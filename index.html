@@ -40,6 +40,10 @@
     --muted:    #3d4a3d;          /* very muted */
     --dim:      #252b25;          /* almost invisible */
 
+    /* Legacy aliases — used in JS data arrays and inline styles */
+    --accent2:  var(--crit-hi);   /* maps to critical red  */
+    --accent3:  var(--accent-hi); /* maps to phosphor green */
+
     --mono: 'IBM Plex Mono', 'Courier New', monospace;
     --sans: 'IBM Plex Sans', system-ui, sans-serif;
   }
@@ -766,12 +770,12 @@
             <div class="stat-change down">▲ +1.1M</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent2)" id="cyberCount">2,841</div>
+            <div class="stat-value" style="color:var(--crit-hi)" id="cyberCount">2,841</div>
             <div class="stat-label">Cyber Events / 24h</div>
             <div class="stat-change down">▲ +12%</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent3)" id="seismicCount">31</div>
+            <div class="stat-value" style="color:var(--accent-hi)" id="seismicCount">31</div>
             <div class="stat-label">Seismic Events / 24h</div>
             <div class="stat-change up">▼ -4</div>
           </div>
