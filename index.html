@@ -15,12 +15,12 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
 
   :root {
-    --bg:       #070808;          /* near-black, barely warm */
-    --surface:  #0a0b0b;          /* panel surface */
-    --surface2: #0f1010;          /* inset surfaces */
-    --surface3: #131515;          /* hover states */
-    --border:   #1c1f1f;          /* hairline borders */
-    --border2:  #252929;          /* emphasized borders */
+    --bg:       #060807;          /* near-black */
+    --surface:  #0c0e0c;          /* panel surface */
+    --surface2: #111411;          /* inset surfaces */
+    --surface3: #161a16;          /* hover states */
+    --border:   #222622;          /* visible hairline borders */
+    --border2:  #2d332d;          /* emphasized borders */
 
     /* Phosphor green — the one accent that's allowed to feel "active" */
     --accent:   #4a7c59;          /* dim phosphor green */
@@ -35,14 +35,10 @@
     --info:     #2e4a5c;          /* dark steel blue, info */
 
     /* Text */
-    --text:     #9aa89a;          /* desaturated warm grey-green */
-    --text-hi:  #c2cfc2;          /* brighter text */
-    --muted:    #3d4a3d;          /* very muted */
-    --dim:      #252b25;          /* almost invisible */
-
-    /* Legacy aliases — used in JS data arrays and inline styles */
-    --accent2:  var(--crit-hi);   /* maps to critical red  */
-    --accent3:  var(--accent-hi); /* maps to phosphor green */
+    --text:     #8a9e8a;          /* readable grey-green */
+    --text-hi:  #b8ccb8;          /* brighter text */
+    --muted:    #5a6e5a;          /* visible muted — was too dark */
+    --dim:      #2e382e;          /* subtle but visible border */
 
     --mono: 'IBM Plex Mono', 'Courier New', monospace;
     --sans: 'IBM Plex Sans', system-ui, sans-serif;
@@ -159,7 +155,7 @@
     color: var(--muted);
     padding: 0 14px 8px;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--dim);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 4px;
   }
 
@@ -278,7 +274,7 @@
     display: flex;
     gap: 8px;
     padding: 6px 0;
-    border-bottom: 1px solid var(--dim);
+    border-bottom: 1px solid var(--border);
     font-size: 11px;
   }
 
@@ -641,6 +637,18 @@
 
   .threat-sub { font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 1.5px; margin-top: 3px; }
 
+  /* ── Deck icons ── */
+  .deck-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: currentColor;
+    opacity: 0.55;
+    filter: grayscale(1);
+  }
+  .deck-item.active .deck-icon { opacity: 0.9; }
+  .deck-item:hover .deck-icon  { opacity: 0.75; }
+
   /* ── Map controls ── */
   .map-layer-btn {
     font-family: var(--mono);
@@ -682,8 +690,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text">USGS: <span>M4.2 earthquake — Aleutian Islands, Alaska</span> &nbsp;•&nbsp; CISA: <span>Critical advisory — industrial control systems</span> &nbsp;•&nbsp; NOAA: <span>Severe weather watch — Gulf Coast</span> &nbsp;•&nbsp; UN: <span>Displacement crisis update — Sudan (4.1M IDPs)</span> &nbsp;•&nbsp; OSINT: <span>Vessel tracking anomaly — Strait of Hormuz</span> &nbsp;•&nbsp; NATO: <span>Joint exercise IRON WOLF 2026 commenced</span> &nbsp;•&nbsp; WHO: <span>Novel respiratory variant monitoring — Southeast Asia</span> &nbsp;•&nbsp;</span>
-      <span class="ticker-text">USGS: <span>M4.2 earthquake — Aleutian Islands, Alaska</span> &nbsp;•&nbsp; CISA: <span>Critical advisory — industrial control systems</span> &nbsp;•&nbsp; NOAA: <span>Severe weather watch — Gulf Coast</span> &nbsp;•&nbsp; UN: <span>Displacement crisis update — Sudan (4.1M IDPs)</span> &nbsp;•&nbsp; OSINT: <span>Vessel tracking anomaly — Strait of Hormuz</span> &nbsp;•&nbsp; NATO: <span>Joint exercise IRON WOLF 2026 commenced</span> &nbsp;•&nbsp; WHO: <span>Novel respiratory variant monitoring — Southeast Asia</span> &nbsp;•&nbsp;</span>
+      <span class="ticker-text" id="ticker-a">SITUATIONSRAPPORTEN <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">SITUATIONSRAPPORTEN <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -715,10 +723,76 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Decks</div>
-      <div class="sidebar-item" onclick="loadDeck('command')">🎛️ Command Center</div>
-      <div class="sidebar-item" onclick="loadDeck('conflict')">⚔️ War &amp; Conflict</div>
-      <div class="sidebar-item" onclick="loadDeck('maritime')">🚢 Maritime &amp; Trade</div>
-      <div class="sidebar-item" onclick="loadDeck('cyber')">🛡️ Cyber &amp; Tech</div>
+
+      <div class="sidebar-item deck-item" id="deck-command" onclick="loadDeck('command')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="3" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1"/>
+          <circle cx="4" cy="7" r="1" fill="currentColor"/>
+          <circle cx="8" cy="7" r="1" fill="currentColor"/>
+          <circle cx="12" cy="7" r="1" fill="currentColor"/>
+          <rect x="3" y="10" width="4" height="1" rx="0.5" fill="currentColor" opacity="0.6"/>
+          <rect x="9" y="10" width="4" height="1" rx="0.5" fill="currentColor" opacity="0.6"/>
+        </svg>
+        Command Center
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-conflict" onclick="loadDeck('conflict')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 13L8 3L13 13" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M5 10H11" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <circle cx="8" cy="3" r="1" fill="currentColor"/>
+          <path d="M2 13H14" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+        War &amp; Conflict
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-maritime" onclick="loadDeck('maritime')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 10C4 8 6 9 8 7C10 5 12 6 14 4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M4 13H12L13 10H3L4 13Z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+          <line x1="8" y1="4" x2="8" y2="10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M8 4L11 7" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+        Maritime &amp; Trade
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-markets" onclick="loadDeck('markets')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="2,12 5,8 8,10 11,5 14,7" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+          <circle cx="11" cy="5" r="1.5" fill="currentColor" opacity="0.6"/>
+        </svg>
+        Prediction Markets
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-cyber" onclick="loadDeck('cyber')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="2" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1"/>
+          <path d="M6 6L7.5 7.5L10 5" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 10L1 14H15L13 10" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+          <line x1="8" y1="10" x2="8" y2="12" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+        </svg>
+        Cyber &amp; Tech
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-humanitarian" onclick="loadDeck('humanitarian')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1"/>
+          <path d="M3 14C3 11.2 5.2 9 8 9C10.8 9 13 11.2 13 14" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          <path d="M11 7L13 9" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+          <path d="M12 6H14M13 5V7" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+        Humanitarian
+      </div>
+
+      <div class="sidebar-item deck-item" id="deck-natural" onclick="loadDeck('natural')">
+        <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2L9.5 5.5L13 6L10.5 8.5L11 12L8 10.5L5 12L5.5 8.5L3 6L6.5 5.5Z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+          <circle cx="8" cy="8" r="1.5" fill="currentColor" opacity="0.4"/>
+          <line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+        Natural Hazards
+      </div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Sources</div>
@@ -765,17 +839,17 @@
             <div class="stat-change up">▲ +2 this week</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" style="color:var(--warn)" id="displacedCount">43M</div>
+            <div class="stat-value" style="color:var(--warn-hi)" id="displacedCount">43M</div>
             <div class="stat-label">IDPs Worldwide</div>
             <div class="stat-change down">▲ +1.1M</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" style="color:var(--crit-hi)" id="cyberCount">2,841</div>
+            <div class="stat-value" style="color:var(--accent2)" id="cyberCount">2,841</div>
             <div class="stat-label">Cyber Events / 24h</div>
             <div class="stat-change down">▲ +12%</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent-hi)" id="seismicCount">31</div>
+            <div class="stat-value" style="color:var(--accent3)" id="seismicCount">31</div>
             <div class="stat-label">Seismic Events / 24h</div>
             <div class="stat-change up">▼ -4</div>
           </div>
@@ -788,10 +862,10 @@
       <div class="widget-header">
         <div class="widget-title"><span class="icon">🌍</span> GLOBAL SITUATIONAL MAP</div>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button class="map-layer-btn active" data-layer="conflict" onclick="toggleLayer(this,'conflict')"><span style="color:#ff3860">●</span> CONFLICT</button>
-          <button class="map-layer-btn active" data-layer="cyber" onclick="toggleLayer(this,'cyber')"><span style="color:#ffb347">●</span> CYBER</button>
-          <button class="map-layer-btn active" data-layer="natural" onclick="toggleLayer(this,'natural')"><span style="color:#39ff8a">●</span> NATURAL</button>
-          <button class="map-layer-btn active" data-layer="maritime" onclick="toggleLayer(this,'maritime')"><span style="color:#00e5ff">●</span> MARITIME</button>
+          <button class="map-layer-btn active" data-layer="conflict" onclick="toggleLayer(this,'conflict')"><span style="color:var(--crit-hi)">▪</span> CONFLICT</button>
+          <button class="map-layer-btn active" data-layer="cyber" onclick="toggleLayer(this,'cyber')"><span style="color:var(--warn-hi)">▪</span> CYBER</button>
+          <button class="map-layer-btn active" data-layer="natural" onclick="toggleLayer(this,'natural')"><span style="color:var(--accent-hi)">▪</span> NATURAL</button>
+          <button class="map-layer-btn active" data-layer="maritime" onclick="toggleLayer(this,'maritime')"><span style="color:#4a8a9a">▪</span> MARITIME</button>
           <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
           <button class="map-ctrl-btn" onclick="mapZoomIn()" title="Zoom In">+</button>
           <button class="map-ctrl-btn" onclick="mapZoomOut()" title="Zoom Out">−</button>
@@ -801,7 +875,7 @@
       <div class="map-container" id="mapContainer" style="position:relative; height:320px; overflow:hidden; cursor:grab; background:#070909;">
         <svg id="worldSvg" style="width:100%;height:100%;display:block;"></svg>
         <!-- Tooltip -->
-        <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:#090b0b;border:1px solid #1c1f1f;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
+        <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:#0c0e0c;border:1px solid #2a2e2a;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
       </div>
     </div>
 
@@ -814,13 +888,13 @@
           <span id="unifiedFeedSource" style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;"></span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;" id="unifiedFeedGrid">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;min-height:200px;" id="unifiedFeedGrid">
         <!-- Left col: main feed -->
-        <div style="border-right:1px solid var(--border);padding:14px;" id="feedColLeft"></div>
+        <div style="border-right:1px solid var(--border2);padding:14px;overflow-y:auto;max-height:340px;" id="feedColLeft"></div>
         <!-- Mid col: secondary feed or bars -->
-        <div style="border-right:1px solid var(--border);padding:14px;" id="feedColMid"></div>
+        <div style="border-right:1px solid var(--border2);padding:14px;overflow-y:auto;max-height:340px;" id="feedColMid"></div>
         <!-- Right col: tertiary / stats -->
-        <div style="padding:14px;" id="feedColRight"></div>
+        <div style="padding:14px;overflow-y:auto;max-height:340px;" id="feedColRight"></div>
       </div>
     </div>
 
@@ -895,6 +969,9 @@ var staticEvents = [
 var liveNaturalEvents  = [];
 var liveMaritimeEvents = [];
 var liveConflictEvents = [];   // from GDELT
+var liveRssItems       = [];   // curated RSS feeds
+var livePolyItems      = [];   // Polymarket geopolitical markets
+var liveJammingCells   = [];   // GPSJam.org EW layer
 var mapEvents          = staticEvents.slice();
 var activeLayers       = new Set(['conflict','cyber','natural','maritime']);
 
@@ -1084,13 +1161,13 @@ updateClock();
 // ── UNIFIED FEED PANEL ──
 
 var CAT_META = {
-  all:          { label:'ALL FEEDS',             source:'GDELT · USGS · NOAA · NASA · ReliefWeb' },
-  conflict:     { label:'CONFLICTS & SECURITY',  source:'GDELT · OSINT · ACLED'                  },
+  all:          { label:'ALL FEEDS',             source:'GDELT · RSS · USGS · NOAA · NASA · Polymarket · GPSJam' },
+  conflict:     { label:'CONFLICTS & SECURITY',  source:'RSS · GDELT · ReliefWeb'                },
   cyber:        { label:'CYBER THREATS',         source:'CISA · OSINT'                           },
-  natural:      { label:'NATURAL HAZARDS',       source:'USGS · NOAA · NASA FIRMS'              },
+  natural:      { label:'NATURAL HAZARDS',       source:'USGS · NOAA · NASA FIRMS · GPSJam'     },
   maritime:     { label:'MARITIME INTEL',        source:'AIS · USNI · OpenSky'                  },
   humanitarian: { label:'HUMANITARIAN',          source:'ReliefWeb · UN OCHA · WFP'             },
-  markets:      { label:'MARKETS & ECONOMY',     source:'—'                                      },
+  markets:      { label:'PREDICTION MARKETS',    source:'Polymarket · gamma-api · geopolitical odds' },
   space:        { label:'SPACE & AEROSPACE',     source:'—'                                      },
 };
 
@@ -1143,14 +1220,28 @@ function renderFeed(cat) {
 
   // ── Render by category ──
 
+  var rssHtml = liveRssItems.length
+    ? (liveCount(liveRssItems.length, 'articles') + liveRssItems.slice(0,8).map(feedItem).join(''))
+    : noData('RSS: fetching live feeds…');
+
+  var polyHtml = livePolyItems.length
+    ? livePolyItems.map(function(m) {
+        var pct = Math.round(m.prob * 100);
+        var bar = '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
+          '<div style="flex:1;height:2px;background:var(--dim)">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + (pct>65?'var(--crit-hi)':pct>40?'var(--warn-hi)':'var(--accent)') + '"></div></div>' +
+          '<span style="font-family:var(--mono);font-size:9px;color:var(--text-hi);min-width:32px;">' + pct + '%</span></div>';
+        return feedItem({ time:m.end, text:m.question, tag:pct+'%', cls:pct>65?'tag-red':pct>40?'tag-yellow':'tag-green' }) + bar;
+      }).join('')
+    : noData('Polymarket: fetching prediction markets…');
+
   if (currentCat === 'conflict') {
     setCol('feedColLeft',
-      colHeader('Live Events', 'GDELT') + gdeltHtml);
+      colHeader('Breaking', 'RSS LIVE') + rssHtml);
     setCol('feedColMid',
-      colHeader('Security Feed') + securityItems.map(feedItem).join('') +
-      '<div style="margin-top:14px">' + colHeader('Conflict Intensity') + conflictItems.map(barItem).join('') + '</div>');
+      colHeader('GDELT Events', 'GDELT LIVE') + gdeltHtml);
     setCol('feedColRight',
-      colHeader('Humanitarian Overview', 'ReliefWeb') + (liveReliefwebItems.length
+      colHeader('Humanitarian', 'ReliefWeb') + (liveReliefwebItems.length
         ? liveReliefwebItems.slice(0,4).map(feedItem).join('')
         : humanitarianItems.map(feedItem).join('')));
 
@@ -1160,9 +1251,15 @@ function renderFeed(cat) {
     setCol('feedColRight', colHeader('APT Attribution') + cyberAttribItems.map(feedItem).join(''));
 
   } else if (currentCat === 'natural') {
+    var jammingNote = liveJammingCells.length
+      ? liveCount(liveJammingCells.length, 'jamming zones on map') + liveJammingCells.slice(0,4).map(function(z){
+          return feedItem({ time:z.level, text:'GPS jamming detected — ' + z.label, tag:'EW', cls:'tag-yellow' });
+        }).join('')
+      : noData('GPSJam: fetching…');
     setCol('feedColLeft',  colHeader('Seismic', 'USGS LIVE') + seisHtml);
     setCol('feedColMid',   colHeader('Weather Alerts', 'NOAA LIVE') + wxHtml);
-    setCol('feedColRight', colHeader('Active Fires', 'NASA FIRMS') + fireHtml);
+    setCol('feedColRight', colHeader('Active Fires', 'NASA FIRMS') + fireHtml +
+      '<div style="margin-top:14px">' + colHeader('GPS Jamming', 'GPSJAM') + jammingNote + '</div>');
 
   } else if (currentCat === 'maritime') {
     setCol('feedColLeft',  colHeader('Maritime Alerts') + maritimeItems.map(feedItem).join(''));
@@ -1174,26 +1271,65 @@ function renderFeed(cat) {
     setCol('feedColMid',   colHeader('Displacement — UNHCR') + displacedItems.map(feedItem).join(''));
     setCol('feedColRight', colHeader('Aid Operations') + aidItems.map(feedItem).join(''));
 
-  } else if (currentCat === 'markets' || currentCat === 'space') {
-    setCol('feedColLeft',  colHeader('Coming Soon') + noData('Feed integration planned for v5.'));
+  } else if (currentCat === 'markets') {
+    setCol('feedColLeft',
+      colHeader('Prediction Markets', 'POLYMARKET') + polyHtml);
+    setCol('feedColMid',
+      colHeader('Breaking News', 'RSS LIVE') + rssHtml);
+    setCol('feedColRight',
+      colHeader('Conflict Intensity') + conflictItems.map(barItem).join('') +
+      '<div style="margin-top:14px">' + colHeader('Cyber Threats') + cyberItems.map(barItem).join('') + '</div>');
+
+  } else if (currentCat === 'space') {
+    setCol('feedColLeft',  colHeader('Coming Soon') + noData('Space feed planned for v6.'));
     setCol('feedColMid',   '');
     setCol('feedColRight', '');
 
   } else {
-    // ALL — GDELT + Seismic + ReliefWeb
+    // ALL — RSS breaking + GDELT + Seismic/ReliefWeb/Polymarket
     setCol('feedColLeft',
-      colHeader('Conflict Events', 'GDELT LIVE') + gdeltHtml);
+      colHeader('Breaking News', 'RSS LIVE') + rssHtml);
     setCol('feedColMid',
-      colHeader('Seismic', 'USGS LIVE') + seisHtml +
-      '<div style="margin-top:14px">' + colHeader('Weather', 'NOAA') + wxHtml.slice(0, wxHtml.indexOf('</div>')+6) + '</div>');
+      colHeader('Conflict Events', 'GDELT') + gdeltHtml.slice ? gdeltHtml : (liveGdeltItems.slice(0,5).map(feedItem).join('') || noData('GDELT loading…')) +
+      '<div style="margin-top:14px">' + colHeader('Seismic', 'USGS') + seisHtml + '</div>');
     setCol('feedColRight',
-      colHeader('Humanitarian', 'RELIEFWEB') + reliefHtml +
-      '<div style="margin-top:14px">' + colHeader('Maritime') + maritimeItems.slice(0,2).map(feedItem).join('') + '</div>');
+      colHeader('Prediction Markets', 'POLYMARKET') + polyHtml +
+      '<div style="margin-top:14px">' + colHeader('Humanitarian', 'ReliefWeb') + (liveReliefwebItems.length ? liveReliefwebItems.slice(0,3).map(feedItem).join('') : humanitarianItems.slice(0,3).map(feedItem).join('')) + '</div>');
   }
 }
 
 // Initial render
 renderFeed('all');
+
+// ── Live ticker updater — pulls from RSS + GDELT ──
+function updateTicker() {
+  var items = [];
+  // Pull from RSS
+  liveRssItems.slice(0, 8).forEach(function(i) {
+    items.push('[' + i.tag + '] ' + i.text);
+  });
+  // Pull from GDELT
+  liveGdeltItems.slice(0, 5).forEach(function(i) {
+    items.push('[GDELT] ' + i.text);
+  });
+  // Pull from seismic
+  liveSeismicItems.slice(0, 3).forEach(function(i) {
+    items.push('[USGS] ' + i.text);
+  });
+  // Pull from jamming
+  liveJammingCells.slice(0, 2).forEach(function(z) {
+    items.push('[GPSJam] GPS jamming — ' + z.label + ' · ' + z.count + ' reports');
+  });
+
+  if (items.length < 3) return; // not enough data yet
+
+  var joined = items.join('  •  ') + '  •  ';
+  var ta = document.getElementById('ticker-a');
+  var tb = document.getElementById('ticker-b');
+  if (ta) ta.innerHTML = joined;
+  if (tb) tb.innerHTML = joined;
+}
+setInterval(updateTicker, 30000); // refresh ticker every 30s
 
 // Simulated live security ticker
 var liveTicker = [
@@ -1243,7 +1379,119 @@ function toggleLayer(btn, layer) {
   document.querySelectorAll('.sidebar-item').forEach(function(el) { el.classList.remove('active'); });
 }
 
-function loadDeck(name) { console.log('Loading deck:', name); }
+// ── DECK DEFINITIONS ──
+var DECKS = {
+  command: {
+    label:   'Command Center',
+    layers:  ['conflict','cyber','natural','maritime'],
+    cat:     'all',
+    mapNote: 'All layers active — global situational awareness',
+    ticker:  'COMMAND · GDELT · USGS · NOAA · NASA FIRMS · RSS · Polymarket · GPSJam · OpenSky',
+  },
+  conflict: {
+    label:   'War & Conflict',
+    layers:  ['conflict','maritime'],
+    cat:     'conflict',
+    mapNote: 'Conflict + Maritime layers — force posture & zone monitoring',
+    ticker:  'CONFLICT DECK · Active conflicts, military movements, maritime security',
+  },
+  maritime: {
+    label:   'Maritime & Trade',
+    layers:  ['maritime','natural'],
+    cat:     'maritime',
+    mapNote: 'Maritime + Natural layers — shipping lanes & weather',
+    ticker:  'MARITIME DECK · AIS tracking, chokepoint status, weather routing',
+  },
+  cyber: {
+    label:   'Cyber & Tech',
+    layers:  ['cyber'],
+    cat:     'cyber',
+    mapNote: 'Cyber layer — APT attribution, threat geography & GPS jamming',
+    ticker:  'CYBER DECK · APT activity, CISA advisories, ransomware campaigns, GPS jamming',
+  },
+  markets: {
+    label:   'Prediction Markets',
+    layers:  ['conflict','maritime'],
+    cat:     'markets',
+    mapNote: 'Polymarket geopolitical prediction markets — crowd intelligence',
+    ticker:  'MARKETS DECK · Polymarket geopolitical odds · crowd-sourced risk intelligence',
+  },
+  humanitarian: {
+    label:   'Humanitarian',
+    layers:  ['conflict','natural'],
+    cat:     'humanitarian',
+    mapNote: 'Conflict + Natural layers — crisis zones & displacement',
+    ticker:  'HUMANITARIAN DECK · Displacement data, aid operations, crisis alerts via UN OCHA',
+  },
+  natural: {
+    label:   'Natural Hazards',
+    layers:  ['natural'],
+    cat:     'natural',
+    mapNote: 'Natural layer — USGS, NOAA, NASA FIRMS',
+    ticker:  'NATURAL HAZARDS DECK · Live seismic, weather alerts, satellite fire detection',
+  },
+};
+
+var activeDeck = null;
+
+function loadDeck(name) {
+  var deck = DECKS[name];
+  if (!deck) return;
+
+  // Deactivate previous deck
+  document.querySelectorAll('.deck-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var deckEl = document.getElementById('deck-' + name);
+  if (deckEl) deckEl.classList.add('active');
+  activeDeck = name;
+
+  // ── 1. Set map layers ──
+  activeLayers = new Set(deck.layers);
+  document.querySelectorAll('.map-layer-btn').forEach(function(btn) {
+    var layer = btn.getAttribute('data-layer');
+    var on = activeLayers.has(layer);
+    btn.classList.toggle('active', on);
+  });
+  if (mapReady) plotEvents();
+
+  // ── 2. Sync sidebar category items ──
+  document.querySelectorAll('.sidebar-item:not(.deck-item)').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var catMatch = document.querySelector('.sidebar-item[onclick*="filterFeed(\'' + deck.cat + '\')"]');
+  if (catMatch) catMatch.classList.add('active');
+
+  // ── 3. Switch feed panel ──
+  renderFeed(deck.cat);
+
+  // ── 4. Update ticker ──
+  var tickerEl = document.querySelector('.ticker-label');
+  if (tickerEl) tickerEl.textContent = deck.label.toUpperCase();
+
+  // ── 5. Flash the map note into feed header source ──
+  var sourceEl = document.getElementById('unifiedFeedSource');
+  if (sourceEl) {
+    sourceEl.textContent = deck.mapNote;
+    sourceEl.style.color = 'var(--accent)';
+    setTimeout(function() {
+      sourceEl.style.color = '';
+      var meta = CAT_META[deck.cat] || CAT_META['all'];
+      sourceEl.textContent = meta.source;
+    }, 3000);
+  }
+
+  // ── 6. Prime the AI analyst context ──
+  var analystCtxMap = {
+    command:      'You are in Command Center mode. Provide broad global situational awareness across all domains.',
+    conflict:     'You are in War & Conflict mode. Focus on military movements, active conflicts, escalation risks, and force posture.',
+    maritime:     'You are in Maritime & Trade mode. Focus on shipping lanes, chokepoints, vessel tracking, and trade disruption.',
+    cyber:        'You are in Cyber & Tech mode. Focus on APT groups, ransomware campaigns, critical infrastructure threats, and CISA advisories.',
+    humanitarian: 'You are in Humanitarian mode. Focus on displacement, aid access, famine risk, and civilian protection.',
+    natural:      'You are in Natural Hazards mode. Focus on seismic activity, severe weather, wildfire, and disaster response.',
+  };
+  window._deckAnalystCtx = analystCtxMap[name] || '';
+}
 
 // ── LIVE API FETCHES ──
 
@@ -1643,10 +1891,10 @@ function plotEvents() {
       var p = mapProjection([d.lon, d.lat]);
       var t = d3.zoomTransform(mapSvg.node());
       tooltip.innerHTML =
-        '<div style="color:'+(SC[d.severity]||'#cdd6f4')+';letter-spacing:2px;font-size:9px;margin-bottom:5px;">'+(d.severity||'')+'</div>'+
-        '<div style="color:#cdd6f4;font-size:11px;font-weight:700;margin-bottom:3px;">'+d.label+'</div>'+
-        '<div style="color:#6272a4;font-size:10px;line-height:1.5;">'+d.detail+'</div>'+
-        (d.source?'<div style="color:#3a4a6a;font-size:9px;margin-top:4px;letter-spacing:1px;">SRC: '+d.source.toUpperCase()+'</div>':'');
+        '<div style="color:'+(SC[d.severity]||'#b8ccb8')+';letter-spacing:2px;font-size:9px;margin-bottom:5px;">'+(d.severity||'')+'</div>'+
+        '<div style="color:#b8ccb8;font-size:11px;font-weight:700;margin-bottom:3px;">'+d.label+'</div>'+
+        '<div style="color:#5a6e5a;font-size:10px;line-height:1.5;">'+d.detail+'</div>'+
+        (d.source?'<div style="color:#3d4d3d;font-size:9px;margin-top:4px;letter-spacing:1px;">SRC: '+d.source.toUpperCase()+'</div>':'');
       tooltip.style.left = Math.min(t.applyX(p[0])+12, container.clientWidth-220)+'px';
       tooltip.style.top  = Math.max(t.applyY(p[1])-80, 8)+'px';
       tooltip.style.opacity = '1';
@@ -1707,11 +1955,15 @@ async function sendMessage() {
   try {
     var res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
         max_tokens:1000,
-        system:'You are an AI intelligence analyst for Situationsrapporten, a real-time OSINT dashboard. Date: March 22 2026. Sources: GDELT (conflict events), ReliefWeb (humanitarian), USGS (earthquakes), NOAA (weather), NASA FIRMS (fires), OpenSky (aircraft). Be concise, authoritative, cite sources.\n\n'+ctx,
+        system:(window._deckAnalystCtx ? window._deckAnalystCtx + ' ' : '') + 'You are an AI intelligence analyst for Situationsrapporten, a real-time OSINT dashboard. Date: March 22 2026. Sources: GDELT (conflict events), ReliefWeb (humanitarian), USGS (earthquakes), NOAA (weather), NASA FIRMS (fires), OpenSky (aircraft). Be concise, authoritative, cite sources.\n\n'+ctx,
         messages:conversation
       })
     });
@@ -1727,28 +1979,259 @@ async function sendMessage() {
   isThinking=false; document.getElementById('sendBtn').disabled=false;
 }
 
+// ── RSS FEED AGGREGATOR ──
+// 12 curated OSINT/conflict/defense RSS feeds via allorigins proxy
+// Returns Atom/RSS XML, parse manually (no DOMParser needed — regex on key tags)
+var RSS_FEEDS = [
+  { url:'https://feeds.bbci.co.uk/news/world/rss.xml',                                     src:'BBC',       cls:'tag-blue'   },
+  { url:'https://www.aljazeera.com/xml/rss/all.xml',                                        src:'AJZ',       cls:'tag-yellow' },
+  { url:'https://feeds.reuters.com/Reuters/worldNews',                                       src:'Reuters',   cls:'tag-blue'   },
+  { url:'https://rss.dw.com/rdf/rss-en-world',                                             src:'DW',        cls:'tag-blue'   },
+  { url:'https://www.rferl.org/api/z_qouktmeit',                                            src:'RFERL',     cls:'tag-yellow' },
+  { url:'https://feeds.feedburner.com/defense-aerospace',                                   src:'DefAero',   cls:'tag-red'    },
+  { url:'https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml',               src:'DefNews',   cls:'tag-red'    },
+  { url:'https://www.understandingwar.org/rss.xml',                                         src:'ISW',       cls:'tag-red'    },
+  { url:'https://theintercept.com/feed/?rss',                                               src:'Intercept', cls:'tag-yellow' },
+  { url:'https://www.middleeasteye.net/rss',                                                src:'MEE',       cls:'tag-yellow' },
+  { url:'https://feeds.feedburner.com/Bellingcat',                                          src:'Bellingcat',cls:'tag-green'  },
+  { url:'https://www.kyivindependent.com/rss/',                                             src:'KyivInd',   cls:'tag-red'    },
+];
+
+async function fetchRSS() {
+  var allItems = [];
+  var fetches = RSS_FEEDS.map(function(feed) {
+    return proxyFetch(feed.url)
+      .then(function(res) { return res.ok ? res.text() : Promise.reject(res.status); })
+      .then(function(xml) {
+        // Parse <item> or <entry> blocks
+        var items = [];
+        var blocks = xml.match(/<(?:item|entry)[\s\S]*?<\/(?:item|entry)>/g) || [];
+        blocks.slice(0, 3).forEach(function(block) {
+          var title = (block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1] || '';
+          title = title.replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'').trim();
+          if (!title || title.length < 15) return;
+          if (title.length > 90) title = title.slice(0,87) + '…';
+          var pubDate = (block.match(/<(?:pubDate|published|updated)>([\s\S]*?)<\/(?:pubDate|published|updated)>/) || [])[1] || '';
+          var t = pubDate ? utcTime(pubDate) : '--:--';
+          items.push({ time:t, text:title, tag:feed.src, cls:feed.cls });
+        });
+        return items;
+      })
+      .catch(function() { return []; });
+  });
+
+  var results = await Promise.allSettled(fetches);
+  results.forEach(function(r) {
+    if (r.status === 'fulfilled') allItems = allItems.concat(r.value);
+  });
+
+  // Sort by time desc (best effort), dedupe titles
+  var seen = {};
+  liveRssItems = allItems.filter(function(item) {
+    if (seen[item.text]) return false;
+    seen[item.text] = true;
+    return true;
+  }).slice(0, 30);
+
+  if (currentCat === 'all' || currentCat === 'conflict' || currentCat === 'markets') {
+    renderFeed(currentCat);
+  }
+  updateTicker();
+
+  // Push top item to security ticker
+  if (liveRssItems.length > 0) {
+    var top = liveRssItems[0];
+    securityItems.unshift({ time:top.time, text:'['+top.tag+'] '+top.text, tag:'RSS', cls:top.cls });
+    if (securityItems.length > 12) securityItems.pop();
+  }
+}
+
+// ── POLYMARKET ──
+// Public REST API — no auth. Gamma API returns active markets.
+// Filter to geopolitical/conflict markets.
+async function fetchPolymarket() {
+  try {
+    // Gamma API: active markets tagged geopolitics/conflict
+    var url = 'https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50&tag_slug=geopolitics';
+    var res = await proxyFetch(url);
+    if (!res.ok) throw new Error('Poly ' + res.status);
+    var data = await res.json();
+
+    var markets = Array.isArray(data) ? data : (data.data || data.markets || []);
+
+    // Filter to conflict/military/elections/war questions
+    var keywords = /ukraine|russia|china|taiwan|iran|israel|gaza|nato|nuclear|war|conflict|election|president|military|troops|attack|missile/i;
+    livePolyItems = markets
+      .filter(function(m) { return keywords.test(m.question || m.title || ''); })
+      .map(function(m) {
+        var q = (m.question || m.title || '').trim();
+        if (q.length > 80) q = q.slice(0,77) + '…';
+        // prob from outcomePrices or bestAsk
+        var prob = 0.5;
+        try {
+          if (m.outcomePrices) {
+            var prices = JSON.parse(m.outcomePrices);
+            prob = parseFloat(prices[0]) || 0.5;
+          } else if (m.bestAsk) {
+            prob = parseFloat(m.bestAsk) || 0.5;
+          }
+        } catch(e) {}
+        var endDate = m.endDate ? utcTime(m.endDate) : m.endDateIso ? utcTime(m.endDateIso) : '—';
+        return { question:q, prob:prob, end:endDate, volume:m.volume || 0 };
+      })
+      .sort(function(a,b) { return b.volume - a.volume; })
+      .slice(0, 12);
+
+    if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+
+  } catch(err) {
+    // Fallback static prediction market data
+    if (livePolyItems.length === 0) {
+      livePolyItems = [
+        { question:'Will Russia control Zaporizhzhia Oblast end of 2026?',        prob:0.71, end:'Dec 31', volume:0 },
+        { question:'Will there be a ceasefire in Gaza before July 2026?',          prob:0.38, end:'Jul 1',  volume:0 },
+        { question:'Will Iran conduct a nuclear test before 2027?',                prob:0.08, end:'Jan 1',  volume:0 },
+        { question:'Will China take military action against Taiwan in 2026?',      prob:0.12, end:'Dec 31', volume:0 },
+        { question:'Will North Korea conduct an ICBM test in 2026?',              prob:0.55, end:'Dec 31', volume:0 },
+        { question:'Will NATO invoke Article 5 in 2026?',                          prob:0.06, end:'Dec 31', volume:0 },
+        { question:'Will the US impose new sanctions on China in 2026?',           prob:0.67, end:'Dec 31', volume:0 },
+        { question:'Will Sudan conflict result in formal partition by 2027?',      prob:0.22, end:'Jan 1',  volume:0 },
+      ];
+      if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+    }
+    console.warn && console.warn('Polymarket:', err.message || err);
+  }
+}
+
+// ── GPSJAM — GPS/GNSS Jamming Detection ──
+// GPSJam.org publishes daily jamming data as CSV.
+// Each row: lat, lon, count of disruption reports.
+// We cluster into meaningful zones and add to the map as a heatmap-style layer.
+async function fetchGPSJam() {
+  try {
+    // GPSJam CSV: today's date
+    var now = new Date();
+    var y = now.getUTCFullYear();
+    var m = String(now.getUTCMonth()+1).padStart(2,'0');
+    var d = String(now.getUTCDate()).padStart(2,'0');
+    var url = 'https://gpsjam.org/data/' + y + '-' + m + '-' + d + '.csv';
+    var res = await proxyFetch(url);
+    if (!res.ok) {
+      // Try yesterday if today not available yet
+      var yd = new Date(now - 86400000);
+      var y2 = yd.getUTCFullYear(), m2 = String(yd.getUTCMonth()+1).padStart(2,'0'), d2 = String(yd.getUTCDate()).padStart(2,'0');
+      res = await proxyFetch('https://gpsjam.org/data/'+y2+'-'+m2+'-'+d2+'.csv');
+      if (!res.ok) throw new Error('GPSJam ' + res.status);
+    }
+    var text = await res.text();
+    var lines = text.trim().split('
+').slice(1);
+
+    // Parse: lat,lon,count  (or lat3,lon3,count depending on resolution)
+    var cells = [];
+    lines.forEach(function(line) {
+      var parts = line.split(',');
+      if (parts.length < 3) return;
+      var lat = parseFloat(parts[0]);
+      var lon = parseFloat(parts[1]);
+      var cnt = parseFloat(parts[2]) || 0;
+      if (isNaN(lat) || isNaN(lon) || cnt < 2) return;
+      cells.push({ lat:lat, lon:lon, count:cnt });
+    });
+
+    // Sort by intensity, keep top 50 zones
+    cells.sort(function(a,b) { return b.count - a.count; });
+    var topCells = cells.slice(0, 50);
+
+    // Name zones by rough region
+    function regionLabel(lat, lon) {
+      if (lat > 44 && lat < 55 && lon > 22 && lon < 42) return 'Eastern Europe';
+      if (lat > 30 && lat < 40 && lon > 33 && lon < 42) return 'Eastern Mediterranean';
+      if (lat > 28 && lat < 38 && lon > 34 && lon < 50) return 'Middle East';
+      if (lat > 55 && lat < 70 && lon > 20 && lon < 40) return 'Baltic / Finland';
+      if (lat > 35 && lat < 45 && lon > 25 && lon < 45) return 'Black Sea Region';
+      if (lat > 60 && lat < 75 && lon > 20 && lon < 60) return 'Arctic / Barents';
+      if (lat > 30 && lat < 40 && lon > 100 && lon < 125) return 'East Asia';
+      return 'Zone ' + lat.toFixed(0) + ',' + lon.toFixed(0);
+    }
+
+    liveJammingCells = topCells.map(function(c) {
+      return {
+        lat:   c.lat,
+        lon:   c.lon,
+        count: c.count,
+        level: c.count > 20 ? 'HIGH' : c.count > 8 ? 'MED' : 'LOW',
+        label: regionLabel(c.lat, c.lon)
+      };
+    });
+
+    // Add to map as EW layer (use 'cyber' layer so it appears in cyber/command decks)
+    var jammingMapEvents = liveJammingCells.slice(0, 30).map(function(z) {
+      var intensity = z.count > 20 ? 0.8 : z.count > 8 ? 0.55 : 0.3;
+      return {
+        lon:      z.lon,
+        lat:      z.lat,
+        layer:    'cyber',
+        color:    '#6a5c2e',
+        r:        Math.max(3, Math.min(10, Math.sqrt(z.count) * 1.5)),
+        label:    'GPS Jamming — ' + z.label,
+        detail:   z.count + ' disruption reports · Electronic warfare / spoofing',
+        severity: z.level,
+        source:   'gpsjam',
+        isJam:    true
+      };
+    });
+
+    // Merge into liveConflictEvents (reuse cyber layer)
+    liveConflictEvents = liveConflictEvents.filter(function(e) { return e.source !== 'gpsjam'; }).concat(jammingMapEvents);
+    rebuildMap();
+
+    if (currentCat === 'natural' || currentCat === 'cyber' || currentCat === 'all') renderFeed(currentCat);
+
+  } catch(err) {
+    // Silent — GPSJam data may not be available every day
+    if (liveJammingCells.length === 0) {
+      liveJammingCells = [
+        { level:'HIGH', label:'Eastern Europe (Ukraine front)', count:28 },
+        { level:'HIGH', label:'Eastern Mediterranean',          count:19 },
+        { level:'MED',  label:'Baltic / Finland border',        count:11 },
+        { level:'MED',  label:'Black Sea Region',               count:9  },
+      ];
+      if (currentCat === 'natural') renderFeed(currentCat);
+    }
+  }
+}
+
 // ── BOOT ──
 
 var topoScript = document.createElement('script');
 topoScript.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';
 topoScript.onload = function() {
   initMap();
+  setTimeout(function() { loadDeck('command'); }, 100);
+  // Stagger all fetches to avoid hammering proxies simultaneously
   fetchUSGS();
-  setTimeout(fetchNOAA,      1500);
-  setTimeout(fetchGDELT,     2500);  // GDELT: conflict events + geo pins
-  setTimeout(fetchReliefWeb, 4000);  // ReliefWeb: UN humanitarian reports
-  setTimeout(fetchFIRMS,     5500);
-  setTimeout(fetchOpenSky,   7000);
+  setTimeout(fetchNOAA,        1500);
+  setTimeout(fetchGDELT,       2500);   // GDELT: conflict events + geo pins
+  setTimeout(fetchReliefWeb,   4000);   // ReliefWeb: UN humanitarian
+  setTimeout(fetchRSS,         5000);   // RSS: 12 curated news feeds
+  setTimeout(fetchPolymarket,  6500);   // Polymarket: prediction markets
+  setTimeout(fetchFIRMS,       8000);   // NASA FIRMS: satellite fires
+  setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
+  setTimeout(fetchOpenSky,    11000);   // OpenSky: ADS-B aircraft
 };
 document.head.appendChild(topoScript);
 
 // Refresh intervals
-setInterval(fetchUSGS,      5*60*1000);
-setInterval(fetchNOAA,      5*60*1000);
-setInterval(fetchGDELT,    15*60*1000);  // GDELT updates every 15 min
-setInterval(fetchReliefWeb,30*60*1000);  // ReliefWeb: 30 min is enough
-setInterval(fetchFIRMS,    10*60*1000);
-setInterval(fetchOpenSky,   3*60*1000);
+setInterval(fetchUSGS,       5*60*1000);
+setInterval(fetchNOAA,       5*60*1000);
+setInterval(fetchGDELT,     15*60*1000);  // GDELT updates every 15 min
+setInterval(fetchReliefWeb,  30*60*1000); // ReliefWeb: 30 min
+setInterval(fetchRSS,        10*60*1000); // RSS: every 10 min
+setInterval(fetchPolymarket,  60*60*1000);// Polymarket: every hour
+setInterval(fetchFIRMS,      10*60*1000); // FIRMS: every 10 min
+setInterval(fetchGPSJam,     60*60*1000); // GPSJam: daily data, check hourly
+setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
 
 </script>
 </body>
