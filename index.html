@@ -2686,16 +2686,7 @@ function drawConflictZones(showLabels) {
         .attr('r', 3.5/kPin)
         .attr('fill', pin.color).attr('opacity', 0.85);
 
-      // Label (only when zoomed in enough)
-      if (kPin >= 3) {
-        g2.append('text')
-          .attr('x', 5/kPin).attr('y', -2/kPin)
-          .attr('font-family', "'IBM Plex Mono',monospace")
-          .attr('font-size', 5/kPin + 'px')
-          .attr('fill', pin.color).attr('opacity', 0.8)
-          .attr('pointer-events', 'none')
-          .text(pin.label ? pin.label.slice(0, 35) : '');
-      }
+      // Labels shown in tooltip on hover only — no permanent text on map
     });
   } else {
     mapG.selectAll('.news-pin-direct').remove();
@@ -3446,26 +3437,26 @@ function zoomToConflict(id) {
       drawConflictZones(true);
       plotEvents();
       updateConflictInfoBox(activeConflictId);
-      // Draw persistent country name at correct zoom
+      // Draw country label at correct zoom (same style as hover label)
       if (activeConflictId) {
+        var kk3 = d3.zoomTransform(mapSvg.node()).k;
         var ids3 = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
-        var kk = d3.zoomTransform(mapSvg.node()).k;
         mapG.selectAll('.country-hover-label').remove();
         ids3.forEach(function(numId) {
           var feat3 = _countriesFeatures.filter(function(f){ return parseInt(f.id) === numId; })[0];
           if (!feat3) return;
           var cname3 = ISO_NAMES[numId] || '';
           if (!cname3) return;
-          var cen = mapPath.centroid(feat3);
-          if (!cen || isNaN(cen[0])) return;
+          var cen3 = mapPath.centroid(feat3);
+          if (!cen3 || isNaN(cen3[0])) return;
           mapG.append('text')
             .attr('class', 'country-hover-label')
-            .attr('x', cen[0]).attr('y', cen[1])
+            .attr('x', cen3[0]).attr('y', cen3[1])
             .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
             .attr('font-family', "'Barlow Condensed',sans-serif")
-            .attr('font-weight', '300').attr('letter-spacing', '0.1em')
-            .attr('font-size', 11/kk + 'px')
-            .attr('fill', '#c8dcc8').attr('opacity', 0.5)
+            .attr('font-weight', '400').attr('letter-spacing', '0.08em')
+            .attr('font-size', 6/kk3 + 'px')
+            .attr('fill', '#b8ccb8').attr('opacity', 0.75)
             .attr('pointer-events', 'none')
             .text(cname3.toUpperCase());
         });
