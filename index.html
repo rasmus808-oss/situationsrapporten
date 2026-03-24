@@ -1665,8 +1665,7 @@ function focusFeedPin(el) {
       document.querySelectorAll('.hotspot-item').forEach(function(el2){ el2.classList.remove('active'); });
       var hsEl = document.getElementById('hs-' + zoneMatch.id);
       if (hsEl) hsEl.classList.add('active');
-      buildNewsPins();
-      mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+      rebuildMap();
       drawConflictZones(false);
       plotEvents();
     }
@@ -2296,7 +2295,7 @@ var liveIndexData = {};
 var CARRIER_GROUPS = [
   { name:'USS Harry S. Truman CSG',    hull:'CVN-75', lon:18.0,  lat:37.5,  detail:'Sixth Fleet — Mediterranean',         updated:'Mar 2026' },
   { name:'USS Carl Vinson CSG',        hull:'CVN-70', lon:125.0, lat:14.0,  detail:'Seventh Fleet — Western Pacific',      updated:'Mar 2026' },
-  { name:'USS Abraham Lincoln CSG',    hull:'CVN-72', lon:58.0,  lat:22.0,  detail:'Fifth Fleet — Arabian Sea',            updated:'Mar 2026' },
+  { name:'USS Abraham Lincoln CSG',    hull:'CVN-72', lon:62.0,  lat:17.0,  detail:'Fifth Fleet — Arabian Sea',            updated:'Mar 2026' },
   { name:'USS Gerald R. Ford CSG',     hull:'CVN-78', lon:-68.0, lat:37.5,  detail:'Second Fleet — N. Atlantic',           updated:'Mar 2026' },
   { name:'USS Theodore Roosevelt CSG', hull:'CVN-71', lon:-117.2,lat:32.7,  detail:'Third Fleet — Eastern Pacific/CONUS',  updated:'Mar 2026' },
 ];
@@ -3331,18 +3330,15 @@ function zoomToConflict(id) {
   }
 
   // Build news pins for the newly active zone
-  buildNewsPins();
-  // Redraw map events (news pins now in liveNewsPins)
-  mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+  rebuildMap();
   // Redraw zones — no labels yet, zoom hasn't settled
   drawConflictZones(false);
-  // Plot events immediately so pins appear (filtered by activeConflictId)
+  // Plot events immediately so pins appear
   plotEvents();
 
   // If toggled off, reset view and hide infobox
   if (!activeConflictId) {
-    buildNewsPins();  // rebuild with no active zone (clears zone-specific pins)
-    mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+    rebuildMap();
     plotEvents();
     mapSvg.transition().duration(600).ease(d3.easeCubicInOut)
       .call(mapZoom.transform, d3.zoomIdentity);
