@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Situationsrapporten — OSINT Intelligence Dashboard</title>
+<title>Burgerklubben's Situationsrapport</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  /* ── Situationsrapporten — Stealthy ops palette ──
+  /* ── Burgerklubben's Situationsrapport — Stealthy ops palette ──
      Inspired by classified terminals, NOC dashboards, and night-vision displays.
      No neon. No glow. Phosphor green on near-black. Muted amber for warnings.
      Everything looks like it belongs in a darkened situation room.
@@ -81,10 +81,10 @@
 
   .logo {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 500;
     color: var(--accent-hi);
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     display: flex;
     align-items: center;
@@ -142,6 +142,8 @@
     border-right: 1px solid var(--border);
     padding: 16px 0;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .sidebar-section {
@@ -351,8 +353,8 @@
   /* ── Map placeholder ── */
   .map-container {
     position: relative;
-    height: 240px;
-    background: #0a0e17;
+    height: 300px;
+    background: #080c0a;
     overflow: hidden;
   }
 
@@ -400,166 +402,217 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--dim); }
 
-  /* ── Right panel — AI Chat ── */
-  .ai-panel {
+  /* ── Right panel — Story Reader ── */
+  .story-panel {
     background: var(--surface);
     border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
-  .ai-header {
-    padding: 10px 14px;
+  .story-header {
     border-bottom: 1px solid var(--border);
     background: var(--surface2);
+    flex-shrink: 0;
+  }
+
+  .story-title-bar {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 10px 14px 6px;
   }
 
-  .ai-badge {
+  .story-badge {
     width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--accent);
     animation: breathe 4s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
-  .ai-title {
+  .story-title-text {
     font-family: var(--mono);
     font-size: 8px;
     letter-spacing: 3px;
     color: var(--muted);
     text-transform: uppercase;
+    flex: 1;
   }
 
-  .ai-messages {
+  .story-close-btn {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+  .story-close-btn:hover { color: var(--muted); }
+
+  .story-meta {
+    padding: 0 14px 8px;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    min-height: 14px;
+  }
+
+  .story-body {
     flex: 1;
     overflow-y: auto;
-    padding: 12px;
+    padding: 14px;
+  }
+
+  .story-empty {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
     gap: 12px;
+    padding: 40px 20px;
   }
 
-  .msg {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  .story-empty-icon {
+    font-size: 28px;
+    color: var(--dim);
+    opacity: 0.5;
   }
 
-  .msg-role {
-    font-family: var(--mono);
-    font-size: 8px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .msg-role.analyst { color: var(--accent); }
-  .msg-role.user    { color: var(--muted);  }
-
-  .msg-bubble {
-    font-size: 11.5px;
-    line-height: 1.6;
-    color: var(--text);
-    background: var(--surface2);
-    border: 1px solid var(--dim);
-    padding: 9px 11px;
-    white-space: pre-wrap;
-    font-family: var(--sans);
-  }
-
-  .msg.user-msg .msg-bubble {
-    border-color: var(--accent-lo);
-    background: rgba(74,124,89,0.04);
-    color: var(--text-hi);
-  }
-
-  .typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 9px 11px;
-    background: var(--surface2);
-    border: 1px solid var(--dim);
-    width: fit-content;
-  }
-
-  .typing-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: typeBounce 1.4s infinite;
-    opacity: 0.4;
-  }
-
-  .typing-dot:nth-child(2) { animation-delay: 0.25s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.5s; }
-
-  @keyframes typeBounce {
-    0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
-    40%           { opacity: 0.9; transform: scale(1); }
-  }
-
-  .ai-input-area {
-    padding: 10px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .ai-input-row { display: flex; gap: 7px; }
-
-  .ai-input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 8px 10px;
-    color: var(--text-hi);
-    font-family: var(--mono);
-    font-size: 11px;
-    resize: none;
-    height: 56px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .ai-input:focus  { border-color: var(--accent-lo); }
-  .ai-input::placeholder { color: var(--dim); }
-
-  .ai-send-btn {
-    background: var(--accent-lo);
-    border: 1px solid var(--accent);
-    color: var(--accent-hi);
+  .story-empty-text {
     font-family: var(--mono);
     font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 2px;
-    padding: 0 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+    max-width: 200px;
   }
 
-  .ai-send-btn:hover    { background: var(--accent); color: var(--bg); }
-  .ai-send-btn:disabled { background: transparent; color: var(--dim); border-color: var(--dim); cursor: not-allowed; }
+  .story-headline {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-hi);
+    line-height: 1.5;
+    margin-bottom: 12px;
+    letter-spacing: 0.2px;
+  }
 
-  .ai-hints { display: flex; flex-wrap: wrap; gap: 5px; }
+  .story-source-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--dim);
+  }
 
-  .hint-btn {
+  .story-tag {
     font-family: var(--mono);
     font-size: 8px;
+    letter-spacing: 1.5px;
+    padding: 2px 6px;
+    border: 1px solid var(--accent-lo);
+    color: var(--accent-hi);
+    background: rgba(74,124,89,0.08);
+  }
+
+  .story-datetime {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--muted);
     letter-spacing: 0.5px;
-    padding: 3px 7px;
+  }
+
+  .story-zone-pill {
+    font-family: var(--mono);
+    font-size: 8px;
+    padding: 2px 6px;
+    background: rgba(74,124,89,0.06);
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.1s;
+    margin-left: auto;
+  }
+  .story-zone-pill:hover { border-color: var(--accent-lo); color: var(--accent-hi); }
+
+  .story-summary {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .story-map-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    padding: 6px 10px;
     background: transparent;
     border: 1px solid var(--dim);
     color: var(--muted);
     cursor: pointer;
     transition: all 0.12s;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .story-map-btn:hover { border-color: var(--accent-lo); color: var(--accent-hi); background: rgba(74,124,89,0.05); }
+
+  .story-related-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--dim);
   }
 
-  .hint-btn:hover { border-color: var(--accent-lo); color: var(--accent-hi); }
+  .story-related-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--dim);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .story-related-item:last-child { border-bottom: none; }
+  .story-related-item:hover { background: var(--surface2); margin: 0 -14px; padding: 8px 14px; }
 
-  /* ── Ticker ── */
+  .story-related-text {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--text);
+    line-height: 1.45;
+    margin-bottom: 3px;
+  }
+
+  .story-related-meta {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--dim);
+    letter-spacing: 0.5px;
+  }
+
+  .story-feed {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    max-height: 240px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+/* ── Ticker ── */
   .ticker {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -677,9 +730,172 @@
   }
   .map-ctrl-btn:hover { color: var(--accent-hi); border-color: var(--accent-lo); }
 
-  /* ── Responsive ── */
+  /* ── Conflict infobox ── */
+  #conflictInfoBox { transition: opacity 0.2s; }
+  #cib-items div { padding: 4px 0; border-bottom: 1px solid var(--dim); line-height:1.4; }
+  #cib-items div:last-child { border-bottom: none; }
+  #cib-feed::-webkit-scrollbar { width: 2px; }
+  #cib-feed::-webkit-scrollbar-thumb { background: var(--dim); }
+
+  /* ── Hotspot navigator ── */
+  .hotspot-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 1px solid transparent;
+  }
+  .hotspot-item:hover  { background: var(--surface3); color: var(--text-hi); }
+  .hotspot-item.active {
+    background: rgba(74,124,89,0.08);
+    border-left-color: var(--accent);
+  }
+  .hs-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+  .hs-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex: 1;
+    letter-spacing: 0.5px;
+  }
+  .hotspot-item:hover .hs-label,
+  .hotspot-item.active .hs-label { color: var(--text-hi); }
+  .hs-sev {
+    font-family: var(--mono);
+    font-size: 7px;
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+
+  /* ── Source status rows ── */
+  .source-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+  .src-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--dim);
+    flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  .src-name { color: var(--muted); flex: 1; }
+  .src-status {
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 1px 4px;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+  }
+  .src-status.loading { color: var(--muted);   border-color: var(--border); }
+  .src-status.live    { color: var(--accent);  border-color: var(--accent-lo); }
+  .src-status.error   { color: var(--crit-hi); border-color: var(--crit); }
+  .src-dot.live  { background: var(--accent);  }
+  .src-dot.error { background: var(--crit-hi); }
+
+  /* ── Feed category pills ── */
+  .feed-cat-pills {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .feed-pill {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    padding: 3px 7px;
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    line-height: 1;
+  }
+  .feed-pill:hover  { border-color: var(--accent-lo); color: var(--accent-hi); }
+  .feed-pill.active {
+    background: rgba(74,124,89,0.1);
+    border-color: var(--accent);
+    color: var(--accent-hi);
+  }
+
+  /* ── Responsive / Mobile ── */
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 160px 1fr 280px; }
+  }
+
+  @media (max-width: 768px) {
+    .layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      height: auto;
+    }
+    .sidebar {
+      display: none;  /* hidden on mobile — use deck pills instead */
+    }
+    .ai-panel {
+      height: 50vh;
+      border-left: none;
+      border-top: 1px solid var(--border);
+    }
+    .main {
+      grid-template-columns: 1fr;
+      padding: 8px;
+      gap: 8px;
+    }
+    .widget.full, .widget.wide { grid-column: span 1; }
+    .map-container { height: 260px !important; }
+    #unifiedFeedGrid {
+      grid-template-columns: 1fr !important;
+    }
+    #feedColMid, #feedColRight {
+      border-right: none !important;
+      border-top: 1px solid var(--border2);
+    }
+    .feed-cat-pills { gap: 3px; }
+    .feed-pill { font-size: 7px; padding: 2px 5px; }
+    .widget-header { padding: 6px 10px !important; flex-wrap: wrap; gap: 4px; }
+    /* Mobile deck bar — replaces sidebar */
+    .mobile-deck-bar {
+      display: flex;
+      overflow-x: auto;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: none;
+    }
+    .mobile-deck-bar::-webkit-scrollbar { display: none; }
+    .mobile-deck-pill {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid var(--dim);
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .mobile-deck-pill.active {
+      border-color: var(--accent);
+      color: var(--accent-hi);
+      background: rgba(74,124,89,0.1);
+    }
+    /* Status bar wraps on mobile */
+    .status-bar-inner { flex-wrap: wrap; gap: 8px; padding: 6px 10px !important; height: auto !important; }
+    .status-divider { display: none; }
   }
 </style>
 </head>
@@ -690,15 +906,26 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">SITUATIONSRAPPORTEN <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">SITUATIONSRAPPORTEN <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
 
+<!-- Mobile deck bar (visible only on small screens) -->
+<div class="mobile-deck-bar" id="mobileDeckBar" style="display:none;">
+  <button class="mobile-deck-pill active" onclick="loadDeck('command')">⬛ Command</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('conflict')">▲ Conflict</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('maritime')">∿ Maritime</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('markets')">↗ Markets</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('cyber')">◉ Cyber</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('humanitarian')">◎ Aid</button>
+  <button class="mobile-deck-pill" onclick="loadDeck('natural')">✦ Hazards</button>
+</div>
+
 <!-- Header -->
 <header>
-  <div class="logo">SITUATIONSRAPPORTEN</div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT</div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <div class="time-display" id="clock">--:--:-- UTC</div>
@@ -710,21 +937,11 @@
 
   <!-- Sidebar -->
   <nav class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Category</div>
-      <div class="sidebar-item active" onclick="filterFeed('all')"><div class="dot dot-blue"></div> All Feeds</div>
-      <div class="sidebar-item" onclick="filterFeed('conflict')"><div class="dot dot-red"></div> Conflicts &amp; Security <span class="count-badge">14</span></div>
-      <div class="sidebar-item" onclick="filterFeed('cyber')"><div class="dot dot-yellow"></div> Cyber Threats <span class="count-badge">7</span></div>
-      <div class="sidebar-item" onclick="filterFeed('natural')"><div class="dot dot-green"></div> Natural Hazards</div>
-      <div class="sidebar-item" onclick="filterFeed('humanitarian')"><div class="dot dot-blue"></div> Humanitarian</div>
-      <div class="sidebar-item" onclick="filterFeed('markets')"><div class="dot dot-gray"></div> Markets &amp; Economy</div>
-      <div class="sidebar-item" onclick="filterFeed('maritime')"><div class="dot dot-blue"></div> Maritime</div>
-      <div class="sidebar-item" onclick="filterFeed('space')"><div class="dot dot-gray"></div> Space &amp; Aerospace</div>
-    </div>
+
     <div class="sidebar-section">
       <div class="sidebar-label">Decks</div>
 
-      <div class="sidebar-item deck-item" id="deck-command" onclick="loadDeck('command')">
+      <div class="sidebar-item deck-item active" id="deck-command" onclick="loadDeck('command')">
         <svg class="deck-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="3" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1"/>
           <circle cx="4" cy="7" r="1" fill="currentColor"/>
@@ -794,64 +1011,63 @@
         Natural Hazards
       </div>
     </div>
-    <div class="sidebar-section">
+
+    <div class="sidebar-section" style="border-top:1px solid var(--dim);padding-top:12px;">
+      <div class="sidebar-label">Conflict Zones</div>
+      <div id="hotspotList"></div>
+    </div>
+
+    <div class="sidebar-section" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--dim);">
       <div class="sidebar-label">Sources</div>
+      <div class="sidebar-item"><div class="dot dot-green"></div> GDELT</div>
       <div class="sidebar-item"><div class="dot dot-green"></div> USGS</div>
       <div class="sidebar-item"><div class="dot dot-green"></div> NOAA</div>
-      <div class="sidebar-item"><div class="dot dot-green"></div> CISA</div>
-      <div class="sidebar-item"><div class="dot dot-green"></div> UN OCHA</div>
-      <div class="sidebar-item"><div class="dot dot-yellow"></div> FlightAware</div>
+      <div class="sidebar-item"><div class="dot dot-green"></div> NASA FIRMS</div>
+      <div class="sidebar-item"><div class="dot dot-green"></div> ReliefWeb</div>
+      <div class="sidebar-item"><div class="dot dot-green" id="src-opensky-dot"></div> AISStream / OpenSky</div>
+      <div class="sidebar-item"><div class="dot dot-green"></div> Polymarket</div>
+      <div class="sidebar-item"><div class="dot dot-green"></div> GPSJam</div>
     </div>
+
   </nav>
 
   <!-- Dashboard grid -->
   <main class="main" id="mainGrid">
 
-    <!-- Global Threat Level -->
-    <div class="widget">
-      <div class="widget-header">
-        <div class="widget-title"><span class="icon">🔴</span> GLOBAL THREAT</div>
-      </div>
-      <div class="widget-body">
-        <div class="threat-display">
+    <!-- Slim status bar: threat + indicators in one 44px row -->
+    <div class="widget full" style="padding:0;">
+      <div style="display:flex;align-items:center;height:38px;">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 16px;border-right:1px solid var(--border);height:100%;flex-shrink:0;">
+          <div id="threatMeter" style="display:flex;gap:2px;align-items:flex-end;"></div>
           <div>
-            <div class="threat-level-text" style="color: var(--warn-hi)">ELEVATED</div>
-            <div class="threat-sub">LEVEL 3 / 5 — SUBSTANTIAL</div>
+            <div class="threat-level-text" style="color:var(--warn-hi);font-size:10px;letter-spacing:1.5px;">ELEVATED</div>
+            <div class="threat-sub" style="font-size:7px;">LEVEL 3/5</div>
           </div>
-          <div class="threat-meter" id="threatMeter"></div>
         </div>
-        <div style="font-size:11px; color: var(--muted); margin-top:6px; font-family: var(--mono);">
-          ↑ Elevated from MODERATE — 14:22 UTC
-        </div>
-      </div>
-    </div>
-
-    <!-- Key Stats -->
-    <div class="widget wide">
-      <div class="widget-header">
-        <div class="widget-title"><span class="icon">📊</span> GLOBAL INDICATORS</div>
-      </div>
-      <div class="widget-body">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" id="conflictCount">47</div>
-            <div class="stat-label">Active Conflicts</div>
-            <div class="stat-change up">▲ +2 this week</div>
+        <div style="display:flex;flex:1;align-items:center;justify-content:space-around;padding:0 12px;">
+          <div style="text-align:center;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:300;color:var(--text-hi);" id="conflictCount">47</div>
+            <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Conflicts</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color:var(--warn-hi)" id="displacedCount">43M</div>
-            <div class="stat-label">IDPs Worldwide</div>
-            <div class="stat-change down">▲ +1.1M</div>
+          <div style="width:1px;height:24px;background:var(--border);"></div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:300;color:var(--warn-hi);" id="displacedCount">43M</div>
+            <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">IDPs</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent2)" id="cyberCount">2,841</div>
-            <div class="stat-label">Cyber Events / 24h</div>
-            <div class="stat-change down">▲ +12%</div>
+          <div style="width:1px;height:24px;background:var(--border);"></div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:300;color:var(--crit-hi);" id="cyberCount">2,841</div>
+            <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Cyber/24h</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" style="color:var(--accent3)" id="seismicCount">31</div>
-            <div class="stat-label">Seismic Events / 24h</div>
-            <div class="stat-change up">▼ -4</div>
+          <div style="width:1px;height:24px;background:var(--border);"></div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:300;color:var(--accent-hi);" id="seismicCount">31</div>
+            <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">Seismic/24h</div>
+          </div>
+          <div style="width:1px;height:24px;background:var(--border);"></div>
+          <div style="text-align:center;">
+            <div style="font-family:var(--mono);font-size:11px;font-weight:300;color:var(--muted);" id="lastUpdate">14:22 UTC</div>
+            <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;">Last update</div>
           </div>
         </div>
       </div>
@@ -872,20 +1088,45 @@
           <button class="map-ctrl-btn" onclick="mapReset()" title="Reset">⌂</button>
         </div>
       </div>
-      <div class="map-container" id="mapContainer" style="position:relative; height:320px; overflow:hidden; cursor:grab; background:#070909;">
+      <div class="map-container" id="mapContainer" style="position:relative; height:300px; overflow:hidden; cursor:grab; background:#080c0a;">
         <svg id="worldSvg" style="width:100%;height:100%;display:block;"></svg>
         <!-- Tooltip -->
-        <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:#0c0e0c;border:1px solid #2a2e2a;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
+
+        <!-- Conflict zone info panel — appears on zone activation -->
+        <div id="conflictInfoBox" style="display:none;position:absolute;top:8px;right:8px;z-index:20;width:200px;background:rgba(6,9,8,0.94);border:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-bottom:1px solid var(--dim);">
+            <div id="cib-title" style="font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text-hi);"></div>
+            <div id="cib-sev" style="font-family:var(--mono);font-size:7px;letter-spacing:1px;padding:2px 5px;border:1px solid var(--dim);"></div>
+          </div>
+          <div style="padding:5px 8px;border-bottom:1px solid var(--dim);">
+            <div id="cib-detail" style="font-family:var(--mono);font-size:8px;color:var(--muted);line-height:1.4;"></div>
+          </div>
+
+          <div style="padding:4px 8px;border-top:1px solid var(--dim);">
+            <div id="cib-score" style="font-family:var(--mono);font-size:7px;color:var(--accent);letter-spacing:0.5px;margin-bottom:3px;"></div>
+          <div id="cib-source" style="font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;"></div>
+          </div>
+        </div>
+        <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:rgba(8,12,10,0.94);border:1px solid #2a2e2a;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
       </div>
     </div>
 
     <!-- Unified Intelligence Feed (filtered by map category buttons) -->
     <div class="widget full" id="unifiedFeedWidget">
-      <div class="widget-header">
-        <div class="widget-title" id="unifiedFeedTitle"><span class="icon">📡</span> <span id="unifiedFeedLabel">ALL FEEDS</span></div>
-        <div style="display:flex;gap:6px;align-items:center;">
+      <div class="widget-header" style="flex-wrap:wrap;gap:6px;padding:8px 12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;">
+          <div class="widget-title"><span id="unifiedFeedLabel">ALL FEEDS</span></div>
           <div class="live-badge">LIVE</div>
-          <span id="unifiedFeedSource" style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;"></span>
+          <span id="unifiedFeedSource" style="font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;"></span>
+        </div>
+        <div class="feed-cat-pills" id="feedCatPills">
+          <button class="feed-pill active" onclick="selectFeedCat('all')">ALL</button>
+          <button class="feed-pill" onclick="selectFeedCat('conflict')">CONFLICT</button>
+          <button class="feed-pill" onclick="selectFeedCat('cyber')">CYBER</button>
+          <button class="feed-pill" onclick="selectFeedCat('natural')">NATURAL</button>
+          <button class="feed-pill" onclick="selectFeedCat('maritime')">MARITIME</button>
+          <button class="feed-pill" onclick="selectFeedCat('humanitarian')">HUMANITARIAN</button>
+          <button class="feed-pill" onclick="selectFeedCat('markets')">MARKETS</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;min-height:200px;" id="unifiedFeedGrid">
@@ -900,35 +1141,23 @@
 
   </main>
 
-  <!-- AI Analyst Panel -->
-  <aside class="ai-panel">
-    <div class="ai-header">
-      <div class="ai-badge"></div>
-      <div class="ai-title">AI ANALYST</div>
+  <!-- Story Reader Panel -->
+  <aside class="story-panel">
+    <div class="story-header">
+      <div class="story-title-bar">
+        <div class="story-badge"></div>
+        <div class="story-title-text">INTEL READER</div>
+        <button class="story-close-btn" id="storyCloseBtn" onclick="clearStoryPanel()" title="Clear">✕</button>
+      </div>
+      <div id="storyMeta" class="story-meta"></div>
     </div>
-
-    <div class="ai-messages" id="aiMessages">
-      <div class="msg">
-        <div class="msg-role analyst">ANALYST</div>
-        <div class="msg-bubble">Welcome to Situationsrapporten. I'm your AI intelligence analyst.
-
-I have context on global conflicts, cyber threats, natural hazards, humanitarian crises, and more.
-
-Ask me anything — tactical analysis, situation summaries, historical context, or threat assessments.</div>
+    <div class="story-body" id="storyBody">
+      <div class="story-empty">
+        <div class="story-empty-icon">◎</div>
+        <div class="story-empty-text">Click any feed item or map pin to read the full story</div>
       </div>
     </div>
-
-    <div class="ai-input-area">
-      <div class="ai-hints">
-        <button class="hint-btn" onclick="setPrompt('Summarize today\\'s top security threats')">Top threats today</button>
-        <button class="hint-btn" onclick="setPrompt('What is the current situation in the Middle East?')">Middle East SITREP</button>
-        <button class="hint-btn" onclick="setPrompt('Explain the latest cyber threat landscape')">Cyber briefing</button>
-        <button class="hint-btn" onclick="setPrompt('What humanitarian crises need attention right now?')">Humanitarian</button>
-      </div>
-      <div class="ai-input-row">
-        <textarea class="ai-input" id="aiInput" placeholder="Ask the analyst..." onkeydown="handleKey(event)"></textarea>
-        <button class="ai-send-btn" id="sendBtn" onclick="sendMessage()">SEND</button>
-      </div>
+    <div class="story-feed" id="storyRelated">
     </div>
   </aside>
 
@@ -937,7 +1166,7 @@ Ask me anything — tactical analysis, situation summaries, historical context, 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Situationsrapporten v4
+   Burgerklubben's Situationsrapport
    NEW: GDELT live conflict events on map
         ReliefWeb live humanitarian feed
         ACLED-style event pins from GDELT
@@ -946,32 +1175,69 @@ Ask me anything — tactical analysis, situation summaries, historical context, 
 
 // ── STATE ──
 
+// Static events — cyber attribution + maritime zones only.
+// Conflict points now come from GDELT (live) + persistent zone overlays.
 var staticEvents = [
-  { lon:31.2,  lat:49.5,  layer:'conflict', color:'#8b3535', r:9,  label:'Ukraine Conflict',     detail:'Active frontline — Zaporizhzhia axis',  severity:'CRITICAL', source:'static' },
-  { lon:35.5,  lat:31.8,  layer:'conflict', color:'#8b3535', r:10, label:'Gaza Strip',            detail:'Ongoing military operations',            severity:'CRITICAL', source:'static' },
-  { lon:44.0,  lat:15.5,  layer:'conflict', color:'#8b3535', r:7,  label:'Yemen',                 detail:'Houthi missile launches — Red Sea',      severity:'HIGH',     source:'static' },
-  { lon:30.0,  lat:15.5,  layer:'conflict', color:'#7a3030', r:8,  label:'Sudan',                 detail:'Civil war — 4.1M displaced',             severity:'HIGH',     source:'static' },
-  { lon:97.0,  lat:21.0,  layer:'conflict', color:'#7a3030', r:7,  label:'Myanmar',               detail:'Junta-resistance clashes',               severity:'HIGH',     source:'static' },
-  { lon:43.0,  lat:3.5,   layer:'conflict', color:'#5c2828', r:6,  label:'Somalia',               detail:'Al-Shabaab insurgency',                  severity:'MEDIUM',   source:'static' },
-  { lon:9.0,   lat:12.0,  layer:'conflict', color:'#5c2828', r:6,  label:'Sahel Region',          detail:'Multi-country instability',              severity:'MEDIUM',   source:'static' },
-  { lon:-72.3, lat:18.5,  layer:'conflict', color:'#5c2828', r:5,  label:'Haiti',                 detail:'Gang violence — 15k displaced',          severity:'MEDIUM',   source:'static' },
-  { lon:37.6,  lat:55.7,  layer:'cyber',    color:'#7a5c2e', r:7,  label:'APT29 (Moscow)',         detail:'State-sponsored spear-phishing',         severity:'HIGH',     source:'static' },
-  { lon:116.4, lat:39.9,  layer:'cyber',    color:'#7a5c2e', r:7,  label:'APT41 (Beijing)',        detail:'Critical infrastructure probing',        severity:'HIGH',     source:'static' },
-  { lon:-77.0, lat:38.9,  layer:'cyber',    color:'#5c4422', r:5,  label:'CISA Advisory',         detail:'Emergency directive issued',             severity:'MEDIUM',   source:'static' },
-  { lon:127.0, lat:37.5,  layer:'cyber',    color:'#5c4422', r:5,  label:'Lazarus Group (DPRK)',   detail:'Ransomware campaign active',             severity:'HIGH',     source:'static' },
-  { lon:45.0,  lat:12.5,  layer:'maritime', color:'#2e5a6a', r:7,  label:'Red Sea — Houthi Zone', detail:'Anti-ship missile threat active',        severity:'HIGH',     source:'static' },
-  { lon:56.5,  lat:24.5,  layer:'maritime', color:'#2e5a6a', r:6,  label:'Strait of Hormuz',      detail:'IRGC vessel shadowing reports',          severity:'HIGH',     source:'static' },
-  { lon:43.5,  lat:11.8,  layer:'maritime', color:'#264a55', r:5,  label:'Gulf of Aden',          detail:'AIS blackout — MV PACIFIC SUNRISE',     severity:'MEDIUM',   source:'static' },
-  { lon:-79.5, lat:9.0,   layer:'maritime', color:'#264a55', r:4,  label:'Panama Canal',          detail:'47-vessel queue — +18% delay',          severity:'LOW',      source:'static' },
-  { lon:103.8, lat:1.3,   layer:'maritime', color:'#264a55', r:4,  label:'Singapore Strait',      detail:'Elevated monitoring posture',            severity:'LOW',      source:'static' },
+  { lon:37.6,  lat:55.7,  layer:'cyber',    color:'#7a5c2e', r:4,  label:'APT29 (Moscow)',         detail:'State-sponsored spear-phishing',         severity:'HIGH',   source:'static' },
+  { lon:116.4, lat:39.9,  layer:'cyber',    color:'#7a5c2e', r:4,  label:'APT41 (Beijing)',        detail:'Critical infrastructure probing',        severity:'HIGH',   source:'static' },
+  { lon:-77.0, lat:38.9,  layer:'cyber',    color:'#5c4422', r:3,  label:'CISA Advisory',         detail:'Emergency directive issued',             severity:'MEDIUM', source:'static' },
+  { lon:127.0, lat:37.5,  layer:'cyber',    color:'#5c4422', r:3,  label:'Lazarus Group (DPRK)',   detail:'Ransomware campaign active',             severity:'HIGH',   source:'static' },
+  { lon:45.0,  lat:12.5,  layer:'maritime', color:'#2e5a6a', r:4,  label:'Red Sea — Houthi Zone', detail:'Anti-ship missile threat active',        severity:'HIGH',   source:'static' },
+  { lon:56.5,  lat:24.5,  layer:'maritime', color:'#2e5a6a', r:4,  label:'Strait of Hormuz',      detail:'IRGC vessel shadowing reports',          severity:'HIGH',   source:'static' },
+  { lon:43.5,  lat:11.8,  layer:'maritime', color:'#264a55', r:3,  label:'Gulf of Aden',          detail:'AIS blackout — MV PACIFIC SUNRISE',     severity:'MEDIUM', source:'static' },
+  { lon:-79.5, lat:9.0,   layer:'maritime', color:'#264a55', r:3,  label:'Panama Canal',          detail:'47-vessel queue — +18% delay',          severity:'LOW',    source:'static' },
+  { lon:103.8, lat:1.3,   layer:'maritime', color:'#264a55', r:3,  label:'Singapore Strait',      detail:'Elevated monitoring posture',            severity:'LOW',    source:'static' },
+];
+
+// ── PERSISTENT CONFLICT ZONES ──
+// These are ongoing conflicts that are always active regardless of daily news.
+// Rendered as semi-transparent regional overlays, not dots.
+// Each has a geoCircle centred on the conflict region.
+var activeConflictId = null;  // only one zone highlighted at a time
+
+// Dynamic severity scores — updated after each GDELT fetch
+var zoneScores = {};  // id -> { gdeltCount, gdeltTone, reliefCount, staticRisk, total, severity }
+
+// Static risk multipliers (0-40 points) — structural factors live data can't see:
+// nuclear capability, chokepoint control, proxy network reach, great power tripwire
+var ZONE_STATIC_RISK = {
+  iran:      38,  // nuclear 60%+, Hormuz, proxy network (Lebanon/Yemen/Iraq/Syria/Gaza), US tripwire
+  ukraine:   32,  // NATO tripwire, nuclear plant risk, great power direct involvement
+  westbank:  28,  // Israel-US-Iran tripwire, escalation to regional war
+  drc:       18,  // mineral supply chain, regional proxy (Rwanda/Uganda)
+  myanmar:   16,  // China proxy, regional instability
+  yemen:     22,  // Hormuz proximity, Iran proxy, Saudi-US involvement
+  gaza:      30,  // Israel-US-Iran tripwire, humanitarian catastrophe scale
+  sudan:     18,  // Wagner/Russia, UAE, humanitarian scale
+  somalia:   14,  // Al-Qaeda affiliate, US operations
+  sahel:     16,  // Wagner/Russia, French departure, regional spread
+  ethiopia:  14,  // regional power, displacement scale
+  haiti:     10,  // US proximity, gang state collapse
+};
+
+var CONFLICT_ZONES = [
+  { id:'ukraine', lon:31.5,  lat:48.5,  radius:4.5,  label:'Ukraine',          detail:'Active frontline — Russian invasion, Zaporizhzhia axis', severity:'CRITICAL', color:'#8b3535', intensity:0.18 },
+  { id:'gaza', lon:34.5,  lat:31.5,  radius:1.2,  label:'Gaza Strip',       detail:'Ongoing military operations — humanitarian crisis',       severity:'CRITICAL', color:'#8b3535', intensity:0.22 },
+  { id:'sudan', lon:30.0,  lat:15.0,  radius:5.0,  label:'Sudan',            detail:'Civil war — RSF vs SAF, 4.1M displaced',                 severity:'HIGH',     color:'#7a3030', intensity:0.15 },
+  { id:'myanmar', lon:96.0,  lat:20.0,  radius:4.5,  label:'Myanmar',          detail:'Junta-resistance clashes, Karen & Shan states',          severity:'HIGH',     color:'#7a3030', intensity:0.14 },
+  { id:'yemen', lon:45.5,  lat:15.5,  radius:3.5,  label:'Yemen',            detail:'Houthi control of north, Saudi-led coalition active',    severity:'HIGH',     color:'#7a3030', intensity:0.14 },
+  { id:'iran', lon:53.0,  lat:32.5,  radius:3.8,  label:'Iran',             detail:'Nuclear tensions, proxy network activity, IRGC ops',     severity:'HIGH',     color:'#7a4030', intensity:0.13 },
+  { id:'somalia', lon:45.5,  lat:5.5,   radius:3.5,  label:'Somalia',          detail:'Al-Shabaab insurgency, US airstrikes ongoing',           severity:'MEDIUM',   color:'#5c2828', intensity:0.12 },
+  { id:'sahel', lon:2.0,   lat:14.0,  radius:7.0,  label:'Sahel Region',     detail:'Mali, Burkina Faso, Niger — jihadist insurgencies',      severity:'MEDIUM',   color:'#5c2828', intensity:0.11 },
+  { id:'drc', lon:27.0,  lat:-1.5,  radius:4.5,  label:'DR Congo',         detail:'M23 rebellion, FDLR activity — eastern DRC',             severity:'HIGH',     color:'#7a3030', intensity:0.13 },
+  { id:'haiti', lon:-72.5, lat:18.5,  radius:1.5,  label:'Haiti',            detail:'Gang control of 80% of Port-au-Prince, 700k displaced',  severity:'HIGH',     color:'#5c2828', intensity:0.13 },
+  { id:'westbank', lon:35.2,  lat:32.0,  radius:1.0,  label:'West Bank',        detail:'Settler violence, IDF operations, tensions escalating',  severity:'HIGH',     color:'#7a3030', intensity:0.16 },
+  { id:'ethiopia', lon:39.5,  lat:13.5,  radius:4.5,  label:'Ethiopia',         detail:'Amhara & Tigray tensions, Eritrea border activity',      severity:'MEDIUM',   color:'#5c2828', intensity:0.11 },
 ];
 
 var liveNaturalEvents  = [];
+var _countriesFeatures = [];  // cached after map load for conflict highlighting
 var liveMaritimeEvents = [];
 var liveConflictEvents = [];   // from GDELT
 var liveRssItems       = [];   // curated RSS feeds
 var livePolyItems      = [];   // Polymarket geopolitical markets
 var liveJammingCells   = [];   // GPSJam.org EW layer
+var liveNewsPins       = [];   // RSS/GDELT headlines plotted on map
 var mapEvents          = staticEvents.slice();
 var activeLayers       = new Set(['conflict','cyber','natural','maritime']);
 
@@ -1101,12 +1367,20 @@ function magClass(mag) {
 }
 
 function feedItem(item) {
-  return '<div class="feed-item">' +
+  var t   = (item.text||'');
+  var tag = (item.tag||'');
+  var cls = (item.cls||'tag-green');
+  var dt  = (item.datetime||item.time||'');
+  // Store data on element via data attributes, call openStory via data lookup
+  var idx = _feedItems.length;
+  _feedItems.push(item);
+  return '<div class="feed-item" style="cursor:pointer;" onclick="openStoryByIdx(' + idx + ')">' +
     '<div class="feed-time">' + (item.time||'') + '</div>' +
-    '<div class="feed-text">' + (item.text||'') + '</div>' +
-    '<span class="feed-tag ' + (item.cls||'tag-green') + '">' + (item.tag||'') + '</span>' +
+    '<div class="feed-text">' + t + '</div>' +
+    '<span class="feed-tag ' + cls + '">' + tag + '</span>' +
     '</div>';
 }
+var _feedItems = [];
 
 function barItem(item) {
   return '<div class="bar-row">' +
@@ -1152,7 +1426,7 @@ updateClock();
   for (var i = 0; i < 5; i++) {
     var bar = document.createElement('div');
     bar.className = 'threat-bar';
-    bar.style.cssText = 'height:'+(14+i*5)+'px;width:10px;background:'+(i<3?colors[i]:'var(--border)')+'transition:all 0.5s;';
+    bar.style.cssText = 'height:'+(6+i*3)+'px;width:5px;background:'+(i<3?colors[i]:'var(--dim)')+';display:inline-block;margin-right:1px;vertical-align:bottom;';
     if (i < 3) bar.style.boxShadow = '0 0 6px ' + colors[i];
     meter.appendChild(bar);
   }
@@ -1177,6 +1451,7 @@ function setCol(id, html) {
 }
 
 function renderFeed(cat) {
+  _feedItems = [];  // reset story index on each render
   currentCat = cat || 'all';
   var meta = CAT_META[currentCat] || CAT_META['all'];
 
@@ -1347,34 +1622,135 @@ setInterval(function() {
   if (currentCat === 'all' || currentCat === 'conflict' || currentCat === 'cyber') renderFeed(currentCat);
 }, 15000);
 
-// ── SIDEBAR & MAP BUTTON HANDLERS ──
+// ── FEED PIN FOCUS ──
+// When a feed item is clicked, find its matching map pin and zoom to it
+function focusFeedPin(el) {
+  var text = el.getAttribute('data-text') || '';
+  if (!text || !mapReady) return;
 
-function filterFeed(cat) {
-  document.querySelectorAll('.sidebar-item').forEach(function(el) { el.classList.remove('active'); });
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  // Highlight clicked feed item (only if el is a real DOM element)
+  document.querySelectorAll('.feed-item').forEach(function(fi) {
+    fi.style.background = '';
+    fi.style.borderLeft = '';
+  });
+  if (el && el.style) {
+    el.style.background = 'rgba(74,124,89,0.08)';
+    el.style.borderLeft = '2px solid var(--accent)';
+  }
 
-  // Sync map layer buttons
-  var mapLayerMap = { conflict:'conflict', cyber:'cyber', natural:'natural', maritime:'maritime' };
-  document.querySelectorAll('.map-layer-btn').forEach(function(btn) {
-    var layer = btn.getAttribute('data-layer');
-    if (cat === 'all' || !mapLayerMap[cat]) {
-      btn.classList.add('active');
-      activeLayers.add(layer);
-    } else {
-      var match = (layer === mapLayerMap[cat]);
-      btn.classList.toggle('active', match);
-      if (match) activeLayers.add(layer); else activeLayers.delete(layer);
-    }
+  var lowerText = text.toLowerCase().slice(0, 120);
+
+  // Step 1: Find which conflict zone this story belongs to
+  var zoneMatch = null;
+  var bestZoneScore = 0;
+  CONFLICT_ZONES.forEach(function(z) {
+    var kws = ZONE_KEYWORDS[z.id] || [];
+    var score = kws.filter(function(kw){ return lowerText.indexOf(kw) >= 0; }).length;
+    if (score > bestZoneScore) { bestZoneScore = score; zoneMatch = z; }
   });
 
-  if (mapReady) plotEvents();
+  // Step 2: Activate the zone if not already active
+  if (zoneMatch && bestZoneScore > 0) {
+    var needsZoneActivation = activeConflictId !== zoneMatch.id;
+    if (needsZoneActivation) {
+      // Activate zone without zoom transition — we'll zoom to the pin instead
+      activeConflictId = zoneMatch.id;
+      document.querySelectorAll('.hotspot-item').forEach(function(el2){ el2.classList.remove('active'); });
+      var hsEl = document.getElementById('hs-' + zoneMatch.id);
+      if (hsEl) hsEl.classList.add('active');
+      buildNewsPins();
+      mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+      drawConflictZones(false);
+      plotEvents();
+    }
+  }
+
+  // Step 3: Find best matching pin (now that zone pins are loaded)
+  var best = null;
+  var bestScore = 0;
+  var words = lowerText.split(/\s+/).filter(function(w){ return w.length > 4; });
+
+  liveNewsPins.forEach(function(pin) {
+    if (!pin.lon || !pin.lat) return;
+    var pinText = (pin.label || pin.detail || '').toLowerCase();
+    var score = words.filter(function(w){ return pinText.indexOf(w) >= 0; }).length;
+    if (score > bestScore) { bestScore = score; best = pin; }
+  });
+
+  // Step 4: Also try extracting location directly from headline
+  var extracted = extractHeadlineLocation(text);
+  if (extracted && (!best || bestScore < 2)) {
+    best = { lon: extracted[0], lat: extracted[1], label: text.slice(0,60), isNewsPin: true };
+    bestScore = 99;
+  }
+
+  // Step 5: Fallback to zone centre if no pin matched
+  if (!best && zoneMatch) {
+    best = { lon: zoneMatch.lon, lat: zoneMatch.lat };
+  }
+
+  if (!best) return;
+
+  // Step 6: Zoom map to pin
+  var container = document.getElementById('mapContainer');
+  var W = container.clientWidth, H = container.clientHeight;
+  var p = mapProjection([best.lon, best.lat]);
+  if (!p) return;
+  var targetK = Math.min(Math.max(d3.zoomTransform(mapSvg.node()).k, 6), 12);
+  var tx = W / 2 - targetK * p[0];
+  var ty = H / 2 - targetK * p[1];
+  var t = d3.zoomIdentity.translate(tx, ty).scale(targetK);
+
+  mapSvg.transition().duration(700).ease(d3.easeCubicInOut)
+    .call(mapZoom.transform, t)
+    .on('end', function() {
+      // Draw labels now that zoom settled
+      drawConflictZones(true);
+      // Pulse the matching pin
+      var kk = d3.zoomTransform(mapSvg.node()).k;
+      mapG.selectAll('.event-group').each(function(d) {
+        if (!d || !d.isNewsPin) return;
+        var pinText = (d.label || '').toLowerCase();
+        var match = words.some(function(w){ return pinText.indexOf(w) >= 0; });
+        if (!match && extracted) {
+          // Match by proximity to extracted coords
+          var dx = Math.abs(d.lon - best.lon);
+          var dy = Math.abs(d.lat - best.lat);
+          match = dx < 1 && dy < 1;
+        }
+        if (match) {
+          var dot = d3.select(this).select('.event-dot, rect.event-dot');
+          // Flash bright 3 times
+          dot.transition().duration(150).attr('opacity', 1)
+               .attr('r', function(d){ return d.isNewsPin ? undefined : 8/kk; })
+            .transition().duration(150).attr('opacity', 0.3)
+            .transition().duration(150).attr('opacity', 1)
+            .transition().duration(150).attr('opacity', 0.3)
+            .transition().duration(150).attr('opacity', 0.9);
+        }
+      });
+    });
+}
+
+// ── SIDEBAR & MAP BUTTON HANDLERS ──
+
+// selectFeedCat: only changes the feed panel — no map changes
+function selectFeedCat(cat) {
+  document.querySelectorAll('.feed-pill').forEach(function(p) { p.classList.remove('active'); });
+  var pill = document.querySelector('.feed-pill[onclick*="\'' + cat + '\'"]');
+  if (pill) pill.classList.add('active');
   renderFeed(cat);
+}
+
+// filterFeed: legacy — now just calls selectFeedCat (sidebar categories removed)
+function filterFeed(cat) {
+  selectFeedCat(cat);
 }
 
 function toggleLayer(btn, layer) {
   btn.classList.toggle('active');
   if (activeLayers.has(layer)) activeLayers.delete(layer); else activeLayers.add(layer);
-  if (mapReady) plotEvents();
+  if (mapReady) { drawConflictZones(); plotEvents(); }
   renderFeed(layer);
   document.querySelectorAll('.sidebar-item').forEach(function(el) { el.classList.remove('active'); });
 }
@@ -1446,6 +1822,18 @@ function loadDeck(name) {
   if (deckEl) deckEl.classList.add('active');
   activeDeck = name;
 
+  // ── 0. Reset to world zoom + deactivate conflict zone ──
+  if (activeConflictId) {
+    activeConflictId = null;
+    document.querySelectorAll('.hotspot-item').forEach(function(el){ el.classList.remove('active'); });
+    updateConflictInfoBox(null);
+  }
+  if (mapSvg && mapZoom) {
+    mapSvg.transition().duration(500).ease(d3.easeCubicInOut)
+      .call(mapZoom.transform, d3.zoomIdentity);
+  }
+  if (mapReady) { drawConflictZones(); }
+
   // ── 1. Set map layers ──
   activeLayers = new Set(deck.layers);
   document.querySelectorAll('.map-layer-btn').forEach(function(btn) {
@@ -1453,7 +1841,7 @@ function loadDeck(name) {
     var on = activeLayers.has(layer);
     btn.classList.toggle('active', on);
   });
-  if (mapReady) plotEvents();
+  if (mapReady) { buildNewsPins(); rebuildMap(); }
 
   // ── 2. Sync sidebar category items ──
   document.querySelectorAll('.sidebar-item:not(.deck-item)').forEach(function(el) {
@@ -1462,7 +1850,11 @@ function loadDeck(name) {
   var catMatch = document.querySelector('.sidebar-item[onclick*="filterFeed(\'' + deck.cat + '\')"]');
   if (catMatch) catMatch.classList.add('active');
 
-  // ── 3. Switch feed panel ──
+  // ── 3. Switch feed panel + update pill ──
+  document.querySelectorAll('.feed-pill').forEach(function(p) { p.classList.remove('active'); });
+  var pill = document.querySelector('.feed-pill[onclick*="\'' + deck.cat + '\'"]');
+  if (!pill) pill = document.querySelector('.feed-pill[onclick*=\"all\"]');
+  if (pill) pill.classList.add('active');
   renderFeed(deck.cat);
 
   // ── 4. Update ticker ──
@@ -1503,7 +1895,7 @@ async function fetchGDELT() {
     // GDELT API v2 event query: conflict/military/protest themes, geolocated only
     var query = encodeURIComponent('conflict OR military OR explosion OR airstrike OR protest OR violence OR "armed attack"');
     var url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + query +
-      '&mode=artlist&maxrecords=25&format=json&timespan=60&sort=DateDesc';
+      '&mode=artlist&maxrecords=75&format=json&timespan=4320&sort=DateDesc';
 
     var res = await proxyFetch(url, 12000);
     if (!res.ok) throw new Error('GDELT HTTP ' + res.status);
@@ -1518,7 +1910,9 @@ async function fetchGDELT() {
       // Truncate long titles
       if (title.length > 90) title = title.slice(0, 87) + '…';
       var domain = (a.domain || a.url || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0].slice(0,15);
-      var seenago = a.seendate ? utcTime(a.seendate.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, '$1-$2-$3T$4:$5:$6Z')) : '--:--';
+      var rawDate = a.seendate ? a.seendate.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, '$1-$2-$3T$4:$5:$6Z') : '';
+      var seenago = rawDate ? utcTime(rawDate) : '--:--';
+      var seenDate = rawDate;
 
       // Tag by theme keywords
       var lc = title.toLowerCase();
@@ -1531,7 +1925,7 @@ async function fetchGDELT() {
       else if (/sanction|diplomat|negoti|ceasefire/.test(lc))     { tag='DIPLO';   cls:'tag-blue';   }
       else                                                          { tag='CONFLICT';cls='tag-yellow'; }
 
-      return { time:seenago, text:title, tag:tag, cls:cls, url:a.url };
+      return { time:seenago, datetime:seenDate, text:title, tag:tag, cls:cls, link:a.url||'', desc:'' };
     });
 
     // Also extract any geolocated events to plot on map
@@ -1566,7 +1960,7 @@ async function fetchGDELTEvents() {
     // GDELT Event 2.0 API — last 15min, EventRootCode 14-20 (conflict/violence)
     // Returns CSV: GlobalEventID, Day, MonthYear, Year, FractionDate, Actor1Code...
     // Use the simpler GKG geofeed which returns JSON with lat/lon
-    var evtUrl = 'https://api.gdeltproject.org/api/v2/geo/geo?query=conflict%20military%20violence%20explosion%20airstrike&timespan=120&format=geojson';
+    var evtUrl = 'https://api.gdeltproject.org/api/v2/geo/geo?query=conflict%20military%20violence%20explosion%20airstrike&timespan=4320&format=geojson';
     var res = await proxyFetch(evtUrl, 10000);
     if (!res.ok) throw new Error('GDELT Geo HTTP ' + res.status);
     var data = await res.json();
@@ -1608,7 +2002,7 @@ async function fetchGDELTEvents() {
 // ReliefWeb: UN OCHA humanitarian reports, free JSON API, no key
 async function fetchReliefWeb() {
   try {
-    var url = 'https://api.reliefweb.int/v1/reports?appname=situationsrapporten-osint&profile=list&preset=latest&limit=20&filter[field]=theme.name&filter[value]=Conflict%20and%20Violence&fields[include][]=title&fields[include][]=date&fields[include][]=source&fields[include][]=country&fields[include][]=theme';
+    var url = 'https://api.reliefweb.int/v1/reports?appname=burgerklubben-situationsrapport&profile=list&preset=latest&limit=20&filter[field]=theme.name&filter[value]=Conflict%20and%20Violence&fields[include][]=title&fields[include][]=date&fields[include][]=source&fields[include][]=country&fields[include][]=theme';
 
     var res = await proxyFetch(url, 10000);
     if (!res.ok) throw new Error('ReliefWeb HTTP ' + res.status);
@@ -1636,9 +2030,12 @@ async function fetchReliefWeb() {
       return { time: source.slice(0,6), text: display, tag: tag, cls: cls };
     });
 
+    setSourceStatus('reliefweb','live', liveReliefwebItems.length + ' reports');
+  scoreConflictZones();
     if (currentCat === 'all' || currentCat === 'humanitarian') renderFeed(currentCat);
 
   } catch(err) {
+    setSourceStatus('reliefweb','error','OFFLINE');
     if (liveReliefwebItems.length === 0) {
       liveReliefwebItems = [
         { time:'OCHA',  text:'Sudan: Humanitarian situation in North Darfur deteriorates sharply', tag:'REPORT', cls:'tag-red'    },
@@ -1678,8 +2075,8 @@ async function fetchUSGS() {
       var coords = q.geometry.coordinates;
       var mag = parseFloat(q.properties.mag) || 3;
       var mc  = magClass(mag);
-      return { lon:coords[0], lat:coords[1], layer:'natural', color:'#39ff8a',
-        r:Math.max(3, Math.min(10, mag*1.5)),
+      return { lon:coords[0], lat:coords[1], layer:'natural', color:'#3a7a4a',
+        r:Math.max(2, Math.min(5, mag*0.8)),
         label:'M'+mag.toFixed(1)+' Earthquake', detail:(q.properties.place||'Unknown'),
         severity:mc.sev, source:'usgs' };
     });
@@ -1717,8 +2114,10 @@ async function fetchNOAA() {
       var tag  = evt.split(' ').map(function(w){ return w[0]||''; }).join('').slice(0,4).toUpperCase() || 'ALRT';
       return { time:utcTime(p.sent||p.effective||Date.now()), text:evt+' — '+area, tag:tag, cls:cls };
     });
+    setSourceStatus('noaa','live', liveWeatherItems.length + ' alerts');
     if (currentCat === 'natural' || currentCat === 'all') renderFeed(currentCat);
   } catch(err) {
+    setSourceStatus('noaa','error','OFFLINE');
     if (liveWeatherItems.length === 0) {
       liveWeatherItems = [
         { time:'14:10', text:'Tornado Watch — Oklahoma & Kansas, 2M residents', tag:'TWA', cls:'tag-red' },
@@ -1755,26 +2154,130 @@ async function fetchFIRMS() {
     });
     var clusters = Object.values(grid).sort(function(a,b){return b.frp-a.frp;}).slice(0,15);
     var fireEvts = clusters.map(function(c) {
-      return { lon:c.lon, lat:c.lat, layer:'natural', color:c.frp>200?'#7a3018':'#6a4820',
-        r:Math.max(3,Math.min(9,Math.log10(c.frp+1)*2.5)),
+      return { lon:c.lon, lat:c.lat, layer:'natural', color:c.frp>200?'#7a3535':'#6a4020',
+        r:Math.max(2,Math.min(5,Math.log10(c.frp+1)*1.5)),
         label:'Active Fire Cluster', detail:c.count+' detections · FRP '+Math.round(c.frp)+' MW',
         severity:c.frp>500?'EXTREME':c.frp>100?'HIGH':'MODERATE', source:'firms' };
     });
     liveNaturalEvents = liveNaturalEvents.filter(function(e){return e.source!=='firms';}).concat(fireEvts);
     rebuildMap();
+    setSourceStatus('firms','live', liveNaturalEvents.filter(function(e){return e.source==='firms';}).length + ' clusters');
     if (currentCat === 'natural' || currentCat === 'all') renderFeed(currentCat);
-  } catch(err) { /* NASA FIRMS unavailable in sandbox — live when hosted */ }
+  } catch(err) { setSourceStatus('firms','error','OFFLINE'); /* NASA FIRMS unavailable in sandbox — live when hosted */ }
 }
 
-// OpenSky ADS-B
-async function fetchOpenSky() {
+// ── AISStream WebSocket — live vessel tracking ──
+// Free API key at https://aisstream.io — enter in the key input below the AI key
+var _aisWs = null;
+var _aisVessels = {};   // MMSI → vessel object
+var _aisKeyInput = null;
+
+function connectAIS() {
+  var key = (window._aisApiKey || '').trim();
+  if (!key) {
+    setSourceStatus('opensky', 'loading', 'NO KEY');
+    return;
+  }
+
+  // Close existing connection
+  if (_aisWs) { try { _aisWs.close(); } catch(e) {} }
+  setSourceStatus('opensky', 'loading', 'CONNECTING');
+
   try {
-    var res = await proxyFetch('https://opensky-network.org/api/states/all?lamin=20&lomin=-20&lamax=70&lomax=65', 10000);
+    _aisWs = new WebSocket('wss://stream.aisstream.io/v0/stream');
+
+    _aisWs.onopen = function() {
+      // Subscribe to global AIS feed, filter to cargo + tanker + military vessel types
+      // BoundingBoxes: [[ minLat, minLon ], [ maxLat, maxLon ]]
+      var sub = {
+        Apikey: key,
+        BoundingBoxes: [[ -70, -180 ], [ 80, 180 ]],
+        FiltersShipMMSI: [],
+        FilterMessageTypes: ['PositionReport']
+      };
+      _aisWs.send(JSON.stringify(sub));
+      setSourceStatus('opensky', 'live', 'AIS LIVE');
+    };
+
+    _aisWs.onmessage = function(evt) {
+      try {
+        var msg = JSON.parse(evt.data);
+        if (msg.MessageType !== 'PositionReport') return;
+
+        var pos  = msg.Message.PositionReport;
+        var meta = msg.MetaData || {};
+        var mmsi = String(meta.MMSI || pos.UserID || '');
+        if (!mmsi || !pos.Latitude || !pos.Longitude) return;
+        if (Math.abs(pos.Latitude) > 89 || Math.abs(pos.Longitude) > 180) return;
+
+        var name    = (meta.ShipName || meta.ship_name || mmsi).trim();
+        var speed   = pos.Sog != null ? pos.Sog.toFixed(1) + ' kn' : '—';
+        var heading = pos.TrueHeading != null && pos.TrueHeading < 360 ? pos.TrueHeading : pos.Cog;
+        var navStat = pos.NavigationalStatus;
+
+        // Colour by nav status: underway=teal, anchored=dim, moored=darker
+        var color = '#2a5060';
+        if (navStat === 1) color = '#3a6070';       // anchored
+        else if (navStat === 5) color = '#1e3a48';  // moored
+        else if (navStat === 0) color = '#3a7080';  // underway
+
+        _aisVessels[mmsi] = {
+          lon: pos.Longitude, lat: pos.Latitude,
+          layer: 'maritime', color: color, r: 2.5,
+          label: name,
+          detail: 'MMSI: ' + mmsi + ' · Speed: ' + speed + (heading ? ' · HDG: ' + Math.round(heading) + '°' : ''),
+          datetime: utcTime(Date.now()),
+          severity: 'INFO', source: 'aisstream', isAircraft: false,
+          heading: heading || 0
+        };
+
+        // Throttle map updates to max once per second
+        if (!_aisUpdatePending) {
+          _aisUpdatePending = true;
+          setTimeout(function() {
+            _aisUpdatePending = false;
+            var vessels = Object.values(_aisVessels).slice(0, 300);
+            liveMaritimeEvents = liveMaritimeEvents.filter(function(e){
+              return e.source !== 'aisstream';
+            }).concat(vessels);
+            rebuildMap();
+            setSourceStatus('opensky', 'live', Object.keys(_aisVessels).length + ' vessels');
+            if (currentCat === 'maritime' || currentCat === 'all') renderFeed(currentCat);
+          }, 1000);
+        }
+
+      } catch(e) {}
+    };
+
+    _aisWs.onerror = function() {
+      setSourceStatus('opensky', 'error', 'WS ERROR');
+    };
+
+    _aisWs.onclose = function() {
+      setSourceStatus('opensky', 'error', 'DISCONNECTED');
+      // Reconnect after 15s if key still present
+      setTimeout(function() {
+        if (window._aisApiKey) connectAIS();
+      }, 15000);
+    };
+
+  } catch(e) {
+    setSourceStatus('opensky', 'error', 'FAILED');
+  }
+}
+
+var _aisUpdatePending = false;
+
+// Legacy OpenSky fallback — used if no AIS key provided
+async function fetchOpenSky() {
+  if (window._aisApiKey) return;  // AISStream takes over when key present
+  try {
+    var res = await proxyFetch('https://opensky-network.org/api/states/all?lamin=20&lomin=-20&lamax=70&lomax=65');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
     var flights = (data.states||[]).filter(function(s){
       return s[8]===false && s[5]!=null && s[6]!=null && (s[1]||'').trim();
-    }).slice(0,60);
+    }).slice(0, 60);
     var flightEvts = flights.map(function(s) {
       return { lon:s[5], lat:s[6], layer:'maritime', color:'#2a5060', r:2.5,
         label:'Flight '+(s[1]||'').trim(),
@@ -1783,15 +2286,621 @@ async function fetchOpenSky() {
     });
     liveMaritimeEvents = liveMaritimeEvents.filter(function(e){return e.source!=='opensky';}).concat(flightEvts);
     rebuildMap();
+    setSourceStatus('opensky','live', flightEvts.length + ' aircraft');
     if (currentCat === 'maritime' || currentCat === 'all') renderFeed(currentCat);
-  } catch(err) { /* OpenSky unavailable in sandbox — live when hosted */ }
+  } catch(err) { setSourceStatus('opensky','error','OFFLINE'); }
 }
 
 // ── MAP ──
 
+function setSourceStatus(id, status, label) {
+  var row = document.getElementById('src-' + id);
+  if (!row) return;
+  var dot = row.querySelector('.src-dot');
+  var st  = row.querySelector('.src-status');
+  if (dot) { dot.className = 'src-dot ' + status; }
+  if (st)  { st.className = 'src-status ' + status; st.textContent = label || status.toUpperCase(); }
+}
+
+// ── DAY / NIGHT TERMINATOR ──
+// Computes the subsolar point and draws a night-side overlay on the map.
+// The terminator is the circle 90° from the subsolar point.
+function getSolarPosition(date) {
+  var J2000 = 2451545.0;
+  var JD = date / 86400000 + 2440587.5;
+  var n  = JD - J2000;
+  var L  = (280.460 + 0.9856474 * n) % 360;
+  var g  = ((357.528 + 0.9856003 * n) % 360) * Math.PI / 180;
+  var lam = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2*g)) * Math.PI / 180;
+  var eps = 23.439 * Math.PI / 180;
+  var sinDec = Math.sin(eps) * Math.sin(lam);
+  var dec = Math.asin(sinDec);
+  // Greenwich Hour Angle
+  var GMST = (280.46061837 + 360.98564736629 * (JD - 2451545)) % 360;
+  var ra   = Math.atan2(Math.cos(eps)*Math.sin(lam), Math.cos(lam));
+  var lon  = ((ra * 180/Math.PI - GMST) % 360 + 360) % 360;
+  if (lon > 180) lon -= 360;
+  return { lat: dec * 180/Math.PI, lon: lon };
+}
+
+function drawDayNight() {
+  if (!mapG) return;
+  mapG.selectAll('.day-night-layer').remove();
+
+  var sun = getSolarPosition(Date.now());
+  // Antipode of sun = centre of night hemisphere
+  var night = { lat: -sun.lat, lon: sun.lon + 180 };
+  if (night.lon > 180)  night.lon -= 360;
+  if (night.lon < -180) night.lon += 360;
+
+  // Night hemisphere = all points within 90° of the antipode
+  // Render as a filled geojson circle centred on the night pole
+  var nightCircle = d3.geoCircle().center([night.lon, night.lat]).radius(90)();
+
+  mapG.insert('path', '.event-group')
+    .attr('class', 'day-night-layer')
+    .datum(nightCircle)
+    .attr('d', mapPath)
+    .attr('fill', '#000')
+    .attr('fill-opacity', 0.28)
+    .attr('stroke', 'none')
+    .attr('pointer-events', 'none');
+
+  // Terminator line removed — fill only
+}
+
+// Refresh terminator every 5 minutes
+setInterval(function() { if (mapReady) drawDayNight(); }, 5 * 60 * 1000);
+
+// ── DYNAMIC CONFLICT SEVERITY SCORING ──
+function scoreConflictZones() {
+  var sevThresholds = { CRITICAL:70, HIGH:45, MEDIUM:20 };
+
+  CONFLICT_ZONES.forEach(function(zone) {
+    var terms = ({
+      ukraine:  ['ukraine','kyiv','zaporizhzhia','zelensky','russian forces'],
+      gaza:     ['gaza','palestin','hamas','idf','rafah'],
+      iran:     ['iran','tehran','irgc','nuclear','khamenei'],
+      sudan:    ['sudan','khartoum','rsf','darfur'],
+      myanmar:  ['myanmar','burma','junta','tatmadaw'],
+      somalia:  ['somalia','shabaab','mogadishu'],
+      sahel:    ['mali','burkina','niger','sahel','jihadist'],
+      drc:      ['congo','drc','kinshasa','m23'],
+      haiti:    ['haiti','port-au-prince','gang'],
+      westbank: ['west bank','ramallah','settler','jenin'],
+      ethiopia: ['ethiopia','amhara','tigray','addis'],
+      yemen:    ['yemen','houthi','sanaa','hodeidah'],
+    })[zone.id] || [zone.label.toLowerCase()];
+
+    // Count GDELT events matching this zone
+    var gdeltCount = 0;
+    var gdeltTone  = 0;
+    liveGdeltItems.forEach(function(item) {
+      if (!item || !item.text) return;
+      var txt = item.text.toLowerCase();
+      if (terms.some(function(t){ return txt.indexOf(t) >= 0; })) {
+        gdeltCount++;
+        // Estimate negativity from keywords
+        var neg = ['attack','strike','kill','dead','bomb','missile','clash','war',
+                   'crisis','threat','nuclear','explosion','conflict','offensive'];
+        neg.forEach(function(n){ if (txt.indexOf(n) >= 0) gdeltTone++; });
+      }
+    });
+
+    // Count RSS mentions
+    var rssCount = 0;
+    liveRssItems.forEach(function(item) {
+      if (!item || !item.text) return;
+      var txt = item.text.toLowerCase();
+      if (terms.some(function(t){ return txt.indexOf(t) >= 0; })) rssCount++;
+    });
+
+    // Count ReliefWeb mentions
+    var reliefCount = 0;
+    liveReliefwebItems.forEach(function(item) {
+      if (!item || !item.text) return;
+      var txt = item.text.toLowerCase();
+      if (terms.some(function(t){ return txt.indexOf(t) >= 0; })) reliefCount++;
+    });
+
+    // Composite score (0–100+)
+    var staticRisk = ZONE_STATIC_RISK[zone.id] || 10;
+    var liveScore  = Math.min(gdeltCount * 3, 30) +
+                     Math.min(gdeltTone  * 2, 20) +
+                     Math.min(rssCount   * 2, 16) +
+                     Math.min(reliefCount* 3, 12);
+    var total = staticRisk + liveScore;
+
+    var severity = 'LOW';
+    if      (total >= sevThresholds.CRITICAL) severity = 'CRITICAL';
+    else if (total >= sevThresholds.HIGH)     severity = 'HIGH';
+    else if (total >= sevThresholds.MEDIUM)   severity = 'MEDIUM';
+
+    zoneScores[zone.id] = {
+      gdeltCount: gdeltCount,
+      rssCount:   rssCount,
+      reliefCount:reliefCount,
+      staticRisk: staticRisk,
+      liveScore:  liveScore,
+      total:      total,
+      severity:   severity,
+    };
+
+    // Update zone severity in place
+    zone.severity = severity;
+  });
+
+  // Re-sort zones by score descending
+  CONFLICT_ZONES.sort(function(a, b) {
+    return (zoneScores[b.id] ? zoneScores[b.id].total : 0) -
+           (zoneScores[a.id] ? zoneScores[a.id].total : 0);
+  });
+
+  // Rebuild the sidebar menu with updated order + severity
+  buildHotspotMenu();
+
+  // Update infobox if one is open
+  if (activeConflictId) updateConflictInfoBox(activeConflictId);
+}
+
+// ── CONFLICT ZONE OVERLAYS ──
+// Maps conflict zones to ISO 3166-1 numeric country codes used in world-atlas.
+// We highlight matching country paths instead of drawing blobs.
+// Capitals are plotted as labelled dots.
+
+// ISO 3166-1 numeric → country name lookup (world-atlas countries-110m subset)
+var ISO_NAMES = {
+  4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',
+  36:'Australia',40:'Austria',50:'Bangladesh',56:'Belgium',64:'Bhutan',
+  68:'Bolivia',76:'Brazil',100:'Bulgaria',104:'Myanmar',116:'Cambodia',
+  120:'Cameroon',124:'Canada',140:'Central African Republic',152:'Chile',
+  156:'China',170:'Colombia',180:'DR Congo',188:'Costa Rica',191:'Croatia',
+  192:'Cuba',196:'Cyprus',203:'Czech Republic',208:'Denmark',214:'Dominican Republic',
+  218:'Ecuador',818:'Egypt',222:'El Salvador',231:'Ethiopia',246:'Finland',
+  250:'France',266:'Gabon',276:'Germany',288:'Ghana',300:'Greece',
+  320:'Guatemala',332:'Haiti',340:'Honduras',348:'Hungary',356:'India',
+  360:'Indonesia',364:'Iran',368:'Iraq',372:'Ireland',376:'Israel',
+  380:'Italy',388:'Jamaica',392:'Japan',400:'Jordan',398:'Kazakhstan',
+  404:'Kenya',410:'South Korea',414:'Kuwait',418:'Laos',422:'Lebanon',
+  430:'Liberia',434:'Libya',504:'Morocco',484:'Mexico',496:'Mongolia',
+  508:'Mozambique',516:'Namibia',524:'Nepal',528:'Netherlands',540:'New Caledonia',
+  554:'New Zealand',558:'Nicaragua',566:'Nigeria',578:'Norway',586:'Pakistan',
+  591:'Panama',598:'Papua New Guinea',600:'Paraguay',604:'Peru',608:'Philippines',
+  616:'Poland',620:'Portugal',630:'Puerto Rico',634:'Qatar',642:'Romania',
+  643:'Russia',646:'Rwanda',682:'Saudi Arabia',686:'Senegal',694:'Sierra Leone',
+  706:'Somalia',710:'South Africa',724:'Spain',729:'Sudan',752:'Sweden',
+  756:'Switzerland',760:'Syria',158:'Taiwan',762:'Tajikistan',764:'Thailand',
+  768:'Togo',788:'Tunisia',792:'Turkey',800:'Uganda',804:'Ukraine',
+  784:'UAE',826:'United Kingdom',840:'United States',858:'Uruguay',
+  860:'Uzbekistan',862:'Venezuela',704:'Vietnam',887:'Yemen',894:'Zambia',
+  716:'Zimbabwe',466:'Mali',854:'Burkina Faso',562:'Niger',275:'Palestine',
+  410:'South Korea',408:'North Korea',12:'Algeria',288:'Ghana',
+};
+
+var CONFLICT_COUNTRY_IDS = {
+  ukraine:     [804],
+  gaza:        [275, 376],      // Palestine / Gaza + Israel
+  iran:        [364],
+  sudan:       [729],
+  myanmar:     [104],
+  somalia:     [706],
+  sahel:       [466,854,562],   // Mali, Burkina Faso, Niger
+  drc:         [180],
+  haiti:       [332],
+  westbank:    [275, 376],      // Palestine + Israel
+  ethiopia:    [231],
+  yemen:       [887],
+};
+
+var CONFLICT_CAPITALS = [
+  { id:'ukraine',   lon:30.52,  lat:50.45,  name:'Kyiv'           },
+  { id:'gaza',      lon:34.47,  lat:31.50,  name:'Gaza City'      },
+  { id:'iran',      lon:51.42,  lat:35.69,  name:'Tehran'         },
+  { id:'sudan',     lon:32.53,  lat:15.55,  name:'Khartoum'       },
+  { id:'myanmar',   lon:96.12,  lat:19.74,  name:'Naypyidaw'      },
+  { id:'somalia',   lon:45.34,  lat:2.05,   name:'Mogadishu'      },
+  { id:'sahel',     lon:-8.00,  lat:12.65,  name:'Bamako'         },
+  { id:'drc',       lon:15.32,  lat:-4.32,  name:'Kinshasa'       },
+  { id:'haiti',     lon:-72.34, lat:18.54,  name:'Port-au-Prince' },
+  { id:'westbank',  lon:35.22,  lat:31.90,  name:'Ramallah'       },
+  { id:'ethiopia',  lon:38.74,  lat:9.03,   name:'Addis Ababa'    },
+  { id:'yemen',     lon:44.19,  lat:15.35,  name:'Sanaa'          },
+];
+
+// Stored after countries load so highlight can redraw
+var _countriesFeatures = [];
+
+function drawConflictZones(showLabels) {
+  if (!mapG || !_countriesFeatures.length) return;
+  mapG.selectAll('.conflict-zone').remove();
+  mapG.selectAll('.conflict-capital').remove();
+
+  if (!activeLayers.has('conflict')) return;
+
+  // Build set of country numeric IDs to highlight
+  var highlightIds = {};
+  CONFLICT_ZONES.forEach(function(z) {
+    var ids = CONFLICT_COUNTRY_IDS[z.id] || [];
+    ids.forEach(function(numId) {
+      highlightIds[numId] = z;
+    });
+  });
+
+  // Highlight only the active zone's countries
+  _countriesFeatures.forEach(function(feature) {
+    var numId = parseInt(feature.id);
+    // Find if this country belongs to the active zone
+    var activeZone = null;
+    if (activeConflictId) {
+      var ids = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
+      if (ids.indexOf(numId) >= 0) {
+        activeZone = CONFLICT_ZONES.filter(function(z){ return z.id === activeConflictId; })[0];
+      }
+    }
+    if (!activeZone) return;
+
+    // Use mouseover fill colour — same as general hover (#283c2e) but slightly lighter
+    mapG.insert('path', '.event-group')
+      .attr('class', 'conflict-zone')
+      .datum(feature)
+      .attr('d', mapPath)
+      .attr('fill', '#2e4435')
+      .attr('fill-opacity', 0.85)
+      .attr('stroke', 'none')
+      .attr('pointer-events', 'none');
+
+    // Country name removed — shown only on hover
+  });
+
+  // Draw capital dot + label only for the active zone, only when labels allowed
+  if (showLabels === false) return;
+  var k = d3.zoomTransform(mapSvg.node()).k;
+  CONFLICT_CAPITALS.forEach(function(cap) {
+    if (cap.id !== activeConflictId) return;  // only show for active zone
+    var zone = CONFLICT_ZONES.filter(function(z){ return z.id === cap.id; })[0];
+    if (!zone) return;
+    var p = mapProjection([cap.lon, cap.lat]);
+    if (!p) return;
+    var g = mapG.append('g')
+      .attr('class', 'conflict-capital')
+      .attr('transform', 'translate(' + p[0] + ',' + p[1] + ')')
+      .attr('pointer-events', 'none');
+
+    // Capital dot
+    g.append('circle')
+      .attr('r', 2 / k)
+      .attr('fill', '#c8c8b8')
+      .attr('opacity', 0.7);
+
+    // Capital name label
+    g.append('text')
+      .attr('x', 4 / k)
+      .attr('y', 1 / k)
+      .attr('font-family', "'Barlow Condensed', sans-serif")
+      .attr('font-weight', '400')
+      .attr('font-size', 6 / k + 'px')
+      .attr('letter-spacing', '0.06em')
+      .attr('fill', '#9aaa9a')
+      .attr('opacity', 0.85)
+      .text(cap.name.toUpperCase());
+  });
+}
+
+
+// ── LIVE NEWS PINS ──
+// Zone summary dots — one per conflict zone, shown in default view
+// Built from CONFLICT_ZONES directly, not from live feeds
+function buildZoneSummaryDots() {
+  return CONFLICT_ZONES.map(function(z) {
+    var sc = zoneScores[z.id];
+    var sev = sc ? sc.severity : z.severity;
+    var color = sev === 'CRITICAL' ? '#8b3535' : sev === 'HIGH' ? '#7a3030' : '#5c2828';
+    return {
+      lon:    z.lon, lat: z.lat,
+      layer:  'conflict',
+      color:  color,
+      r:      sev === 'CRITICAL' ? 5 : sev === 'HIGH' ? 4 : 3,
+      label:  z.label,
+      detail: z.detail,
+      severity: sev,
+      source: 'zone-summary',
+      isZoneSummary: true,
+      isZoneDot: true,
+      zoneId: z.id
+    };
+  });
+}
+
+// Smart timestamp: "Today HH:MM UTC" if < 12h, else "DD MMM"
+function smartTimestamp(dtStr) {
+  if (!dtStr) return '';
+  try {
+    var dt = new Date(dtStr);
+    if (isNaN(dt)) {
+      // Try parsing "DD/MM HH:MM UTC" format from our own formatting
+      var m = dtStr.match(/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
+      if (m) {
+        var now = new Date();
+        dt = new Date(Date.UTC(now.getUTCFullYear(), parseInt(m[2])-1, parseInt(m[1]),
+                               parseInt(m[3]), parseInt(m[4])));
+      }
+    }
+    if (isNaN(dt)) return dtStr;
+    var ageMs = Date.now() - dt.getTime();
+    var h = ageMs / 3600000;
+    if (h < 12) {
+      return 'Today ' + String(dt.getUTCHours()).padStart(2,'0') + ':' +
+             String(dt.getUTCMinutes()).padStart(2,'0') + ' UTC';
+    }
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return dt.getUTCDate() + ' ' + months[dt.getUTCMonth()];
+  } catch(e) { return dtStr; }
+}
+
+// Zone keyword map for matching headlines to zones
+var ZONE_KEYWORDS = {
+  ukraine:   ['ukraine','kyiv','zaporizhzhia','kharkiv','kherson','donetsk','luhansk','zelensky','russian forces','bakhmut','avdiivka','sumy'],
+  gaza:      ['gaza','rafah','hamas','idf','palestinian','palestin','khan younis','jabalia'],
+  iran:      ['iran','tehran','irgc','nuclear','khamenei','rouhani','hormuz','isfahan'],
+  sudan:     ['sudan','khartoum','rsf','darfur','el fasher','port sudan'],
+  myanmar:   ['myanmar','burma','junta','tatmadaw','naypyidaw','rakhine'],
+  somalia:   ['somalia','shabaab','mogadishu','puntland'],
+  sahel:     ['mali','burkina','niger','sahel','jihadist','bamako','ouagadougou'],
+  drc:       ['congo','drc','kinshasa','m23','ituri','kivu'],
+  haiti:     ['haiti','port-au-prince','gang','ariel henry'],
+  westbank:  ['west bank','ramallah','jenin','nablus','settler','hebron'],
+  ethiopia:  ['ethiopia','amhara','tigray','addis','oromo'],
+  yemen:     ['yemen','houthi','sanaa','hodeidah','aden','taiz'],
+};
+
+// Static fallback pins per zone (used when live feed has < 3 items)
+var ZONE_FALLBACK_PINS = {
+  ukraine:   [
+    { lon:32.1,lat:49.2, text:'Ukraine frontline: active artillery exchanges along 1,000km contact line', tag:'ISW',  cls:'tag-red'   },
+    { lon:36.1,lat:49.9, text:'Kharkiv region: Russian drone strikes on civilian infrastructure',          tag:'UA',   cls:'tag-red'   },
+    { lon:35.2,lat:47.8, text:'Zaporizhzhia: IAEA monitoring nuclear plant amid shelling',                 tag:'IAEA', cls:'tag-yellow'},
+  ],
+  gaza:      [
+    { lon:34.35,lat:31.35, text:'Gaza City: IDF ground operations ongoing in northern Gaza',               tag:'IDF',  cls:'tag-red'   },
+    { lon:34.25,lat:31.30, text:'Rafah: humanitarian corridor access disputed',                            tag:'UN',   cls:'tag-yellow'},
+    { lon:34.42,lat:31.52, text:'Khan Younis: ceasefire talks in Cairo, no agreement reached',             tag:'DIPLO',cls:'tag-blue'  },
+  ],
+  iran:      [
+    { lon:51.4,lat:35.7,  text:'Tehran: uranium enrichment at 60%, IAEA access restricted',                tag:'IAEA', cls:'tag-red'   },
+    { lon:53.7,lat:32.4,  text:'Iran: IRGC ballistic missile exercise in Persian Gulf',                    tag:'IRGC', cls:'tag-red'   },
+    { lon:56.3,lat:27.1,  text:'Strait of Hormuz: IRGC vessels shadow tanker convoy',                     tag:'MAR',  cls:'tag-yellow'},
+  ],
+  sudan:     [
+    { lon:32.5,lat:15.6,  text:'Khartoum: RSF controls 80% of capital, SAF besieged',                     tag:'RSF',  cls:'tag-red'   },
+    { lon:25.4,lat:13.6,  text:'El Fasher: UN warns of imminent massacre as RSF encircles city',           tag:'UN',   cls:'tag-red'   },
+    { lon:37.2,lat:19.6,  text:'Port Sudan: aid corridor open, UNHCR scaling operations',                  tag:'UNHCR',cls:'tag-yellow'},
+  ],
+  myanmar:   [
+    { lon:96.1,lat:19.7,  text:'Naypyidaw: junta losses mount as resistance advances',                     tag:'NUG',  cls:'tag-yellow'},
+    { lon:97.0,lat:21.9,  text:'Shan State: Three Brotherhood Alliance controls key towns',                tag:'AA',   cls:'tag-red'   },
+    { lon:92.9,lat:19.3,  text:'Rakhine: Arakan Army captures Sittwe port',                               tag:'AA',   cls:'tag-red'   },
+  ],
+  somalia:   [
+    { lon:45.3,lat:2.05,  text:'Mogadishu: SNA-US joint operations against Al-Shabaab',                   tag:'SNA',  cls:'tag-red'   },
+    { lon:46.2,lat:2.8,   text:'Lower Shabelle: Al-Shabaab IED attack on convoy',                         tag:'AS',   cls:'tag-red'   },
+    { lon:45.5,lat:5.6,   text:'Galmudug: clan clashes displace 12,000 civilians',                        tag:'IDP',  cls:'tag-yellow'},
+  ],
+  sahel:     [
+    { lon:-8.0,lat:12.6,  text:'Mali: Wagner-backed FAMA offensive in Mopti region',                      tag:'FAMA', cls:'tag-red'   },
+    { lon:-1.7,lat:12.4,  text:'Burkina Faso: JNIM attack kills 40 civilians near Ouahigouya',             tag:'JNIM', cls:'tag-red'   },
+    { lon:8.0, lat:13.5,  text:'Niger: AES alliance consolidates power, France expelled',                  tag:'AES',  cls:'tag-yellow'},
+  ],
+  drc:       [
+    { lon:29.2,lat:-1.5,  text:'North Kivu: M23 advances on Goma, UN peacekeepers withdrawing',           tag:'M23',  cls:'tag-red'   },
+    { lon:27.5,lat:-1.8,  text:'South Kivu: FDLR activity forces 200k to flee Uvira area',                tag:'FDLR', cls:'tag-red'   },
+    { lon:25.5,lat:-1.2,  text:'Ituri: ADF ambushes FARDC patrol, 8 soldiers killed',                     tag:'ADF',  cls:'tag-red'   },
+  ],
+  haiti:     [
+    { lon:-72.3,lat:18.5, text:'Port-au-Prince: Viv Ansanm coalition controls 80% of capital',            tag:'GANG', cls:'tag-red'   },
+    { lon:-72.5,lat:18.6, text:'Cité Soleil: MSS massacre displaces 15,000 residents',                    tag:'MSF',  cls:'tag-red'   },
+    { lon:-72.4,lat:18.4, text:'Haiti: Kenyan-led security force deployment underway',                     tag:'KSM',  cls:'tag-yellow'},
+  ],
+  westbank:  [
+    { lon:35.3,lat:32.5,  text:'Jenin: IDF Operation Iron Wall — 70+ killed in 10 days',                  tag:'IDF',  cls:'tag-red'   },
+    { lon:35.3,lat:32.2,  text:'Nablus: settler rampage burns Palestinian vehicles, homes',                tag:'SETT', cls:'tag-red'   },
+    { lon:35.2,lat:31.9,  text:'Ramallah: PA authority collapse feared amid IDF raids',                   tag:'PA',   cls:'tag-yellow'},
+  ],
+  ethiopia:  [
+    { lon:38.0,lat:11.0,  text:'Amhara: Fano militia controls 5 regional cities',                         tag:'FANO', cls:'tag-red'   },
+    { lon:39.5,lat:13.5,  text:'Tigray: fragile peace holds, HDX reports food insecurity',                 tag:'WFP',  cls:'tag-yellow'},
+    { lon:36.6,lat:8.5,   text:'Oromia: OLA clashes with ENDF displace 80,000',                          tag:'OLA',  cls:'tag-red'   },
+  ],
+  yemen:     [
+    { lon:43.2,lat:14.8,  text:'Sanaa: Houthi anti-ship missile exercise in Red Sea',                     tag:'HUTH', cls:'tag-red'   },
+    { lon:42.9,lat:14.8,  text:'Hodeidah port: maritime security alert, vessel diversions',               tag:'MAR',  cls:'tag-yellow'},
+    { lon:45.0,lat:12.8,  text:'Marib: joint Yemeni forces hold line against Houthi advance',             tag:'YAF',  cls:'tag-yellow'},
+  ],
+};
+
+// ── Headline location extractor ──
+// Maps city/location keywords found in headlines to precise coordinates
+// Used to geographically place RSS pins instead of random jitter
+var HEADLINE_LOCATIONS = {
+  // Ukraine
+  'kyiv':           [30.52, 50.45], 'kiev':          [30.52, 50.45],
+  'kharkiv':        [36.30, 50.00], 'kharkov':       [36.30, 50.00],
+  'zaporizhzhia':   [35.10, 47.85], 'zaporizhzhe':   [35.10, 47.85],
+  'kherson':        [32.62, 46.64], 'mariupol':      [37.54, 47.10],
+  'donetsk':        [37.80, 48.00], 'luhansk':       [39.33, 48.57],
+  'avdiivka':       [37.74, 48.13], 'bakhmut':       [37.99, 48.60],
+  'sumy':           [34.80, 50.90], 'odesa':         [30.72, 46.48],
+  'dnipro':         [35.04, 48.47], 'zaporizhzhia nuclear': [34.58, 47.51],
+  // Gaza / West Bank
+  'rafah':          [34.25, 31.30], 'khan younis':   [34.30, 31.35],
+  'jabalia':        [34.49, 31.53], 'beit lahiya':   [34.49, 31.55],
+  'jenin':          [35.30, 32.46], 'nablus':        [35.26, 32.22],
+  'hebron':         [35.10, 31.53], 'ramallah':      [35.21, 31.90],
+  'jericho':        [35.44, 31.86], 'tulkarm':       [35.02, 32.31],
+  'tel aviv':       [34.78, 32.08], 'haifa':         [34.99, 32.81],
+  // Iran
+  'tehran':         [51.42, 35.69], 'isfahan':       [51.67, 32.66],
+  'natanz':         [51.72, 33.52], 'fordow':        [51.73, 34.89],
+  'bushehr':        [50.83, 28.97], 'tabriz':        [46.29, 38.08],
+  'mashhad':        [59.61, 36.30], 'ahvaz':         [48.68, 31.32],
+  // Sudan
+  'khartoum':       [32.53, 15.55], 'omdurman':      [32.48, 15.65],
+  'el fasher':      [25.36, 13.63], 'port sudan':    [37.22, 19.62],
+  'darfur':         [24.50, 13.50], 'kassala':       [36.40, 15.46],
+  'nyala':          [24.88, 12.05],
+  // Myanmar
+  'naypyidaw':      [96.13, 19.74], 'yangon':        [96.16, 16.87],
+  'mandalay':       [96.08, 21.97], 'lashio':        [97.75, 22.93],
+  'myawaddy':       [98.50, 16.70], 'sittwe':        [92.90, 20.14],
+  'taunggyi':       [97.04, 20.79],
+  // Somalia
+  'mogadishu':      [45.34,  2.05], 'baidoa':        [43.65,  3.11],
+  'kismayo':        [42.54,  0.36], 'galkayo':       [47.43,  6.77],
+  'bosaso':         [49.18, 11.28],
+  // Sahel
+  'bamako':         [-8.00, 12.65], 'ouagadougou':   [-1.52, 12.37],
+  'niamey':         [ 2.11, 13.51], 'timbuktu':      [-3.00, 16.77],
+  'gao':            [-0.05, 16.27], 'mopti':         [-4.20, 14.49],
+  // DRC
+  'kinshasa':       [15.32, -4.32], 'goma':          [29.23, -1.68],
+  'bukavu':         [28.86, -2.50], 'uvira':         [29.14, -3.41],
+  'bunia':          [30.25,  1.56], 'beni':          [29.47,  0.49],
+  'lubumbashi':     [27.47, -11.66],
+  // Haiti
+  'port-au-prince': [-72.34, 18.54], 'cap-haïtien': [-72.20, 19.76],
+  'gonaïves':       [-72.68, 19.45], 'les cayes':    [-73.75, 18.20],
+  // Ethiopia
+  'addis ababa':    [38.74,  9.03], 'addis':         [38.74,  9.03],
+  'gondar':         [37.46, 12.61], 'mekelle':       [39.47, 13.50],
+  'bahir dar':      [37.39, 11.60], 'dire dawa':     [41.87,  9.60],
+  // Yemen
+  'sanaa':          [44.19, 15.35], "sana'a":        [44.19, 15.35],
+  'hodeidah':       [42.95, 14.80], 'aden':          [45.04, 12.78],
+  'marib':          [45.33, 15.46], 'taiz':          [44.02, 13.58],
+  // Other common
+  'beirut':         [35.50, 33.89], 'damascus':      [36.29, 33.51],
+  'baghdad':        [44.44, 33.34], 'mosul':         [43.14, 36.34],
+  'kabul':          [69.17, 34.52], 'islamabad':     [73.04, 33.69],
+};
+
+function extractHeadlineLocation(text) {
+  var lower = text.toLowerCase();
+  var best = null;
+  var bestLen = 0;
+  // Prefer longer matches (more specific)
+  Object.keys(HEADLINE_LOCATIONS).forEach(function(place) {
+    if (lower.indexOf(place) >= 0 && place.length > bestLen) {
+      best = HEADLINE_LOCATIONS[place];
+      bestLen = place.length;
+    }
+  });
+  return best; // [lon, lat] or null
+}
+
+// Build zone-specific news pins (3–10 per zone)
+// Called when a zone is activated. Searches live feeds then pads with fallbacks.
+function buildZoneNewsPins(zoneId) {
+  var zone = CONFLICT_ZONES.filter(function(z){ return z.id === zoneId; })[0];
+  if (!zone) return [];
+
+  var keywords = ZONE_KEYWORDS[zoneId] || [zone.label.toLowerCase()];
+  var geoCoord = [zone.lon, zone.lat];
+
+  // Search live feeds for matching items
+  var allItems = liveRssItems.concat(liveGdeltItems).filter(function(item) {
+    if (!item || !item.text) return false;
+    var txt = item.text.toLowerCase();
+    return keywords.some(function(k){ return txt.indexOf(k) >= 0; });
+  });
+
+  // Dedupe by text similarity
+  var seen = {};
+  var unique = allItems.filter(function(item) {
+    var key = item.text.slice(0,30).toLowerCase();
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+
+  // Take up to 10 best (most recent)
+  var live = unique.slice(0, 10);
+
+  // Convert to map pins with jittered positions
+  var pins = live.map(function(item, i) {
+    // Try to extract precise location from headline text
+    var extracted = extractHeadlineLocation(item.text);
+    var lon, lat;
+    if (extracted) {
+      // Precise geographic placement from headline
+      lon = extracted[0] + (Math.random() - 0.5) * 0.15;  // tiny jitter only
+      lat = extracted[1] + (Math.random() - 0.5) * 0.15;
+    } else {
+      // No location found — spread in ring around zone centre
+      var angle = (i / Math.max(live.length, 1)) * Math.PI * 2 + Math.PI / 6;
+      var minR  = zone.radius * 0.5;
+      var maxR  = zone.radius * 0.85;
+      var r     = minR + Math.random() * (maxR - minR);
+      lon = zone.lon + Math.cos(angle) * r;
+      lat = zone.lat + Math.sin(angle) * r * 0.65;
+    }
+    var cls = item.cls || 'tag-yellow';
+    var color = cls === 'tag-red' ? '#8b3535' : cls === 'tag-blue' ? '#2e5a6a' : '#7a5c2e';
+    var title = item.text;
+    if (title.length > 60) title = title.slice(0,57) + '…';
+    var ts = smartTimestamp(item.datetime || item.time || '');
+    return {
+      lon: lon, lat: lat,
+      layer: 'conflict', color: color,
+      r: extracted ? 2.5 : 2,  // geo-precise pins slightly larger
+      label: title,
+      detail: item.text,
+      datetime: ts,
+      source: 'newspin', isNewsPin: true,
+      isGeo: !!extracted,
+      tag: item.tag || '', cls: cls,
+      zoneId: zoneId
+    };
+  });
+
+  // Pad with fallback static pins if fewer than 3 live items
+  var fallbacks = ZONE_FALLBACK_PINS[zoneId] || [];
+  if (pins.length < 3) {
+    fallbacks.slice(0, 10 - pins.length).forEach(function(fb, i) {
+      pins.push({
+        lon: fb.lon, lat: fb.lat,
+        layer: 'conflict', color: fb.cls === 'tag-red' ? '#8b3535' : fb.cls === 'tag-blue' ? '#2e5a6a' : '#7a5c2e',
+        r: 2.5,
+        label: fb.text.length > 60 ? fb.text.slice(0,57)+'…' : fb.text,
+        detail: fb.text,
+        datetime: 'Background brief',
+        source: 'newspin', isNewsPin: true,
+        tag: fb.tag, cls: fb.cls,
+        zoneId: zoneId
+      });
+    });
+  }
+
+  return pins.slice(0, 10);
+}
+
+// Legacy: keep liveNewsPins for compatibility but now populated per-zone
+var liveNewsPins = [];
+
+function buildNewsPins() {
+  // In default view: no news pins, zone summary dots handle it
+  // In zone view: called from zoomToConflict via rebuildMap
+  if (activeConflictId) {
+    liveNewsPins = buildZoneNewsPins(activeConflictId);
+  } else {
+    liveNewsPins = [];
+  }
+}
+
+
 function rebuildMap() {
-  mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents);
-  if (mapReady) plotEvents();
+  buildNewsPins();
+  var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
+  mapEvents = staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+  if (mapReady) { drawConflictZones(); plotEvents(); }
 }
 
 function initMap() {
@@ -1810,33 +2919,106 @@ function initMap() {
   mapZoom = d3.zoom().scaleExtent([0.8,12]).on('zoom', function(e) {
     mapG.attr('transform', e.transform);
     var k = e.transform.k;
-    mapSvg.selectAll('.event-ring').attr('r', function(d){ return (d.r+6)/k; });
+    mapSvg.selectAll('.event-ring').attr('r', function(d){ return (d.r+5)/k; });
     mapSvg.selectAll('.event-dot').attr('r',  function(d){ return d.r/k; });
-    mapSvg.selectAll('.pulse-ring').attr('r', function(d){ return (d.r+12)/k; });
+    mapSvg.selectAll('.day-night-layer').attr('stroke-width', 0.8/k);
+    // Rescale capital dots and labels with zoom
+    mapG.selectAll('.conflict-capital circle').attr('r', 2/k);
+    mapG.selectAll('.conflict-capital text').attr('font-size', 7/k + 'px').attr('x', 4/k).attr('y', 1/k);
+    // Rescale news pin diamonds and labels
+    mapG.selectAll('.event-group rect.event-dot')
+      .attr('width', 5/k).attr('height', 5/k).attr('x', -2.5/k).attr('y', -2.5/k);
+    mapG.selectAll('.news-pin-label')
+      .attr('font-size', 6/k + 'px').attr('x', 5/k)
+      .text(function(d){ return k >= 2.5 ? d.label : ''; });
   });
 
   mapSvg.call(mapZoom).on('dblclick.zoom', null).style('cursor','grab');
-  mapSvg.insert('rect',':first-child').attr('width','100%').attr('height','100%').attr('fill','#070909');
+  mapSvg.insert('rect',':first-child').attr('width','100%').attr('height','100%').attr('fill','#070c09');
 
   mapG = mapSvg.append('g');
 
   mapG.append('path').datum(d3.geoGraticule().step([30,30])())
-    .attr('d',mapPath).attr('fill','none').attr('stroke','#111414').attr('stroke-width',0.3);
+    .attr('d',mapPath).attr('fill','none').attr('stroke','#111a14').attr('stroke-width',0.25);
   mapG.append('path').datum({type:'LineString',coordinates:[[-180,0],[180,0]]})
-    .attr('d',mapPath).attr('fill','none').attr('stroke','#1c2020').attr('stroke-width',0.5);
+    .attr('d',mapPath).attr('fill','none').attr('stroke','#1a2a20').attr('stroke-width',0.4);
 
   d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(function(world) {
     var countries = topojson.feature(world, world.objects.countries);
     var mesh = topojson.mesh(world, world.objects.countries, function(a,b){return a!==b;});
+    _countriesFeatures = countries.features;
     mapG.append('g').selectAll('path').data(countries.features).enter().append('path')
-      .attr('d',mapPath).attr('fill','#0c0e0e').attr('stroke','none')
-      .on('mouseover', function(){ d3.select(this).attr('fill','#121616'); })
-      .on('mouseout',  function(){ d3.select(this).attr('fill','#0c0e0e'); });
+      .attr('d',mapPath).attr('fill','#1d2820').attr('stroke','none')
+      .on('mouseover', function(event, d) {
+        var k = d3.zoomTransform(mapSvg.node()).k;
+        if (k < 2) return;  // no hover highlight at world zoom
+        d3.select(this).attr('fill','#283c2e');
+        if (k >= 3) {
+          // Show country name label only when zoomed in
+          var name = ISO_NAMES[parseInt(d.id)] || '';
+          if (!name) return;
+          var centroid = mapPath.centroid(d);
+          if (!centroid || isNaN(centroid[0])) return;
+          mapG.append('text')
+            .attr('class','country-hover-label')
+            .attr('x', centroid[0])
+            .attr('y', centroid[1])
+            .attr('text-anchor','middle')
+            .attr('dominant-baseline','central')
+            .attr('font-family',"'Barlow Condensed',sans-serif")
+            .attr('font-weight','400')
+            .attr('font-size', 6/k + 'px')
+            .attr('letter-spacing','0.08em')
+            .attr('fill','#b8ccb8')
+            .attr('opacity',0.85)
+            .attr('pointer-events','none')
+            .text(name.toUpperCase());
+        }
+      })
+      .on('mouseout', function(){
+        var k = d3.zoomTransform(mapSvg.node()).k;
+        if (k < 2) return;
+        d3.select(this).attr('fill','#1d2820');
+        mapG.selectAll('.country-hover-label').remove();
+      });
     mapG.append('path').datum(mesh).attr('d',mapPath)
-      .attr('fill','none').attr('stroke','#1a1e1e').attr('stroke-width',0.3);
+      .attr('fill','none').attr('stroke','#1c2a22').attr('stroke-width',0.35);
+    // Fit view to inhabited landmasses — exclude Antarctica (lat < -58)
+    // Project the bounding box [-180,-58,180,72] directly
+    var container = document.getElementById('mapContainer');
+    var W = container.clientWidth, H = container.clientHeight;
+    // Project the four corners of the target extent
+    var corners = [
+      mapProjection([-180,  72]),
+      mapProjection([ 180,  72]),
+      mapProjection([-180, -58]),
+      mapProjection([ 180, -58])
+    ].filter(function(p){ return p !== null; });
+    var xVals = corners.map(function(p){ return p[0]; });
+    var yVals = corners.map(function(p){ return p[1]; });
+    var x0 = Math.min.apply(null, xVals), x1 = Math.max.apply(null, xVals);
+    var y0 = Math.min.apply(null, yVals), y1 = Math.max.apply(null, yVals);
+    var landW = x1 - x0, landH = y1 - y0;
+    var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    var scaleX = W * 0.97 / landW;
+    var scaleY = H * 0.96 / landH;
+    var initScale = Math.min(scaleX, scaleY);
+    var tx = W / 2 - initScale * cx;
+    var ty = H / 2 - initScale * cy;
+    var initTransform = d3.zoomIdentity.translate(tx, ty).scale(initScale);
+    mapSvg.call(mapZoom.transform, initTransform);
+    drawDayNight();
+    drawConflictZones();
     mapReady = true;
     plotEvents();
-  }).catch(function(){ mapReady = true; plotEvents(); });
+    buildHotspotMenu();
+  }).catch(function(){
+    drawDayNight();
+    drawConflictZones();
+    mapReady = true;
+    plotEvents();
+    buildHotspotMenu();
+  });
 }
 
 function plotEvents() {
@@ -1849,32 +3031,47 @@ function plotEvents() {
   var SC = { CRITICAL:'#b04444', HIGH:'#a07840', STRONG:'#a07840', MAJOR:'#b04444',
              MEDIUM:'#4a8a9a', MODERATE:'#6aab7a', EXTREME:'#b04444', INFO:'#3d4a3d', LOW:'#3d4a3d' };
 
-  var visible = mapEvents.filter(function(d){ return activeLayers.has(d.layer); });
+  // Zone anchor dots — always visible when conflict layer active
+  // One dot per conflict zone, shows zone name + detail on hover
+  var zoneDots = [];
+  if (activeLayers.has('conflict')) {
+    CONFLICT_ZONES.forEach(function(z) {
+      // Hide dot for the active zone — country highlight replaces it
+      if (z.id === activeConflictId) return;
+      zoneDots.push({
+        lon: z.lon, lat: z.lat, layer: 'conflict',
+        color: z.color, r: 4,
+        label: z.label, detail: z.detail,
+        severity: z.severity, source: 'zone-dot',
+        isNewsPin: false, isZoneDot: true,
+        zoneId: z.id
+      });
+    });
+  }
 
+  var visible = mapEvents.filter(function(d) {
+    if (!activeLayers.has(d.layer)) return false;
+    if (d.isNewsPin) {
+      // News pins: only show when a zone is active AND pin belongs to that zone
+      if (!activeConflictId) return false;
+      return d.zoneId === activeConflictId;
+    }
+    // Non-news pins: always show (static + GDELT + USGS etc)
+    return true;
+  });
+
+  var allVisible = zoneDots.concat(visible);
   var groups = mapG.selectAll('.event-group')
-    .data(visible).enter().append('g').attr('class','event-group')
+    .data(allVisible).enter().append('g').attr('class','event-group')
     .attr('transform', function(d){
       var p = mapProjection([d.lon, d.lat]);
       return 'translate('+p[0]+','+p[1]+')';
     }).style('cursor','pointer');
 
-  // Pulse ring (non-aircraft, non-GDELT small dots)
-  groups.filter(function(d){return !d.isAircraft && d.source!=='gdelt';}).append('circle').attr('class','pulse-ring')
-    .attr('r', function(d){return (d.r+12)/k;}).attr('fill','none')
-    .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.6).attr('opacity',0.3)
-    .each(function(d, i) {
-      var el = d3.select(this);
-      (function anim() {
-        el.attr('opacity',0.4).attr('r',(d.r+12)/k)
-          .transition().duration(1800+i*120).ease(d3.easeLinear)
-          .attr('r',(d.r+24)/k).attr('opacity',0).on('end',anim);
-      })();
-    });
-
-  // Middle ring
+  // Static outer ring only — no animation
   groups.filter(function(d){return !d.isAircraft;}).append('circle').attr('class','event-ring')
-    .attr('r', function(d){return (d.r+6)/k;}).attr('fill','none')
-    .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.8).attr('opacity',0.5);
+    .attr('r', function(d){return (d.r+5)/k;}).attr('fill','none')
+    .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.5).attr('opacity',0.35);
 
   // Aircraft triangle
   groups.filter(function(d){return d.isAircraft;}).append('path')
@@ -1886,23 +3083,70 @@ function plotEvents() {
     .attr('r', function(d){return d.r/k;}).attr('fill', function(d){return d.color;}).attr('opacity',0.85);
 
   // Tooltip
+  // Zone dot click triggers zoomToConflict
+  groups.filter(function(d){ return d.isZoneDot || d.isZoneSummary; })
+    .on('click', function(event, d) {
+      if (d.zoneId) zoomToConflict(d.zoneId);
+    })
+    .style('cursor', 'pointer');
+
+  // News pin click opens story panel
+  groups.filter(function(d){ return d.isNewsPin; })
+    .on('click', function(event, d) {
+      openStory({
+        text:     d.detail || d.label || '',
+        tag:      d.tag      || '',
+        cls:      d.cls      || 'tag-yellow',
+        datetime: d.datetime || ''
+      });
+    });
+
   groups
     .on('mouseover', function(event, d) {
       var p = mapProjection([d.lon, d.lat]);
       var t = d3.zoomTransform(mapSvg.node());
-      tooltip.innerHTML =
-        '<div style="color:'+(SC[d.severity]||'#b8ccb8')+';letter-spacing:2px;font-size:9px;margin-bottom:5px;">'+(d.severity||'')+'</div>'+
-        '<div style="color:#b8ccb8;font-size:11px;font-weight:700;margin-bottom:3px;">'+d.label+'</div>'+
-        '<div style="color:#5a6e5a;font-size:10px;line-height:1.5;">'+d.detail+'</div>'+
-        (d.source?'<div style="color:#3d4d3d;font-size:9px;margin-top:4px;letter-spacing:1px;">SRC: '+d.source.toUpperCase()+'</div>':'');
+      // Zone dots: only show tooltip at world zoom, hide when zoomed in
+      if (d.isZoneDot && t.k >= 2) return;
+      var dtLine = (d.datetime && d.isNewsPin)
+        ? '<div style="color:var(--accent);font-family:var(--mono);font-size:8px;letter-spacing:1px;margin-bottom:5px;">'+d.datetime+'</div>'
+        : '';
+      var tagLine = d.tag
+        ? '<div style="color:#4a6a5a;font-family:var(--mono);font-size:8px;margin-top:5px;letter-spacing:1.5px;">['+d.tag+']</div>'
+        : '';
+      if (d.isNewsPin) {
+        tooltip.innerHTML =
+          dtLine +
+          '<div style="color:var(--text-hi);font-family:var(--sans);font-size:10px;font-weight:500;line-height:1.45;">'+d.label+'</div>' +
+          tagLine;
+      } else {
+        // General conflict/event dot — show label + brief context
+        tooltip.innerHTML =
+          '<div style="color:var(--text-hi);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:1px;margin-bottom:4px;">'+d.label+'</div>' +
+          '<div style="color:var(--muted);font-family:var(--sans);font-size:9px;line-height:1.5;">'+d.detail+'</div>' +
+          tagLine;
+      }
       tooltip.style.left = Math.min(t.applyX(p[0])+12, container.clientWidth-220)+'px';
       tooltip.style.top  = Math.max(t.applyY(p[1])-80, 8)+'px';
       tooltip.style.opacity = '1';
-      if (!d.isAircraft) d3.select(this).select('.event-dot').attr('opacity',1).attr('r',(d.r*1.4)/k);
+      if (d.isNewsPin) {
+        d3.select(this).select('.event-dot').attr('opacity', 0.5);
+        tooltip.style.background = 'rgba(6,9,8,0.75)';
+      } else if (d.isZoneSummary) {
+        d3.select(this).select('.event-dot').attr('opacity', 1).attr('r', (d.r*1.4)/k);
+        tooltip.style.background = 'rgba(6,9,8,0.92)';
+      } else if (!d.isAircraft) {
+        d3.select(this).select('.event-dot').attr('opacity',1).attr('r',(d.r*1.3)/k);
+        tooltip.style.background = 'rgba(6,9,8,0.94)';
+      }
     })
     .on('mouseout', function(event, d) {
       tooltip.style.opacity = '0';
-      if (!d.isAircraft) d3.select(this).select('.event-dot').attr('opacity',0.85).attr('r',d.r/k);
+      tooltip.style.background = 'rgba(6,9,8,0.94)';
+      if (d.isNewsPin) {
+        d3.select(this).select('.event-dot').attr('opacity', 0.9);
+      } else if (d.isZoneSummary || !d.isAircraft) {
+        d3.select(this).select('.event-dot').attr('opacity',0.85).attr('r', d.r/k);
+      }
     });
 }
 
@@ -1910,73 +3154,349 @@ function mapZoomIn()  { if(mapZoom&&mapSvg) mapSvg.transition().duration(300).ca
 function mapZoomOut() { if(mapZoom&&mapSvg) mapSvg.transition().duration(300).call(mapZoom.scaleBy, 0.625); }
 function mapReset()   { if(mapZoom&&mapSvg) mapSvg.transition().duration(500).call(mapZoom.transform, d3.zoomIdentity); }
 
+// Fly map to a conflict zone by id
+function zoomToConflict(id) {
+  var zone = CONFLICT_ZONES.filter(function(z){ return z.id === id; })[0];
+  if (!zone || !mapProjection || !mapSvg) return;
+
+  // Deactivate previous, activate new
+  var prev = activeConflictId;
+  activeConflictId = (prev === id) ? null : id;  // toggle off if same
+
+  // Update sidebar highlight
+  document.querySelectorAll('.hotspot-item').forEach(function(el){ el.classList.remove('active'); });
+  if (activeConflictId) {
+    var item = document.getElementById('hs-' + id);
+    if (item) item.classList.add('active');
+  }
+
+  // Build news pins for the newly active zone
+  buildNewsPins();
+  // Redraw map events (news pins now in liveNewsPins)
+  mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+  // Redraw zones — no labels yet, zoom hasn't settled
+  drawConflictZones(false);
+  // Plot events immediately so pins appear (filtered by activeConflictId)
+  plotEvents();
+
+  // If toggled off, reset view and hide infobox
+  if (!activeConflictId) {
+    buildNewsPins();  // rebuild with no active zone (clears zone-specific pins)
+    mapEvents = staticEvents.concat(liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
+    plotEvents();
+    mapSvg.transition().duration(600).ease(d3.easeCubicInOut)
+      .call(mapZoom.transform, d3.zoomIdentity);
+    updateConflictInfoBox(null);
+    return;
+  }
+
+  // Compute tight bounding box from projected country paths
+  var container = document.getElementById('mapContainer');
+  var W = container.clientWidth, H = container.clientHeight;
+
+  // Use the zone's defined zoom scale for tight country-level zoom
+  var targetScale = zone.zoom || 5;
+  var p = mapProjection([zone.lon, zone.lat]);
+  if (!p) return;
+
+  // Try to fit using actual country bounding box if available
+  var ids = CONFLICT_COUNTRY_IDS[id] || [];
+  if (ids.length > 0 && _countriesFeatures.length > 0) {
+    var matchFeatures = _countriesFeatures.filter(function(f){
+      return ids.indexOf(parseInt(f.id)) >= 0;
+    });
+    if (matchFeatures.length > 0) {
+      var fc = { type:'FeatureCollection', features: matchFeatures };
+      var b = mapPath.bounds(fc);
+      if (b && b[0] && b[1]) {
+        var bw = b[1][0] - b[0][0];
+        var bh = b[1][1] - b[0][1];
+        var bcx = (b[0][0] + b[1][0]) / 2;
+        var bcy = (b[0][1] + b[1][1]) / 2;
+        // Adaptive padding: tighter for small countries, looser for large
+        // bw/bh in projected pixels — small country = small values
+        var longestSide = Math.max(bw, bh);
+        var fill = longestSide < 80  ? 0.70   // very small (Gaza, Haiti, West Bank)
+                 : longestSide < 200 ? 0.75   // small (Yemen, Somalia, DRC)
+                 : longestSide < 400 ? 0.80   // medium (Ukraine, Iran)
+                 :                     0.88;  // large (Sudan, Sahel multi-country)
+        var scaleX = W * fill / bw;
+        var scaleY = H * fill / bh;
+        targetScale = Math.min(scaleX, scaleY, 28); // higher cap for tiny countries
+        var tx = W / 2 - targetScale * bcx;
+        var ty = H / 2 - targetScale * bcy;
+        var t = d3.zoomIdentity.translate(tx, ty).scale(targetScale);
+        mapSvg.transition().duration(900).ease(d3.easeCubicInOut)
+          .call(mapZoom.transform, t)
+          .on('end', function(){ drawConflictZones(true); });
+        window._deckAnalystCtx = 'Focus on ' + zone.label + ': ' + zone.detail;
+        return;
+      }
+    }
+  }
+
+  // Fallback: zoom to lon/lat centroid with preset scale
+  var tx = W / 2 - targetScale * p[0];
+  var ty = H / 2 - targetScale * p[1];
+  var t  = d3.zoomIdentity.translate(tx, ty).scale(targetScale);
+  mapSvg.transition().duration(900).ease(d3.easeCubicInOut)
+    .call(mapZoom.transform, t)
+    .on('end', function() { drawConflictZones(); });
+  window._deckAnalystCtx = 'Focus on ' + zone.label + ': ' + zone.detail;
+  updateConflictInfoBox(activeConflictId);
+}
+
+// Build the hotspot navigator from CONFLICT_ZONES
+function updateConflictInfoBox(id) {
+  var box = document.getElementById('conflictInfoBox');
+  if (!id) { if (box) box.style.display = 'none'; return; }
+
+  var zone = CONFLICT_ZONES.filter(function(z){ return z.id === id; })[0];
+  if (!zone || !box) return;
+
+  // Title + severity
+  document.getElementById('cib-title').textContent = zone.label.toUpperCase();
+  var sevEl = document.getElementById('cib-sev');
+  sevEl.textContent = zone.severity;
+  var sevColors = { CRITICAL:'var(--crit-hi)', HIGH:'var(--warn-hi)', MEDIUM:'var(--accent)', LOW:'var(--muted)' };
+  sevEl.style.color = sevColors[zone.severity] || 'var(--muted)';
+  sevEl.style.borderColor = sevColors[zone.severity] || 'var(--dim)';
+
+  // Static detail line
+  document.getElementById('cib-detail').textContent = zone.detail;
+
+  // Live items — search RSS + GDELT for zone keywords
+  var keywords = zone.label.toLowerCase().split(' ');
+  // Also add country-specific search terms
+  var extraTerms = {
+    ukraine:'ukraine kyiv zelensky zaporizhzhia',
+    gaza:'gaza strip palestin hamas idf',
+    iran:'iran tehran irgc nuclear',
+    sudan:'sudan khartoum rsf darfur',
+    myanmar:'myanmar burma junta',
+    somalia:'somalia shabaab mogadishu',
+    sahel:'sahel mali burkina niger jihadist',
+    drc:'congo drc kinshasa m23',
+    haiti:'haiti gang port-au-prince',
+    westbank:'west bank ramallah settler idf',
+    ethiopia:'ethiopia amhara tigray addis',
+    yemen:'yemen houthi sanaa',
+  };
+  var searchStr = (extraTerms[id] || zone.label).toLowerCase();
+  var terms = searchStr.split(' ');
+
+  // Gather matching items from live feeds
+  var matched = [];
+  var allFeedItems = liveRssItems.concat(liveGdeltItems).concat(liveReliefwebItems);
+  allFeedItems.forEach(function(item) {
+    if (!item || !item.text) return;
+    var txt = item.text.toLowerCase();
+    if (terms.some(function(t){ return t.length > 3 && txt.indexOf(t) >= 0; })) {
+      matched.push(item);
+    }
+  });
+
+  // Render up to 6 matched items
+  var itemsEl = document.getElementById('cib-items');
+  if (matched.length > 0) {
+    itemsEl.innerHTML = matched.slice(0,6).map(function(item) {
+      var tag = item.tag ? '<span style="color:var(--accent);margin-right:4px;">[' + item.tag + ']</span>' : '';
+      return '<div>' + tag + item.text + '</div>';
+    }).join('');
+    document.getElementById('cib-source').textContent =
+      matched.length + ' live reports · GDELT · RSS · ReliefWeb';
+
+  // Show live score
+  var sc = zoneScores[id];
+  if (sc) {
+    var scoreEl = document.getElementById('cib-score');
+    if (scoreEl) scoreEl.textContent = 'Risk score: ' + sc.total + ' / 100+ · Static: ' + sc.staticRisk + ' · Live signals: ' + sc.liveScore;
+  }
+  } else {
+    itemsEl.innerHTML = '<div style="color:var(--dim);">No live reports yet — feeds loading…</div>';
+    document.getElementById('cib-source').textContent = 'GDELT · RSS · ReliefWeb';
+  }
+
+  box.style.display = 'none';
+  // Small delay so the hide is visible before reopen
+  setTimeout(function() { box.style.display = 'block'; }, 60);
+}
+
+function buildHotspotMenu() {
+  var el = document.getElementById('hotspotList');
+  if (!el) return;
+  var sevColor = {
+    CRITICAL: 'var(--crit-hi)',
+    HIGH:     'var(--warn-hi)',
+    MEDIUM:   'var(--accent)',
+    LOW:      'var(--muted)'
+  };
+  var rows = '';
+  CONFLICT_ZONES.forEach(function(z) {
+    var sc = sevColor[z.severity] || 'var(--muted)';
+    rows += '<div class="hotspot-item" id="hs-' + z.id + '" data-zone="' + z.id + '">';
+    rows += '<span class="hs-dot" style="background:' + z.color + '"></span>';
+    rows += '<span class="hs-label">' + z.label + '</span>';
+    rows += '<span class="hs-sev" style="color:' + sc + '">' + z.severity + '</span>';
+    rows += '</div>';
+  });
+  el.innerHTML = rows;
+  el.querySelectorAll('.hotspot-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      zoomToConflict(this.getAttribute('data-zone'));
+    });
+  });
+}
+
 window.addEventListener('resize', function() { if (mapSvg) { mapReady=false; initMap(); } });
 
-// ── AI CHAT ──
+// ── STORY READER PANEL ──
 
-function setPrompt(text) { document.getElementById('aiInput').value=text; document.getElementById('aiInput').focus(); }
-function handleKey(e)    { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+var _currentStoryItem = null;
 
-function appendMsg(role, text) {
-  var msgs=document.getElementById('aiMessages');
-  var div=document.createElement('div');
-  div.className='msg '+(role==='user'?'user-msg':'');
-  div.innerHTML='<div class="msg-role '+(role==='user'?'user':'analyst')+'">'+(role==='user'?'YOU':'ANALYST')+'</div><div class="msg-bubble">'+text+'</div>';
-  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+function clearStoryPanel() {
+  _currentStoryItem = null;
+  document.getElementById('storyBody').innerHTML =
+    '<div class="story-empty"><div class="story-empty-icon">◎</div>' +
+    '<div class="story-empty-text">Click any feed item or map pin to read the full story</div></div>';
+  document.getElementById('storyMeta').textContent = '';
+  document.getElementById('storyRelated').innerHTML = '';
 }
-function showTyping() {
-  var msgs=document.getElementById('aiMessages');
-  var div=document.createElement('div');
-  div.className='msg'; div.id='typingIndicator';
-  div.innerHTML='<div class="msg-role analyst">ANALYST</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
-  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+
+function openStoryByIdx(idx) {
+  var item = _feedItems[idx];
+  if (item) openStory(item);
 }
-function removeTyping() { var el=document.getElementById('typingIndicator'); if(el) el.remove(); }
 
-async function sendMessage() {
-  if(isThinking) return;
-  var input=document.getElementById('aiInput');
-  var text=input.value.trim();
-  if(!text) return;
-  isThinking=true; input.value='';
-  document.getElementById('sendBtn').disabled=true;
-  appendMsg('user',text); conversation.push({role:'user',content:text}); showTyping();
+function openStory(item) {
+  if (!item || !item.text) return;
+  _currentStoryItem = item;
+  _relatedItems = [];  // reset related index
 
-  // Give the analyst context on what's live right now
-  var gdeltSummary = liveGdeltItems.slice(0,3).map(function(i){ return i.text; }).join('; ');
-  var reliefSummary = liveReliefwebItems.slice(0,3).map(function(i){ return i.text; }).join('; ');
-  var ctx = 'Live data: GDELT '+liveGdeltItems.length+' conflict events (recent: '+gdeltSummary+'); '+
-    'ReliefWeb '+liveReliefwebItems.length+' reports (recent: '+reliefSummary+'); '+
-    'USGS '+liveSeismicItems.length+' earthquakes; '+
-    'NOAA '+liveWeatherItems.length+' weather alerts; '+
-    'OpenSky '+liveMaritimeEvents.filter(function(e){return e.source==='opensky';}).length+' aircraft; '+
-    'NASA FIRMS '+liveNaturalEvents.filter(function(e){return e.source==='firms';}).length+' fire clusters.';
+  // Meta bar
+  var metaEl = document.getElementById('storyMeta');
+  var parts = [];
+  if (item.datetime) parts.push(item.datetime);
+  if (item.tag)      parts.push('[' + item.tag + ']');
+  metaEl.textContent = parts.join('  ·  ');
 
-  try {
-    var res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        system:(window._deckAnalystCtx ? window._deckAnalystCtx + ' ' : '') + 'You are an AI intelligence analyst for Situationsrapporten, a real-time OSINT dashboard. Date: March 22 2026. Sources: GDELT (conflict events), ReliefWeb (humanitarian), USGS (earthquakes), NOAA (weather), NASA FIRMS (fires), OpenSky (aircraft). Be concise, authoritative, cite sources.\n\n'+ctx,
-        messages:conversation
-      })
-    });
-    if (!res.ok) throw new Error('API ' + res.status);
-    var data=await res.json();
-    var reply=(data.content||[]).filter(function(b){return b.type==='text';})[0];
-    reply=reply?reply.text:'No response.';
-    removeTyping(); appendMsg('analyst',reply); conversation.push({role:'assistant',content:reply});
-  } catch(err) {
-    removeTyping();
-    appendMsg('analyst','⚠️ COMMS ERROR: '+err.message+'\n\nNote: AI analyst requires the app to be served from a real domain, not a sandboxed preview.');
+  // Find which zone this belongs to
+  var lowerText = item.text.toLowerCase();
+  var zoneMatch = null, bestScore = 0;
+  CONFLICT_ZONES.forEach(function(z) {
+    var kws = ZONE_KEYWORDS[z.id] || [];
+    var score = kws.filter(function(kw){ return lowerText.indexOf(kw) >= 0; }).length;
+    if (score > bestScore) { bestScore = score; zoneMatch = z; }
+  });
+
+  // Build story body
+  var cls = item.cls || 'tag-yellow';
+  var tagColor = cls === 'tag-red' ? 'var(--crit-hi)' : cls === 'tag-blue' ? '#4a8a9a' : 'var(--accent-hi)';
+  var tagBg    = cls === 'tag-red' ? 'rgba(139,53,53,0.12)' : cls === 'tag-blue' ? 'rgba(46,74,92,0.12)' : 'rgba(74,124,89,0.10)';
+  var tagBorder = cls === 'tag-red' ? 'var(--crit)' : cls === 'tag-blue' ? 'var(--info)' : 'var(--accent)';
+
+  var html = '';
+
+  // Headline
+  html += '<div class="story-headline">' + escHtml(item.text) + '</div>';
+
+  // Source row
+  html += '<div class="story-source-row">';
+  if (item.tag) {
+    html += '<span class="story-tag" style="color:' + tagColor + ';border-color:' + tagBorder + ';background:' + tagBg + '">' + escHtml(item.tag) + '</span>';
   }
-  isThinking=false; document.getElementById('sendBtn').disabled=false;
+  if (item.datetime) {
+    html += '<span class="story-datetime">' + escHtml(item.datetime) + '</span>';
+  }
+  if (zoneMatch) {
+    html += '<button class="story-zone-pill" id="storyZonePill" data-zone="' + zoneMatch.id + '">' +
+      '⊙ ' + zoneMatch.label.toUpperCase() + '</button>';
+  }
+  html += '</div>';
+
+  // Description from RSS feed (if available)
+  if (item.desc && item.desc.length > 20) {
+    html += '<div class="story-summary">' + escHtml(item.desc) + '</div>';
+  } else if (zoneMatch) {
+    // Fallback: zone context paragraph
+    html += '<div class="story-summary" style="opacity:0.6;font-style:italic;">' + escHtml(zoneMatch.detail) + '</div>';
+  }
+
+  // Link to original article
+  if (item.link) {
+    html += '<a href="' + escHtml(item.link) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;' +
+      'font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--accent);text-decoration:none;margin-bottom:14px;">' +
+      '⬡ READ FULL ARTICLE</a>';
+  }
+
+  // Zoom to map button
+  if (zoneMatch || extractHeadlineLocation(item.text)) {
+    html += '<button class="story-map-btn" onclick="focusFeedPinFromStory()">⊕ LOCATE ON MAP</button>';
+  }
+
+  document.getElementById('storyBody').innerHTML = html;
+  // Wire zone pill click after DOM update
+  var zpill = document.getElementById('storyZonePill');
+  if (zpill) zpill.addEventListener('click', function() {
+    zoomToConflict(this.getAttribute('data-zone'));
+  });
+
+  // Related stories section
+  var related = findRelatedStories(item, zoneMatch);
+  var relHtml = '';
+  if (related.length > 0) {
+    relHtml += '<div class="story-related-label">Related · ' + related.length + ' stories</div>';
+    related.forEach(function(r) {
+      var ridx = _relatedItems.length;
+      _relatedItems.push(r);
+      relHtml += '<div class="story-related-item" onclick="openRelatedStory(' + ridx + ')">';
+      relHtml += '<div class="story-related-text">' + escHtml(r.text.slice(0,80)) + (r.text.length > 80 ? '…' : '') + '</div>';
+      relHtml += '<div class="story-related-meta">' + escHtml(r.tag || '') + (r.datetime ? '  ·  ' + escHtml(r.datetime) : '') + '</div>';
+      relHtml += '</div>';
+    });
+  }
+  document.getElementById('storyRelated').innerHTML = relHtml;
+
+  // Also focus on map
+  if (item.text) {
+    var fakeEl = { getAttribute: function(){ return item.text; } };
+    focusFeedPin(fakeEl);
+  }
+}
+
+function focusFeedPinFromStory() {
+  if (!_currentStoryItem) return;
+  var fakeEl = { getAttribute: function(){ return _currentStoryItem.text; } };
+  focusFeedPin(fakeEl);
+}
+
+function findRelatedStories(item, zoneMatch) {
+  if (!zoneMatch) return [];
+  var kws = ZONE_KEYWORDS[zoneMatch.id] || [];
+  var all = liveRssItems.concat(liveGdeltItems);
+  var related = [];
+  var seen = {};
+  all.forEach(function(r) {
+    if (!r || !r.text || r.text === item.text) return;
+    var txt = r.text.toLowerCase();
+    var score = kws.filter(function(k){ return txt.indexOf(k) >= 0; }).length;
+    if (score > 0 && !seen[r.text.slice(0,40)]) {
+      seen[r.text.slice(0,40)] = true;
+      related.push(r);
+    }
+  });
+  return related.slice(0, 8);
+}
+
+var _relatedItems = [];
+
+function openRelatedStory(idx) {
+  var item = _relatedItems[idx];
+  if (item) openStory(item);
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── RSS FEED AGGREGATOR ──
@@ -2006,14 +3526,24 @@ async function fetchRSS() {
         // Parse <item> or <entry> blocks
         var items = [];
         var blocks = xml.match(/<(?:item|entry)[\s\S]*?<\/(?:item|entry)>/g) || [];
-        blocks.slice(0, 3).forEach(function(block) {
+        blocks.slice(0, 5).forEach(function(block) {
           var title = (block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/) || [])[1] || '';
           title = title.replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'').trim();
           if (!title || title.length < 15) return;
           if (title.length > 90) title = title.slice(0,87) + '…';
           var pubDate = (block.match(/<(?:pubDate|published|updated)>([\s\S]*?)<\/(?:pubDate|published|updated)>/) || [])[1] || '';
           var t = pubDate ? utcTime(pubDate) : '--:--';
-          items.push({ time:t, text:title, tag:feed.src, cls:feed.cls });
+          var rssDate = pubDate ? (function(d){ try{ var dt=new Date(d); if(isNaN(dt)) return '';
+            return String(dt.getUTCDate()).padStart(2,'0')+'/'+String(dt.getUTCMonth()+1).padStart(2,'0')+' '+
+            String(dt.getUTCHours()).padStart(2,'0')+':'+String(dt.getUTCMinutes()).padStart(2,'0')+' UTC'; }catch(e){return '';} })(pubDate) : '';
+          // Extract description / summary for reader panel
+          var desc = (block.match(/<(?:description|summary|content:encoded)>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:description|summary|content:encoded)>/) || [])[1] || '';
+          desc = desc.replace(/<[^>]+>/g, ' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').replace(/\s+/g,' ').trim();
+          if (desc.length > 400) desc = desc.slice(0, 400) + '…';
+          // Extract article link
+          var link = (block.match(/<link>([^<]+)<\/link>/) || block.match(/<link[^>]+href="([^"]+)"/) || [])[1] || '';
+          link = link.trim();
+          items.push({ time:t, datetime:rssDate, text:title, desc:desc, link:link, tag:feed.src, cls:feed.cls });
         });
         return items;
       })
@@ -2031,8 +3561,11 @@ async function fetchRSS() {
     if (seen[item.text]) return false;
     seen[item.text] = true;
     return true;
-  }).slice(0, 30);
+  }).slice(0, 60);
 
+  setSourceStatus('rss','live', liveRssItems.length + ' articles');
+  scoreConflictZones();
+  rebuildMap();
   if (currentCat === 'all' || currentCat === 'conflict' || currentCat === 'markets') {
     renderFeed(currentCat);
   }
@@ -2051,40 +3584,59 @@ async function fetchRSS() {
 // Filter to geopolitical/conflict markets.
 async function fetchPolymarket() {
   try {
-    // Gamma API: active markets tagged geopolitics/conflict
-    var url = 'https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50&tag_slug=geopolitics';
-    var res = await proxyFetch(url);
-    if (!res.ok) throw new Error('Poly ' + res.status);
+    // Gamma API supports direct browser CORS — call without proxy
+    // Use events endpoint which has better geopolitical filtering
+    var url = 'https://gamma-api.polymarket.com/events?active=true&closed=false&limit=50&tag_slug=politics';
+    var res = await fetch(url);
+    if (!res.ok) {
+      // Try markets endpoint as fallback
+      res = await fetch('https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50');
+      if (!res.ok) throw new Error('Poly ' + res.status);
+    }
     var data = await res.json();
 
-    var markets = Array.isArray(data) ? data : (data.data || data.markets || []);
+    // Handle both events and markets array responses
+    var items = Array.isArray(data) ? data : (data.data || data.events || data.markets || []);
 
-    // Filter to conflict/military/elections/war questions
-    var keywords = /ukraine|russia|china|taiwan|iran|israel|gaza|nato|nuclear|war|conflict|election|president|military|troops|attack|missile/i;
-    livePolyItems = markets
-      .filter(function(m) { return keywords.test(m.question || m.title || ''); })
+    var keywords = /ukraine|russia|china|taiwan|iran|israel|gaza|nato|nuclear|war|conflict|election|president|military|troops|attack|missile|sanction|ceasefire/i;
+
+    livePolyItems = items
+      .filter(function(m) {
+        var text = m.title || m.question || m.description || '';
+        return keywords.test(text);
+      })
       .map(function(m) {
-        var q = (m.question || m.title || '').trim();
+        // Events have a title; markets have a question
+        var q = (m.title || m.question || '').trim();
         if (q.length > 80) q = q.slice(0,77) + '…';
-        // prob from outcomePrices or bestAsk
+
+        // Extract probability — events nest markets; markets have outcomePrices
         var prob = 0.5;
         try {
-          if (m.outcomePrices) {
-            var prices = JSON.parse(m.outcomePrices);
+          if (m.markets && m.markets[0] && m.markets[0].outcomePrices) {
+            var prices = JSON.parse(m.markets[0].outcomePrices);
             prob = parseFloat(prices[0]) || 0.5;
+          } else if (m.outcomePrices) {
+            var prices2 = JSON.parse(m.outcomePrices);
+            prob = parseFloat(prices2[0]) || 0.5;
           } else if (m.bestAsk) {
             prob = parseFloat(m.bestAsk) || 0.5;
           }
         } catch(e) {}
-        var endDate = m.endDate ? utcTime(m.endDate) : m.endDateIso ? utcTime(m.endDateIso) : '—';
-        return { question:q, prob:prob, end:endDate, volume:m.volume || 0 };
+        if (prob > 1) prob = prob / 100; // handle percentage format
+
+        var vol = parseFloat(m.volume || (m.markets && m.markets[0] && m.markets[0].volume) || 0);
+        var endDate = (m.endDate || m.endDateIso || '').slice(0,10) || '—';
+        return { question:q, prob:prob, end:endDate, volume:vol };
       })
       .sort(function(a,b) { return b.volume - a.volume; })
       .slice(0, 12);
 
+    setSourceStatus('polymarket','live', livePolyItems.length + ' markets');
     if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
 
   } catch(err) {
+    setSourceStatus('polymarket','error','OFFLINE');
     // Fallback static prediction market data
     if (livePolyItems.length === 0) {
       livePolyItems = [
@@ -2124,8 +3676,7 @@ async function fetchGPSJam() {
       if (!res.ok) throw new Error('GPSJam ' + res.status);
     }
     var text = await res.text();
-    var lines = text.trim().split('
-').slice(1);
+    var lines = text.trim().split('\n').slice(1);
 
     // Parse: lat,lon,count  (or lat3,lon3,count depending on resolution)
     var cells = [];
@@ -2173,7 +3724,7 @@ async function fetchGPSJam() {
         lat:      z.lat,
         layer:    'cyber',
         color:    '#6a5c2e',
-        r:        Math.max(3, Math.min(10, Math.sqrt(z.count) * 1.5)),
+        r:        Math.max(2, Math.min(5, Math.sqrt(z.count) * 0.8)),
         label:    'GPS Jamming — ' + z.label,
         detail:   z.count + ' disruption reports · Electronic warfare / spoofing',
         severity: z.level,
@@ -2186,9 +3737,11 @@ async function fetchGPSJam() {
     liveConflictEvents = liveConflictEvents.filter(function(e) { return e.source !== 'gpsjam'; }).concat(jammingMapEvents);
     rebuildMap();
 
+    setSourceStatus('gpsjam','live', liveJammingCells.length + ' zones');
     if (currentCat === 'natural' || currentCat === 'cyber' || currentCat === 'all') renderFeed(currentCat);
 
   } catch(err) {
+    setSourceStatus('gpsjam','error','OFFLINE');
     // Silent — GPSJam data may not be available every day
     if (liveJammingCells.length === 0) {
       liveJammingCells = [
@@ -2207,8 +3760,13 @@ async function fetchGPSJam() {
 var topoScript = document.createElement('script');
 topoScript.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';
 topoScript.onload = function() {
-  initMap();
-  setTimeout(function() { loadDeck('command'); }, 100);
+  // Double rAF + 50ms ensures CSS grid has fully laid out before measuring
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      setTimeout(initMap, 50);
+      setTimeout(function() { loadDeck('command'); }, 200);
+    });
+  });
   // Stagger all fetches to avoid hammering proxies simultaneously
   fetchUSGS();
   setTimeout(fetchNOAA,        1500);
@@ -2218,9 +3776,29 @@ topoScript.onload = function() {
   setTimeout(fetchPolymarket,  6500);   // Polymarket: prediction markets
   setTimeout(fetchFIRMS,       8000);   // NASA FIRMS: satellite fires
   setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
-  setTimeout(fetchOpenSky,    11000);   // OpenSky: ADS-B aircraft
+  setTimeout(fetchOpenSky,    11000);   // OpenSky fallback (if no AIS key)
+  setTimeout(connectAIS,      12000);   // AISStream WebSocket (if key present)
 };
 document.head.appendChild(topoScript);
+
+// Show mobile deck bar on small screens
+(function() {
+  var bar = document.getElementById('mobileDeckBar');
+  if (bar && window.innerWidth <= 768) bar.style.display = 'flex';
+  window.addEventListener('resize', function() {
+    if (bar) bar.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+  });
+  // Sync mobile pill active state with loadDeck
+  var origLoadDeck = loadDeck;
+  loadDeck = function(name) {
+    origLoadDeck(name);
+    document.querySelectorAll('.mobile-deck-pill').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    var active = document.querySelector('.mobile-deck-pill[onclick*="' + name + '"]');
+    if (active) active.classList.add('active');
+  };
+})();
 
 // Refresh intervals
 setInterval(fetchUSGS,       5*60*1000);
