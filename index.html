@@ -16,29 +16,29 @@
 
   :root {
     --bg:       #060807;          /* near-black */
-    --surface:  #0c0e0c;          /* panel surface */
-    --surface2: #111411;          /* inset surfaces */
-    --surface3: #161a16;          /* hover states */
-    --border:   #222622;          /* visible hairline borders */
-    --border2:  #2d332d;          /* emphasized borders */
+    --surface:  #0e110e;          /* panel surface */
+    --surface2: #141814;          /* inset surfaces */
+    --surface3: #1a201a;          /* hover states */
+    --border:   #2e362e;          /* visible hairline borders */
+    --border2:  #3a423a;          /* emphasized borders */
 
     /* Phosphor green — the one accent that's allowed to feel "active" */
-    --accent:   #4a7c59;          /* dim phosphor green */
-    --accent-hi:#6aab7a;          /* highlighted phosphor */
-    --accent-lo:#2a4a33;          /* ghost phosphor */
+    --accent:   #5a9c6a;          /* dim phosphor green */
+    --accent-hi:#8acc8a;          /* highlighted phosphor */
+    --accent-lo:#3a6045;          /* ghost phosphor */
 
     /* Alert hierarchy — all desaturated */
     --crit:     #8b3535;          /* dark red, critical */
-    --crit-hi:  #b04444;          /* critical highlight */
+    --crit-hi:  #d05555;          /* critical highlight */
     --warn:     #7a5c2e;          /* dark amber, warning */
-    --warn-hi:  #a07840;          /* warning highlight */
+    --warn-hi:  #c09050;          /* warning highlight */
     --info:     #2e4a5c;          /* dark steel blue, info */
 
     /* Text */
-    --text:     #8a9e8a;          /* readable grey-green */
-    --text-hi:  #b8ccb8;          /* brighter text */
-    --muted:    #5a6e5a;          /* visible muted — was too dark */
-    --dim:      #2e382e;          /* subtle but visible border */
+    --text:     #a8c0a8;          /* readable grey-green */
+    --text-hi:  #d8ecd8;          /* brighter text */
+    --muted:    #7a9a7a;          /* visible muted — was too dark */
+    --dim:      #3a4a3a;          /* subtle but visible border */
 
     --mono: 'IBM Plex Mono', 'Courier New', monospace;
     --sans: 'IBM Plex Sans', system-ui, sans-serif;
@@ -170,7 +170,7 @@
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 400;
-    color: var(--muted);
+    color: var(--text);
     transition: all 0.1s;
     border-left: 1px solid transparent;
     letter-spacing: 0.5px;
@@ -261,7 +261,7 @@
     font-size: 8px;
     letter-spacing: 2.5px;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--text-hi);
     display: flex;
     align-items: center;
     gap: 7px;
@@ -285,14 +285,14 @@
   .feed-time {
     font-family: var(--mono);
     font-size: 8px;
-    color: var(--muted);
+    color: var(--text);
     white-space: nowrap;
     padding-top: 2px;
     min-width: 38px;
     letter-spacing: 0.5px;
   }
 
-  .feed-text { color: var(--text); line-height: 1.45; font-size: 11px; }
+  .feed-text { color: var(--text-hi); line-height: 1.45; font-size: 11px; }
 
   .feed-tag {
     font-family: var(--mono);
@@ -979,7 +979,7 @@
           <line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
           <circle cx="11" cy="5" r="1.5" fill="currentColor" opacity="0.6"/>
         </svg>
-        Prediction Markets
+        Markets
       </div>
 
       <div class="sidebar-item deck-item" id="deck-cyber" onclick="loadDeck('cyber')">
@@ -1082,6 +1082,7 @@
           <button class="map-layer-btn active" data-layer="cyber" onclick="toggleLayer(this,'cyber')"><span style="color:var(--warn-hi)">▪</span> CYBER</button>
           <button class="map-layer-btn active" data-layer="natural" onclick="toggleLayer(this,'natural')"><span style="color:var(--accent-hi)">▪</span> NATURAL</button>
           <button class="map-layer-btn active" data-layer="maritime" onclick="toggleLayer(this,'maritime')"><span style="color:#4a8a9a">▪</span> MARITIME</button>
+          <button class="map-layer-btn active" data-layer="markets" onclick="toggleLayer(this,'markets')"><span style="color:#5a9c6a">▪</span> MARKETS</button>
           <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
           <button class="map-ctrl-btn" onclick="mapZoomIn()" title="Zoom In">+</button>
           <button class="map-ctrl-btn" onclick="mapZoomOut()" title="Zoom Out">−</button>
@@ -1239,7 +1240,7 @@ var livePolyItems      = [];   // Polymarket geopolitical markets
 var liveJammingCells   = [];   // GPSJam.org EW layer
 var liveNewsPins       = [];   // RSS/GDELT headlines plotted on map
 var mapEvents          = staticEvents.slice();
-var activeLayers       = new Set(['conflict','cyber','natural','maritime']);
+var activeLayers       = new Set(['conflict','cyber','natural','maritime','markets']);
 
 var mapSvg, mapG, mapProjection, mapZoom, mapPath;
 var mapReady = false;
@@ -1441,7 +1442,7 @@ var CAT_META = {
   natural:      { label:'NATURAL HAZARDS',       source:'USGS · NOAA · NASA FIRMS · GPSJam'     },
   maritime:     { label:'MARITIME INTEL',        source:'AIS · USNI · OpenSky'                  },
   humanitarian: { label:'HUMANITARIAN',          source:'ReliefWeb · UN OCHA · WFP'             },
-  markets:      { label:'PREDICTION MARKETS',    source:'Polymarket · gamma-api · geopolitical odds' },
+  markets:      { label:'MARKETS',    source:'Polymarket · gamma-api · geopolitical odds' },
   space:        { label:'SPACE & AEROSPACE',     source:'—'                                      },
 };
 
@@ -1508,7 +1509,7 @@ function renderFeed(cat) {
           '<span style="font-family:var(--mono);font-size:9px;color:var(--text-hi);min-width:32px;">' + pct + '%</span></div>';
         return feedItem({ time:m.end, text:m.question, tag:pct+'%', cls:pct>65?'tag-red':pct>40?'tag-yellow':'tag-green' }) + bar;
       }).join('')
-    : noData('Polymarket: fetching prediction markets…');
+    : noData('Polymarket: fetching markets…');
 
   if (currentCat === 'conflict') {
     setCol('feedColLeft',
@@ -1548,7 +1549,7 @@ function renderFeed(cat) {
 
   } else if (currentCat === 'markets') {
     setCol('feedColLeft',
-      colHeader('Prediction Markets', 'POLYMARKET') + polyHtml);
+      colHeader('Markets', 'POLYMARKET') + polyHtml);
     setCol('feedColMid',
       colHeader('Breaking News', 'RSS LIVE') + rssHtml);
     setCol('feedColRight',
@@ -1568,13 +1569,19 @@ function renderFeed(cat) {
       colHeader('Conflict Events', 'GDELT') + gdeltHtml.slice ? gdeltHtml : (liveGdeltItems.slice(0,5).map(feedItem).join('') || noData('GDELT loading…')) +
       '<div style="margin-top:14px">' + colHeader('Seismic', 'USGS') + seisHtml + '</div>');
     setCol('feedColRight',
-      colHeader('Prediction Markets', 'POLYMARKET') + polyHtml +
+      colHeader('Markets', 'POLYMARKET') + polyHtml +
       '<div style="margin-top:14px">' + colHeader('Humanitarian', 'ReliefWeb') + (liveReliefwebItems.length ? liveReliefwebItems.slice(0,3).map(feedItem).join('') : humanitarianItems.slice(0,3).map(feedItem).join('')) + '</div>');
   }
 }
 
 // Initial render
 renderFeed('all');
+
+// Pre-load intel reader with a static story on boot
+setTimeout(function() {
+  var firstStatic = securityItems[0];
+  if (firstStatic) openStory(firstStatic);
+}, 300);
 
 // ── Live ticker updater — pulls from RSS + GDELT ──
 function updateTicker() {
@@ -1786,10 +1793,10 @@ var DECKS = {
     ticker:  'CYBER DECK · APT activity, CISA advisories, ransomware campaigns, GPS jamming',
   },
   markets: {
-    label:   'Prediction Markets',
-    layers:  ['conflict','maritime'],
+    label:   'Markets',
+    layers:  ['conflict','maritime','markets'],
     cat:     'markets',
-    mapNote: 'Polymarket geopolitical prediction markets — crowd intelligence',
+    mapNote: 'Polymarket geopolitical markets — crowd intelligence',
     ticker:  'MARKETS DECK · Polymarket geopolitical odds · crowd-sourced risk intelligence',
   },
   humanitarian: {
@@ -2267,6 +2274,78 @@ function connectAIS() {
 }
 
 var _aisUpdatePending = false;
+
+// ── STOCK EXCHANGES + CARRIER STRIKE GROUPS ──
+
+var STOCK_EXCHANGES = [
+  { id:'NYSE',     lon:-74.01, lat:40.71,  name:'NYSE',     index:'DJI',    symbol:'^DJI',      color:'#2a6a3a', region:'Americas'   },
+  { id:'NASDAQ',   lon:-73.98, lat:40.76,  name:'NASDAQ',   index:'COMP',   symbol:'^IXIC',     color:'#2a7a3a', region:'Americas'   },
+  { id:'LSE',      lon:-0.09,  lat:51.51,  name:'LSE',      index:'FTSE',   symbol:'^FTSE',     color:'#2a5a6a', region:'Europe'     },
+  { id:'EURONEXT', lon:2.35,   lat:48.86,  name:'Euronext', index:'CAC40',  symbol:'^FCHI',     color:'#2a5a6a', region:'Europe'     },
+  { id:'DAX',      lon:8.68,   lat:50.11,  name:'Frankfurt',index:'DAX',    symbol:'^GDAXI',    color:'#2a5a6a', region:'Europe'     },
+  { id:'TSE',      lon:139.69, lat:35.68,  name:'Tokyo',    index:'N225',   symbol:'^N225',     color:'#6a4a2a', region:'Asia'       },
+  { id:'SSE',      lon:121.47, lat:31.23,  name:'Shanghai', index:'CSI300', symbol:'000001.SS', color:'#6a2a2a', region:'Asia'       },
+  { id:'HKEX',     lon:114.16, lat:22.28,  name:'HK',       index:'HSI',    symbol:'^HSI',      color:'#6a4a2a', region:'Asia'       },
+  { id:'BSE',      lon:72.88,  lat:18.94,  name:'Mumbai',   index:'SENSEX', symbol:'^BSESN',    color:'#6a5a2a', region:'Asia'       },
+  { id:'ASX',      lon:151.21, lat:-33.87, name:'Sydney',   index:'ASX200', symbol:'^AXJO',     color:'#2a6a5a', region:'Pacific'    },
+  { id:'TADAWUL',  lon:46.72,  lat:24.69,  name:'Riyadh',   index:'TASI',   symbol:'^TASI',     color:'#5a4a2a', region:'MiddleEast' },
+];
+
+var liveIndexData = {};
+
+var CARRIER_GROUPS = [
+  { name:'USS Harry S. Truman CSG',    hull:'CVN-75', lon:18.0,  lat:37.5,  detail:'Sixth Fleet — Mediterranean',         updated:'Mar 2026' },
+  { name:'USS Carl Vinson CSG',        hull:'CVN-70', lon:125.0, lat:14.0,  detail:'Seventh Fleet — Western Pacific',      updated:'Mar 2026' },
+  { name:'USS Abraham Lincoln CSG',    hull:'CVN-72', lon:58.0,  lat:22.0,  detail:'Fifth Fleet — Arabian Sea',            updated:'Mar 2026' },
+  { name:'USS Gerald R. Ford CSG',     hull:'CVN-78', lon:-68.0, lat:37.5,  detail:'Second Fleet — N. Atlantic',           updated:'Mar 2026' },
+  { name:'USS Theodore Roosevelt CSG', hull:'CVN-71', lon:-117.2,lat:32.7,  detail:'Third Fleet — Eastern Pacific/CONUS',  updated:'Mar 2026' },
+];
+
+async function fetchStockIndices() {
+  try {
+    var symbols = STOCK_EXCHANGES.map(function(e){ return e.symbol; }).join(',');
+    var url = 'https://query1.finance.yahoo.com/v8/finance/spark?symbols=' +
+      encodeURIComponent(symbols) + '&range=1d&interval=1d';
+    var res = await proxyFetch(url);
+    if (!res.ok) throw new Error('Yahoo HTTP ' + res.status);
+    var data = await res.json();
+    var spark = (data.spark && data.spark.result) || [];
+    spark.forEach(function(r) {
+      var ex = STOCK_EXCHANGES.filter(function(e){ return e.symbol === r.symbol; })[0];
+      if (!ex) return;
+      var meta = r.response && r.response[0] && r.response[0].meta;
+      if (!meta) return;
+      var price  = meta.regularMarketPrice || 0;
+      var prev   = meta.previousClose || meta.chartPreviousClose || price;
+      var change = price - prev;
+      var pct    = prev ? (change / prev * 100) : 0;
+      liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
+        currency:meta.currency||'', name:ex.name };
+    });
+    rebuildMap();
+    if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+  } catch(e) {
+    // Fallback static data
+    if (Object.keys(liveIndexData).length === 0) {
+      var fallback = {
+        NYSE:    { price:38721, change:142,   changePct:0.37,  currency:'USD', name:'NYSE'     },
+        NASDAQ:  { price:16430, change:-28,   changePct:-0.17, currency:'USD', name:'NASDAQ'   },
+        LSE:     { price:7680,  change:22,    changePct:0.29,  currency:'GBP', name:'FTSE 100' },
+        EURONEXT:{ price:8121,  change:44,    changePct:0.54,  currency:'EUR', name:'CAC 40'   },
+        DAX:     { price:18420, change:88,    changePct:0.48,  currency:'EUR', name:'DAX'      },
+        TSE:     { price:38950, change:-210,  changePct:-0.54, currency:'JPY', name:'Nikkei'   },
+        SSE:     { price:3088,  change:12,    changePct:0.39,  currency:'CNY', name:'Shanghai' },
+        HKEX:    { price:17240, change:-85,   changePct:-0.49, currency:'HKD', name:'HSI'      },
+        BSE:     { price:72400, change:320,   changePct:0.44,  currency:'INR', name:'SENSEX'   },
+        ASX:     { price:7820,  change:18,    changePct:0.23,  currency:'AUD', name:'ASX 200'  },
+        TADAWUL: { price:11820, change:-42,   changePct:-0.35, currency:'SAR', name:'TASI'     },
+      };
+      liveIndexData = fallback;
+      rebuildMap();
+      if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+    }
+  }
+}
 
 // Legacy OpenSky fallback — used if no AIS key provided
 async function fetchOpenSky() {
@@ -2850,7 +2929,7 @@ function buildZoneNewsPins(zoneId) {
     return {
       lon: lon, lat: lat,
       layer: 'conflict', color: color,
-      r: extracted ? 2.5 : 2,  // geo-precise pins slightly larger
+      r: extracted ? 4 : 3,  // geo-precise pins slightly larger
       label: title,
       detail: item.text,
       datetime: ts,
@@ -2868,7 +2947,7 @@ function buildZoneNewsPins(zoneId) {
       pins.push({
         lon: fb.lon, lat: fb.lat,
         layer: 'conflict', color: fb.cls === 'tag-red' ? '#8b3535' : fb.cls === 'tag-blue' ? '#2e5a6a' : '#7a5c2e',
-        r: 2.5,
+        r: 3.5,
         label: fb.text.length > 60 ? fb.text.slice(0,57)+'…' : fb.text,
         detail: fb.text,
         datetime: 'Background brief',
@@ -2899,8 +2978,28 @@ function buildNewsPins() {
 function rebuildMap() {
   buildNewsPins();
   var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
-  mapEvents = staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents, liveMaritimeEvents, liveNewsPins);
-  if (mapReady) { drawConflictZones(); plotEvents(); }
+
+  // Exchange dots on markets layer
+  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined') ? STOCK_EXCHANGES.map(function(ex) {
+    var d = liveIndexData[ex.id];
+    var up = d && d.changePct >= 0;
+    var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
+    return { lon:ex.lon, lat:ex.lat, layer:'markets', color:color, r:5,
+      label:ex.name+' '+ex.index,
+      detail:(d ? (up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}) : 'Loading…')+' · '+ex.region,
+      severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
+  }) : [];
+
+  // CSG dots on maritime layer
+  var csgDots = (typeof CARRIER_GROUPS !== 'undefined') ? CARRIER_GROUPS.map(function(csg) {
+    return { lon:csg.lon, lat:csg.lat, layer:'maritime', color:'#1e4a6a', r:6,
+      label:csg.name, detail:csg.detail+' · '+csg.updated,
+      severity:'INFO', source:'csg', isCSG:true };
+  }) : [];
+
+  mapEvents = staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents,
+    liveMaritimeEvents, liveNewsPins, exchangeDots, csgDots);
+  if (mapReady) { drawConflictZones(activeConflictId ? undefined : false); plotEvents(); }
 }
 
 function initMap() {
@@ -2931,6 +3030,29 @@ function initMap() {
     mapG.selectAll('.news-pin-label')
       .attr('font-size', 6/k + 'px').attr('x', 5/k)
       .text(function(d){ return k >= 2.5 ? d.label : ''; });
+    mapG.selectAll('.exchange-label')
+      .attr('font-size', 5/k + 'px').attr('x', 6/k).attr('y', -3/k)
+      .text(function(d) {
+        var idx = liveIndexData[d.exchangeId];
+        if (!idx) return d.label ? d.label.split(' ')[0] : '';
+        return d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
+      });
+    mapG.selectAll('.csg-label')
+      .attr('font-size', 5/k + 'px').attr('x', 8/k)
+      .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
+    // Rescale exchange labels
+    mapG.selectAll('.exchange-label')
+      .attr('font-size', 5/k + 'px').attr('x', 6/k).attr('y', -3/k)
+      .text(function(d) {
+        var idx = liveIndexData[d.exchangeId];
+        if (!idx) return d.label ? d.label.split(' ')[0] : '';
+        var sign = idx.changePct >= 0 ? '+' : '';
+        return d.label.split(' ')[0] + ' ' + sign + idx.changePct.toFixed(1) + '%';
+      });
+    // Rescale CSG labels
+    mapG.selectAll('.csg-label')
+      .attr('font-size', 5/k + 'px').attr('x', 8/k)
+      .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
   });
 
   mapSvg.call(mapZoom).on('dblclick.zoom', null).style('cursor','grab');
@@ -2948,7 +3070,7 @@ function initMap() {
     var mesh = topojson.mesh(world, world.objects.countries, function(a,b){return a!==b;});
     _countriesFeatures = countries.features;
     mapG.append('g').selectAll('path').data(countries.features).enter().append('path')
-      .attr('d',mapPath).attr('fill','#1d2820').attr('stroke','none')
+      .attr('d',mapPath).attr('fill','#243028').attr('stroke','none')
       .on('mouseover', function(event, d) {
         var k = d3.zoomTransform(mapSvg.node()).k;
         if (k < 2) return;  // no hover highlight at world zoom
@@ -2978,7 +3100,7 @@ function initMap() {
       .on('mouseout', function(){
         var k = d3.zoomTransform(mapSvg.node()).k;
         if (k < 2) return;
-        d3.select(this).attr('fill','#1d2820');
+        d3.select(this).attr('fill','#243028');
         mapG.selectAll('.country-hover-label').remove();
       });
     mapG.append('path').datum(mesh).attr('d',mapPath)
@@ -3068,8 +3190,8 @@ function plotEvents() {
       return 'translate('+p[0]+','+p[1]+')';
     }).style('cursor','pointer');
 
-  // Static outer ring only — no animation
-  groups.filter(function(d){return !d.isAircraft;}).append('circle').attr('class','event-ring')
+  // Static outer ring — skip exchange/CSG/newspin (custom rendered below)
+  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG;}).append('circle').attr('class','event-ring')
     .attr('r', function(d){return (d.r+5)/k;}).attr('fill','none')
     .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.5).attr('opacity',0.35);
 
@@ -3078,9 +3200,47 @@ function plotEvents() {
     .attr('d', function(d){ var s=d.r/k; return 'M0,'+-s*1.5+' L'+s+','+s+' L'+-s+','+s+'Z'; })
     .attr('fill', function(d){return d.color;}).attr('opacity',0.75);
 
-  // Core dot
-  groups.filter(function(d){return !d.isAircraft;}).append('circle').attr('class','event-dot')
+  // Core dot — standard events only
+  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG;}).append('circle').attr('class','event-dot')
     .attr('r', function(d){return d.r/k;}).attr('fill', function(d){return d.color;}).attr('opacity',0.85);
+
+  // ── Exchange dots ──
+  var exchG = groups.filter(function(d){ return d.isExchange; });
+  exchG.append('circle').attr('class','event-ring')
+    .attr('r', function(){ return 9/k; }).attr('fill','none')
+    .attr('stroke', function(d){ return d.color; }).attr('stroke-width', 0.7).attr('opacity', 0.45);
+  exchG.append('circle').attr('class','event-dot')
+    .attr('r', function(){ return 4/k; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.9);
+  exchG.append('text').attr('class','exchange-label')
+    .attr('x', function(){ return 6/k; }).attr('y', function(){ return -3/k; })
+    .attr('font-family', "'IBM Plex Mono',monospace").attr('font-weight','500')
+    .attr('font-size', function(){ return 5/k + 'px'; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.95)
+    .attr('pointer-events', 'none')
+    .text(function(d) {
+      var idx = liveIndexData[d.exchangeId];
+      if (!idx) return d.label ? d.label.split(' ')[0] : '';
+      return d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
+    });
+
+  // ── CSG dots ──
+  var csgG = groups.filter(function(d){ return d.isCSG; });
+  csgG.append('circle').attr('class','event-ring')
+    .attr('r', function(){ return 11/k; }).attr('fill','none')
+    .attr('stroke','#2a6a9a').attr('stroke-width', 0.8).attr('opacity', 0.5);
+  csgG.append('circle').attr('class','event-dot')
+    .attr('r', function(){ return 5/k; }).attr('fill','#1e4a6a').attr('opacity', 0.9);
+  csgG.append('rect')
+    .attr('width', function(){ return 4/k; }).attr('height', function(){ return 4/k; })
+    .attr('x', function(){ return -2/k; }).attr('y', function(){ return -2/k; })
+    .attr('transform','rotate(45)').attr('fill','#4a9aaa').attr('opacity', 0.8);
+  csgG.append('text').attr('class','csg-label')
+    .attr('x', function(){ return 8/k; }).attr('y', function(){ return 1/k; })
+    .attr('font-family', "'IBM Plex Mono',monospace")
+    .attr('font-size', function(){ return 5/k + 'px'; })
+    .attr('fill','#4a9aaa').attr('opacity', 0.9).attr('pointer-events','none')
+    .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
 
   // Tooltip
   // Zone dot click triggers zoomToConflict
@@ -3570,6 +3730,17 @@ async function fetchRSS() {
     renderFeed(currentCat);
   }
   updateTicker();
+  // Auto-open first story in reader panel if it's still showing the empty state
+  if (liveRssItems.length > 0 && !_currentStoryItem) {
+    openStory(liveRssItems[0]);
+  }
+  // Open latest RSS story in intel reader if panel still showing static content
+  if (liveRssItems.length > 0 && !_currentStoryItem) {
+    openStory(liveRssItems[0]);
+  } else if (liveRssItems.length > 0 && _currentStoryItem && !_currentStoryItem.link) {
+    // Replace static fallback with first live story
+    openStory(liveRssItems[0]);
+  }
 
   // Push top item to security ticker
   if (liveRssItems.length > 0) {
@@ -3586,13 +3757,20 @@ async function fetchPolymarket() {
   try {
     // Gamma API supports direct browser CORS — call without proxy
     // Use events endpoint which has better geopolitical filtering
-    var url = 'https://gamma-api.polymarket.com/events?active=true&closed=false&limit=50&tag_slug=politics';
-    var res = await fetch(url);
-    if (!res.ok) {
-      // Try markets endpoint as fallback
-      res = await fetch('https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50');
-      if (!res.ok) throw new Error('Poly ' + res.status);
+    // Try multiple Polymarket endpoints
+    var res = null;
+    var polyUrls = [
+      'https://gamma-api.polymarket.com/events?active=true&closed=false&limit=50&tag_slug=politics',
+      'https://gamma-api.polymarket.com/events?active=true&closed=false&limit=30',
+      'https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=50'
+    ];
+    for (var pi = 0; pi < polyUrls.length; pi++) {
+      try {
+        res = await fetch(polyUrls[pi]);
+        if (res.ok) break;
+      } catch(fe) { res = null; }
     }
+    if (!res || !res.ok) throw new Error('Poly unavailable');
     var data = await res.json();
 
     // Handle both events and markets array responses
@@ -3773,9 +3951,10 @@ topoScript.onload = function() {
   setTimeout(fetchGDELT,       2500);   // GDELT: conflict events + geo pins
   setTimeout(fetchReliefWeb,   4000);   // ReliefWeb: UN humanitarian
   setTimeout(fetchRSS,         5000);   // RSS: 12 curated news feeds
-  setTimeout(fetchPolymarket,  6500);   // Polymarket: prediction markets
+  setTimeout(fetchPolymarket,  6500);   // Polymarket: markets
   setTimeout(fetchFIRMS,       8000);   // NASA FIRMS: satellite fires
   setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
+  setTimeout(fetchStockIndices, 11500);  // Yahoo Finance: stock indices
   setTimeout(fetchOpenSky,    11000);   // OpenSky fallback (if no AIS key)
   setTimeout(connectAIS,      12000);   // AISStream WebSocket (if key present)
 };
@@ -3809,6 +3988,7 @@ setInterval(fetchRSS,        10*60*1000); // RSS: every 10 min
 setInterval(fetchPolymarket,  60*60*1000);// Polymarket: every hour
 setInterval(fetchFIRMS,      10*60*1000); // FIRMS: every 10 min
 setInterval(fetchGPSJam,     60*60*1000); // GPSJam: daily data, check hourly
+setInterval(fetchStockIndices,  5*60*1000); // Stock indices: every 5 min
 setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
 
 </script>
