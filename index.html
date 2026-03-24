@@ -2637,32 +2637,11 @@ function drawConflictZones(showLabels) {
       .attr('stroke', 'none')
       .attr('pointer-events', 'none');
 
-    // Country name — shown permanently when zone active
-    if (showLabels !== false) {
-      var centroid2 = mapPath.centroid(feature);
-      if (centroid2 && !isNaN(centroid2[0])) {
-        var cname2 = ISO_NAMES[parseInt(feature.id)] || '';
-        if (cname2) {
-          mapG.insert('text', '.event-group')
-            .attr('class', 'conflict-zone')
-            .attr('x', centroid2[0]).attr('y', centroid2[1])
-            .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
-            .attr('font-family', "'Barlow Condensed',sans-serif")
-            .attr('font-weight', '300').attr('letter-spacing', '0.12em')
-            .attr('font-size', function() {
-              var kk = d3.zoomTransform(mapSvg.node()).k;
-              return Math.min(14, Math.max(6, 10/kk)) + 'px';
-            })
-            .attr('fill', '#c8dcc8').attr('opacity', 0.55)
-            .attr('pointer-events', 'none')
-            .text(cname2.toUpperCase());
-        }
-      }
-    }
+    // Country name shown via hover label only
   });
 
   // ── Draw news pins DIRECTLY here (not via mapEvents/plotEvents) ──
-  var kPin = d3.zoomTransform(mapSvg.node()).k;  // read k here for pin sizing
+  var kPin = Math.max(0.5, d3.zoomTransform(mapSvg.node()).k);  // read k here for pin sizing
   if (activeConflictId && liveNewsPins.length > 0) {
     mapG.selectAll('.news-pin-direct').remove();
     liveNewsPins.forEach(function(pin) {
@@ -2708,7 +2687,7 @@ function drawConflictZones(showLabels) {
         .attr('fill', pin.color).attr('opacity', 0.85);
 
       // Label (only when zoomed in enough)
-      if (k >= 3) {
+      if (kPin >= 3) {
         g2.append('text')
           .attr('x', 5/kPin).attr('y', -2/kPin)
           .attr('font-family', "'IBM Plex Mono',monospace")
@@ -2726,7 +2705,32 @@ function drawConflictZones(showLabels) {
   if (showLabels === false) return;
   var k = d3.zoomTransform(mapSvg.node()).k;
 
-    CONFLICT_CAPITALS.forEach(function(cap) {
+    // Draw country name label for active zone (same style as hover label, persistent)
+  if (activeConflictId && _countriesFeatures.length) {
+    var ids2 = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
+    ids2.forEach(function(numId) {
+      var feat = _countriesFeatures.filter(function(f){ return parseInt(f.id) === numId; })[0];
+      if (!feat) return;
+      var cname = ISO_NAMES[numId] || '';
+      if (!cname) return;
+      var centroid = mapPath.centroid(feat);
+      if (!centroid || isNaN(centroid[0])) return;
+      // Remove any existing hover label for this country first
+      mapG.selectAll('.country-hover-label').remove();
+      mapG.append('text')
+        .attr('class', 'country-hover-label')
+        .attr('x', centroid[0]).attr('y', centroid[1])
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+        .attr('font-family', "'Barlow Condensed',sans-serif")
+        .attr('font-weight', '300').attr('letter-spacing', '0.08em')
+        .attr('font-size', Math.min(11, Math.max(5, 8/k)) + 'px')
+        .attr('fill', '#c8dcc8').attr('opacity', 0.55)
+        .attr('pointer-events', 'none')
+        .text(cname.toUpperCase());
+    });
+  }
+
+  CONFLICT_CAPITALS.forEach(function(cap) {
     if (cap.id !== activeConflictId) return;  // only show for active zone
     var zone = CONFLICT_ZONES.filter(function(z){ return z.id === cap.id; })[0];
     if (!zone) return;
@@ -3172,7 +3176,10 @@ function initMap() {
         var k = d3.zoomTransform(mapSvg.node()).k;
         if (k < 2) return;
         d3.select(this).attr('fill','#243028');
-        mapG.selectAll('.country-hover-label').remove();
+        // Keep label visible if this country belongs to the active conflict zone
+      var thisId = parseInt(d.id);
+      var isActiveZoneCountry = activeConflictId && (CONFLICT_COUNTRY_IDS[activeConflictId] || []).indexOf(thisId) >= 0;
+      if (!isActiveZoneCountry) mapG.selectAll('.country-hover-label').remove();
       });
     mapG.append('path').datum(mesh).attr('d',mapPath)
       .attr('fill','none').attr('stroke','#1c2a22').attr('stroke-width',0.35);
@@ -3414,6 +3421,7 @@ function zoomToConflict(id) {
   if (!activeConflictId) {
     liveNewsPins = [];
     mapEvents = buildFullMapEvents();
+    mapG.selectAll('.country-hover-label').remove();
     drawConflictZones(false);
     plotEvents();
     mapSvg.transition().duration(600).ease(d3.easeCubicInOut)
