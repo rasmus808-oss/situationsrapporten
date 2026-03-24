@@ -2302,27 +2302,37 @@ var CARRIER_GROUPS = [
 
 async function fetchStockIndices() {
   try {
-    var symbols = STOCK_EXCHANGES.map(function(e){ return e.symbol; }).join(',');
-    var url = 'https://query1.finance.yahoo.com/v8/finance/spark?symbols=' +
-      encodeURIComponent(symbols) + '&range=1d&interval=1d';
-    var res = await proxyFetch(url);
-    if (!res.ok) throw new Error('Yahoo HTTP ' + res.status);
-    var data = await res.json();
-    var spark = (data.spark && data.spark.result) || [];
-    spark.forEach(function(r) {
-      var ex = STOCK_EXCHANGES.filter(function(e){ return e.symbol === r.symbol; })[0];
-      if (!ex) return;
-      var meta = r.response && r.response[0] && r.response[0].meta;
-      if (!meta) return;
-      var price  = meta.regularMarketPrice || 0;
-      var prev   = meta.previousClose || meta.chartPreviousClose || price;
-      var change = price - prev;
-      var pct    = prev ? (change / prev * 100) : 0;
-      liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
-        currency:meta.currency||'', name:ex.name };
+    // Fetch each symbol individually via quote endpoint (more reliable through proxies)
+    var fetched = 0;
+    var total = STOCK_EXCHANGES.length;
+    var done = function() {
+      fetched++;
+      if (fetched >= total) {
+        rebuildMap();
+        if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+      }
+    };
+    STOCK_EXCHANGES.forEach(function(ex) {
+      var url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ex.symbol);
+      proxyFetch(url).then(function(res) {
+        return res.ok ? res.json() : Promise.reject(res.status);
+      }).then(function(data) {
+        var q = data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result[0];
+        if (!q) { done(); return; }
+        var price  = q.regularMarketPrice || 0;
+        var prev   = q.regularMarketPreviousClose || price;
+        var change = price - prev;
+        var pct    = prev ? (change / prev * 100) : 0;
+        liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
+          currency:q.currency||'', name:ex.shortName||ex.name };
+        done();
+      }).catch(function() { done(); });
     });
-    rebuildMap();
-    if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
+    // Early return — done() handles the rebuild
+    if (true) {
+    // (rebuild triggered in done() callbacks above)
+    return;
+    }
   } catch(e) {
     // Fallback static data
     if (Object.keys(liveIndexData).length === 0) {
@@ -3173,11 +3183,11 @@ function plotEvents() {
   var visible = mapEvents.filter(function(d) {
     if (!activeLayers.has(d.layer)) return false;
     if (d.isNewsPin) {
-      // News pins: only show when a zone is active AND pin belongs to that zone
+      // News pins only show when their zone is active
       if (!activeConflictId) return false;
       return d.zoneId === activeConflictId;
     }
-    // Non-news pins: always show (static + GDELT + USGS etc)
+    // All other dots always show (GDELT, USGS, static, exchange, CSG etc)
     return true;
   });
 
