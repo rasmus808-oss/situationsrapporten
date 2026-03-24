@@ -1710,8 +1710,8 @@ function focusFeedPin(el) {
   mapSvg.transition().duration(700).ease(d3.easeCubicInOut)
     .call(mapZoom.transform, t)
     .on('end', function() {
-      // Draw labels now that zoom settled
       drawConflictZones(true);
+      plotEvents();
       // Pulse the matching pin
       var kk = d3.zoomTransform(mapSvg.node()).k;
       mapG.selectAll('.event-group').each(function(d) {
@@ -2637,13 +2637,96 @@ function drawConflictZones(showLabels) {
       .attr('stroke', 'none')
       .attr('pointer-events', 'none');
 
-    // Country name removed — shown only on hover
+    // Country name — shown permanently when zone active
+    if (showLabels !== false) {
+      var centroid2 = mapPath.centroid(feature);
+      if (centroid2 && !isNaN(centroid2[0])) {
+        var cname2 = ISO_NAMES[parseInt(feature.id)] || '';
+        if (cname2) {
+          mapG.insert('text', '.event-group')
+            .attr('class', 'conflict-zone')
+            .attr('x', centroid2[0]).attr('y', centroid2[1])
+            .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+            .attr('font-family', "'Barlow Condensed',sans-serif")
+            .attr('font-weight', '300').attr('letter-spacing', '0.12em')
+            .attr('font-size', function() {
+              var kk = d3.zoomTransform(mapSvg.node()).k;
+              return Math.min(14, Math.max(6, 10/kk)) + 'px';
+            })
+            .attr('fill', '#c8dcc8').attr('opacity', 0.55)
+            .attr('pointer-events', 'none')
+            .text(cname2.toUpperCase());
+        }
+      }
+    }
   });
+
+  // ── Draw news pins DIRECTLY here (not via mapEvents/plotEvents) ──
+  var kPin = d3.zoomTransform(mapSvg.node()).k;  // read k here for pin sizing
+  if (activeConflictId && liveNewsPins.length > 0) {
+    mapG.selectAll('.news-pin-direct').remove();
+    liveNewsPins.forEach(function(pin) {
+      if (pin.zoneId !== activeConflictId) return;
+      var p2 = mapProjection([pin.lon, pin.lat]);
+      if (!p2 || isNaN(p2[0])) return;
+      var g2 = mapG.append('g')
+        .attr('class', 'news-pin-direct')
+        .attr('transform', 'translate(' + p2[0] + ',' + p2[1] + ')')
+        .style('cursor', 'pointer')
+        .on('mouseover', function() {
+          d3.select(this).select('.np-dot').attr('opacity', 1).attr('filter', 'brightness(1.8)');
+          var tooltip = document.getElementById('mapTooltip');
+          var container = document.getElementById('mapContainer');
+          var t2 = d3.zoomTransform(mapSvg.node());
+          if (tooltip) {
+            tooltip.innerHTML =
+              (pin.datetime ? '<div style="color:var(--accent);font-family:var(--mono);font-size:8px;margin-bottom:4px;">' + pin.datetime + '</div>' : '') +
+              '<div style="color:var(--text-hi);font-size:10px;line-height:1.4;">' + (pin.label || '') + '</div>' +
+              (pin.tag ? '<div style="color:var(--muted);font-family:var(--mono);font-size:8px;margin-top:4px;">[' + pin.tag + ']</div>' : '');
+            tooltip.style.left = Math.min(t2.applyX(p2[0]) + 10, container.clientWidth - 220) + 'px';
+            tooltip.style.top  = Math.max(t2.applyY(p2[1]) - 70, 8) + 'px';
+            tooltip.style.opacity = '1';
+          }
+        })
+        .on('mouseout', function() {
+          d3.select(this).select('.np-dot').attr('opacity', 0.85).attr('filter', null);
+          var tooltip = document.getElementById('mapTooltip');
+          if (tooltip) tooltip.style.opacity = '0';
+        })
+        .on('click', function() {
+          openStory({ text: pin.detail || pin.label, tag: pin.tag, cls: pin.cls, datetime: pin.datetime });
+        });
+
+      // Outer ring
+      g2.append('circle')
+        .attr('r', 7/kPin).attr('fill', 'none')
+        .attr('stroke', pin.color).attr('stroke-width', 0.6).attr('opacity', 0.4);
+
+      // Core dot
+      g2.append('circle').attr('class', 'np-dot')
+        .attr('r', 3.5/kPin)
+        .attr('fill', pin.color).attr('opacity', 0.85);
+
+      // Label (only when zoomed in enough)
+      if (k >= 3) {
+        g2.append('text')
+          .attr('x', 5/kPin).attr('y', -2/kPin)
+          .attr('font-family', "'IBM Plex Mono',monospace")
+          .attr('font-size', 5/kPin + 'px')
+          .attr('fill', pin.color).attr('opacity', 0.8)
+          .attr('pointer-events', 'none')
+          .text(pin.label ? pin.label.slice(0, 35) : '');
+      }
+    });
+  } else {
+    mapG.selectAll('.news-pin-direct').remove();
+  }
 
   // Draw capital dot + label only for the active zone, only when labels allowed
   if (showLabels === false) return;
   var k = d3.zoomTransform(mapSvg.node()).k;
-  CONFLICT_CAPITALS.forEach(function(cap) {
+
+    CONFLICT_CAPITALS.forEach(function(cap) {
     if (cap.id !== activeConflictId) return;  // only show for active zone
     var zone = CONFLICT_ZONES.filter(function(z){ return z.id === cap.id; })[0];
     if (!zone) return;
@@ -2986,28 +3069,7 @@ function buildNewsPins() {
 
 function rebuildMap() {
   buildNewsPins();
-  var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
-
-  // Exchange dots on markets layer
-  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined') ? STOCK_EXCHANGES.map(function(ex) {
-    var d = liveIndexData[ex.id];
-    var up = d && d.changePct >= 0;
-    var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
-    return { lon:ex.lon, lat:ex.lat, layer:'markets', color:color, r:5,
-      label:ex.name+' '+ex.index,
-      detail:(d ? (up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}) : 'Loading…')+' · '+ex.region,
-      severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
-  }) : [];
-
-  // CSG dots on maritime layer
-  var csgDots = (typeof CARRIER_GROUPS !== 'undefined') ? CARRIER_GROUPS.map(function(csg) {
-    return { lon:csg.lon, lat:csg.lat, layer:'maritime', color:'#1e4a6a', r:6,
-      label:csg.name, detail:csg.detail+' · '+csg.updated,
-      severity:'INFO', source:'csg', isCSG:true };
-  }) : [];
-
-  mapEvents = staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents,
-    liveMaritimeEvents, liveNewsPins, exchangeDots, csgDots);
+  mapEvents = buildFullMapEvents();
   if (mapReady) { drawConflictZones(activeConflictId ? undefined : false); plotEvents(); }
 }
 
@@ -3181,13 +3243,13 @@ function plotEvents() {
   }
 
   var visible = mapEvents.filter(function(d) {
-    if (!activeLayers.has(d.layer)) return false;
+    // News pins: show only when their zone is active — bypass layer check
     if (d.isNewsPin) {
-      // News pins only show when their zone is active
       if (!activeConflictId) return false;
       return d.zoneId === activeConflictId;
     }
-    // All other dots always show (GDELT, USGS, static, exchange, CSG etc)
+    // All other dots: respect layer toggle
+    if (!activeLayers.has(d.layer)) return false;
     return true;
   });
 
@@ -3331,23 +3393,28 @@ function zoomToConflict(id) {
   var zone = CONFLICT_ZONES.filter(function(z){ return z.id === id; })[0];
   if (!zone || !mapProjection || !mapSvg) return;
 
-  // Deactivate previous, activate new
+  // Toggle: clicking the active zone turns it off
   var prev = activeConflictId;
-  activeConflictId = (prev === id) ? null : id;  // toggle off if same
+  activeConflictId = (prev === id) ? null : id;
 
-  // Update sidebar highlight
+  // Sync sidebar highlight
   document.querySelectorAll('.hotspot-item').forEach(function(el){ el.classList.remove('active'); });
   if (activeConflictId) {
-    var item = document.getElementById('hs-' + id);
-    if (item) item.classList.add('active');
+    var hs = document.getElementById('hs-' + id);
+    if (hs) hs.classList.add('active');
   }
 
-  // Build news pins + full mapEvents (includes exchange/CSG/news pins)
-  rebuildMap();
+  // Always ensure conflict layer is on
+  activeLayers.add('conflict');
+  document.querySelectorAll('.map-layer-btn[data-layer="conflict"]').forEach(function(b){
+    b.classList.add('active');
+  });
 
-  // If toggled off, reset view and hide infobox
+  // If deactivating: reset to world view
   if (!activeConflictId) {
-    rebuildMap();
+    liveNewsPins = [];
+    mapEvents = buildFullMapEvents();
+    drawConflictZones(false);
     plotEvents();
     mapSvg.transition().duration(600).ease(d3.easeCubicInOut)
       .call(mapZoom.transform, d3.zoomIdentity);
@@ -3355,60 +3422,69 @@ function zoomToConflict(id) {
     return;
   }
 
-  // Compute tight bounding box from projected country paths
+  // Build news pins for this zone NOW before zoom
+  liveNewsPins = buildZoneNewsPins(activeConflictId);
+  mapEvents = buildFullMapEvents();
+
+  // Compute zoom transform from country bounding box
   var container = document.getElementById('mapContainer');
   var W = container.clientWidth, H = container.clientHeight;
+  var transform = null;
 
-  // Use the zone's defined zoom scale for tight country-level zoom
-  var targetScale = zone.zoom || 5;
-  var p = mapProjection([zone.lon, zone.lat]);
-  if (!p) return;
-
-  // Try to fit using actual country bounding box if available
   var ids = CONFLICT_COUNTRY_IDS[id] || [];
   if (ids.length > 0 && _countriesFeatures.length > 0) {
-    var matchFeatures = _countriesFeatures.filter(function(f){
-      return ids.indexOf(parseInt(f.id)) >= 0;
-    });
-    if (matchFeatures.length > 0) {
-      var fc = { type:'FeatureCollection', features: matchFeatures };
-      var b = mapPath.bounds(fc);
+    var feats = _countriesFeatures.filter(function(f){ return ids.indexOf(parseInt(f.id)) >= 0; });
+    if (feats.length > 0) {
+      var b = mapPath.bounds({ type:'FeatureCollection', features: feats });
       if (b && b[0] && b[1]) {
-        var bw = b[1][0] - b[0][0];
-        var bh = b[1][1] - b[0][1];
-        var bcx = (b[0][0] + b[1][0]) / 2;
-        var bcy = (b[0][1] + b[1][1]) / 2;
-        // Adaptive padding: tighter for small countries, looser for large
-        // bw/bh in projected pixels — small country = small values
-        var longestSide = Math.max(bw, bh);
-        var fill = longestSide < 80  ? 0.70   // very small (Gaza, Haiti, West Bank)
-                 : longestSide < 200 ? 0.75   // small (Yemen, Somalia, DRC)
-                 : longestSide < 400 ? 0.80   // medium (Ukraine, Iran)
-                 :                     0.88;  // large (Sudan, Sahel multi-country)
-        var scaleX = W * fill / bw;
-        var scaleY = H * fill / bh;
-        targetScale = Math.min(scaleX, scaleY, 28); // higher cap for tiny countries
-        var tx = W / 2 - targetScale * bcx;
-        var ty = H / 2 - targetScale * bcy;
-        var t = d3.zoomIdentity.translate(tx, ty).scale(targetScale);
-        mapSvg.transition().duration(900).ease(d3.easeCubicInOut)
-          .call(mapZoom.transform, t)
-          .on('end', function(){ drawConflictZones(true); });
-        window._deckAnalystCtx = 'Focus on ' + zone.label + ': ' + zone.detail;
-        return;
+        var bw = b[1][0]-b[0][0], bh = b[1][1]-b[0][1];
+        var bcx = (b[0][0]+b[1][0])/2, bcy = (b[0][1]+b[1][1])/2;
+        var longest = Math.max(bw, bh);
+        var fill = longest < 80 ? 0.65 : longest < 200 ? 0.72 : longest < 400 ? 0.78 : 0.86;
+        var s = Math.min(W*fill/bw, H*fill/bh, 28);
+        transform = d3.zoomIdentity.translate(W/2 - s*bcx, H/2 - s*bcy).scale(s);
       }
     }
   }
 
-  // Fallback: zoom to lon/lat centroid with preset scale
-  var tx = W / 2 - targetScale * p[0];
-  var ty = H / 2 - targetScale * p[1];
-  var t  = d3.zoomIdentity.translate(tx, ty).scale(targetScale);
+  if (!transform) {
+    // Fallback to zone centroid
+    var p = mapProjection([zone.lon, zone.lat]);
+    var s2 = 5;
+    transform = d3.zoomIdentity.translate(W/2 - s2*p[0], H/2 - s2*p[1]).scale(s2);
+  }
+
+  // Animate zoom, then draw everything at correct scale
   mapSvg.transition().duration(900).ease(d3.easeCubicInOut)
-    .call(mapZoom.transform, t)
-    .on('end', function() { drawConflictZones(); });
+    .call(mapZoom.transform, transform)
+    .on('end', function() {
+      drawConflictZones(true);
+      plotEvents();
+      updateConflictInfoBox(activeConflictId);
+    });
+
   window._deckAnalystCtx = 'Focus on ' + zone.label + ': ' + zone.detail;
-  updateConflictInfoBox(activeConflictId);
+}
+
+// Helper: build complete mapEvents array from all sources
+function buildFullMapEvents() {
+  var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
+  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined') ? STOCK_EXCHANGES.map(function(ex) {
+    var d = liveIndexData[ex.id];
+    var up = d && d.changePct >= 0;
+    var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
+    return { lon:ex.lon, lat:ex.lat, layer:'markets', color:color, r:5,
+      label:ex.name+' '+ex.index,
+      detail:(d?(up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}):'Loading…')+' · '+ex.region,
+      severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
+  }) : [];
+  var csgDots = (typeof CARRIER_GROUPS !== 'undefined') ? CARRIER_GROUPS.map(function(csg) {
+    return { lon:csg.lon, lat:csg.lat, layer:'maritime', color:'#1e4a6a', r:6,
+      label:csg.name, detail:csg.detail+' · '+csg.updated,
+      severity:'INFO', source:'csg', isCSG:true };
+  }) : [];
+  return staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents,
+    liveMaritimeEvents, liveNewsPins, exchangeDots, csgDots);
 }
 
 // Build the hotspot navigator from CONFLICT_ZONES
@@ -3461,26 +3537,12 @@ function updateConflictInfoBox(id) {
     }
   });
 
-  // Render up to 6 matched items
-  var itemsEl = document.getElementById('cib-items');
-  if (matched.length > 0) {
-    itemsEl.innerHTML = matched.slice(0,6).map(function(item) {
-      var tag = item.tag ? '<span style="color:var(--accent);margin-right:4px;">[' + item.tag + ']</span>' : '';
-      return '<div>' + tag + item.text + '</div>';
-    }).join('');
-    document.getElementById('cib-source').textContent =
-      matched.length + ' live reports · GDELT · RSS · ReliefWeb';
-
   // Show live score
   var sc = zoneScores[id];
-  if (sc) {
-    var scoreEl = document.getElementById('cib-score');
-    if (scoreEl) scoreEl.textContent = 'Risk score: ' + sc.total + ' / 100+ · Static: ' + sc.staticRisk + ' · Live signals: ' + sc.liveScore;
-  }
-  } else {
-    itemsEl.innerHTML = '<div style="color:var(--dim);">No live reports yet — feeds loading…</div>';
-    document.getElementById('cib-source').textContent = 'GDELT · RSS · ReliefWeb';
-  }
+  var srcEl = document.getElementById('cib-source');
+  if (srcEl) srcEl.textContent = matched.length + ' signals · GDELT · RSS · ReliefWeb';
+  var scoreEl = document.getElementById('cib-score');
+  if (scoreEl && sc) scoreEl.textContent = 'Risk score: ' + sc.total + ' · Static: ' + sc.staticRisk + ' · Live: ' + sc.liveScore;
 
   box.style.display = 'none';
   // Small delay so the hide is visible before reopen
