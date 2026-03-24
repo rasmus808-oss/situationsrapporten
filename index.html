@@ -2705,30 +2705,7 @@ function drawConflictZones(showLabels) {
   if (showLabels === false) return;
   var k = d3.zoomTransform(mapSvg.node()).k;
 
-    // Draw country name label for active zone (same style as hover label, persistent)
-  if (activeConflictId && _countriesFeatures.length) {
-    var ids2 = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
-    ids2.forEach(function(numId) {
-      var feat = _countriesFeatures.filter(function(f){ return parseInt(f.id) === numId; })[0];
-      if (!feat) return;
-      var cname = ISO_NAMES[numId] || '';
-      if (!cname) return;
-      var centroid = mapPath.centroid(feat);
-      if (!centroid || isNaN(centroid[0])) return;
-      // Remove any existing hover label for this country first
-      mapG.selectAll('.country-hover-label').remove();
-      mapG.append('text')
-        .attr('class', 'country-hover-label')
-        .attr('x', centroid[0]).attr('y', centroid[1])
-        .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
-        .attr('font-family', "'Barlow Condensed',sans-serif")
-        .attr('font-weight', '300').attr('letter-spacing', '0.08em')
-        .attr('font-size', Math.min(11, Math.max(5, 8/k)) + 'px')
-        .attr('fill', '#c8dcc8').attr('opacity', 0.55)
-        .attr('pointer-events', 'none')
-        .text(cname.toUpperCase());
-    });
-  }
+  
 
   CONFLICT_CAPITALS.forEach(function(cap) {
     if (cap.id !== activeConflictId) return;  // only show for active zone
@@ -3469,6 +3446,30 @@ function zoomToConflict(id) {
       drawConflictZones(true);
       plotEvents();
       updateConflictInfoBox(activeConflictId);
+      // Draw persistent country name at correct zoom
+      if (activeConflictId) {
+        var ids3 = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
+        var kk = d3.zoomTransform(mapSvg.node()).k;
+        mapG.selectAll('.country-hover-label').remove();
+        ids3.forEach(function(numId) {
+          var feat3 = _countriesFeatures.filter(function(f){ return parseInt(f.id) === numId; })[0];
+          if (!feat3) return;
+          var cname3 = ISO_NAMES[numId] || '';
+          if (!cname3) return;
+          var cen = mapPath.centroid(feat3);
+          if (!cen || isNaN(cen[0])) return;
+          mapG.append('text')
+            .attr('class', 'country-hover-label')
+            .attr('x', cen[0]).attr('y', cen[1])
+            .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+            .attr('font-family', "'Barlow Condensed',sans-serif")
+            .attr('font-weight', '300').attr('letter-spacing', '0.1em')
+            .attr('font-size', 11/kk + 'px')
+            .attr('fill', '#c8dcc8').attr('opacity', 0.5)
+            .attr('pointer-events', 'none')
+            .text(cname3.toUpperCase());
+        });
+      }
     });
 
   window._deckAnalystCtx = 'Focus on ' + zone.label + ': ' + zone.detail;
