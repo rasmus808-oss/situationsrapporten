@@ -928,6 +928,7 @@
   <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT</div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
+    <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
     <div class="time-display" id="clock">--:--:-- UTC</div>
   </div>
 </header>
@@ -1130,6 +1131,7 @@
           <button class="feed-pill" onclick="selectFeedCat('maritime')">MARITIME</button>
           <button class="feed-pill" onclick="selectFeedCat('humanitarian')">HUMANITARIAN</button>
           <button class="feed-pill" onclick="selectFeedCat('markets')">MARKETS</button>
+          <button class="feed-pill" onclick="selectFeedCat('osint')">⬡ OSINT</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;min-height:200px;" id="unifiedFeedGrid">
@@ -1166,7 +1168,137 @@
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js">
+// ── ADMIN PANEL ──
+var ADMIN_PASSWORD = 'burgerklubben';  // Change this!
+var _adminAuthed = false;
+
+function openAdmin() {
+  document.getElementById('adminOverlay').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'flex';
+  if (_adminAuthed) showAdminContent();
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'none';
+}
+
+function checkAdminPass() {
+  var val = document.getElementById('adminPassInput').value;
+  if (val === ADMIN_PASSWORD) {
+    _adminAuthed = true;
+    document.getElementById('adminLogin').style.display = 'none';
+    showAdminContent();
+  } else {
+    document.getElementById('adminLoginError').style.display = 'block';
+    document.getElementById('adminPassInput').value = '';
+  }
+}
+
+function showAdminContent() {
+  document.getElementById('adminLogin').style.display = 'none';
+  document.getElementById('adminContent').style.display = 'block';
+  renderAdminOsintList();
+  renderAdminRssList();
+  renderAdminNitterList();
+}
+
+function renderAdminOsintList() {
+  var el = document.getElementById('adminOsintList');
+  if (!el) return;
+  el.innerHTML = OSINT_ACCOUNTS.map(function(a, i) {
+    var status = osintFeedStatus[a.handle];
+    var dot = status === 'ok' ? '#5a9c6a' : status === 'error' ? '#d05555' : '#3a4a3a';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="width:6px;height:6px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">@' + a.handle + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);">' + a.focus + '</div>' +
+      '</div>' +
+      '<button onclick="adminToggleOsint(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (a.enabled ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (a.enabled ? 'var(--accent)' : 'var(--dim)') + ';color:' + (a.enabled ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (a.enabled ? 'ON' : 'OFF') + '</button>' +
+      '<button onclick="adminRemoveOsint(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;cursor:pointer;background:transparent;border:1px solid var(--dim);color:var(--dim);">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAdminRssList() {
+  var el = document.getElementById('adminRssList');
+  if (!el) return;
+  el.innerHTML = RSS_FEEDS.map(function(f, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">' + f.src + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">' + f.url + '</div>' +
+      '</div>' +
+      '<button onclick="adminToggleRss(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (f.enabled !== false ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (f.enabled !== false ? 'var(--accent)' : 'var(--dim)') + ';color:' + (f.enabled !== false ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (f.enabled !== false ? 'ON' : 'OFF') + '</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAdminNitterList() {
+  var el = document.getElementById('adminNitterList');
+  if (!el) return;
+  el.innerHTML = NITTER_MIRRORS.map(function(m, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);flex:1;">' + m + '</div>' +
+      '<button onclick="adminRemoveMirror(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function adminToggleOsint(i) {
+  OSINT_ACCOUNTS[i].enabled = !OSINT_ACCOUNTS[i].enabled;
+  renderAdminOsintList();
+}
+
+function adminRemoveOsint(i) {
+  OSINT_ACCOUNTS.splice(i, 1);
+  renderAdminOsintList();
+}
+
+function adminAddAccount() {
+  var handle = (document.getElementById('newHandleInput').value || '').replace('@','').trim();
+  var label  = (document.getElementById('newLabelInput').value || handle).trim();
+  if (!handle) return;
+  OSINT_ACCOUNTS.push({ handle:handle, label:label, focus:'Custom', cls:'tag-yellow', enabled:true });
+  document.getElementById('newHandleInput').value = '';
+  document.getElementById('newLabelInput').value = '';
+  renderAdminOsintList();
+}
+
+function adminToggleRss(i) {
+  RSS_FEEDS[i].enabled = RSS_FEEDS[i].enabled === false ? true : false;
+  renderAdminRssList();
+}
+
+function adminAddMirror() {
+  var url = (document.getElementById('newMirrorInput').value || '').trim().replace(/\/+$/, '');
+  if (!url.startsWith('http')) return;
+  NITTER_MIRRORS.unshift(url);  // Add to front so it's tried first
+  document.getElementById('newMirrorInput').value = '';
+  renderAdminNitterList();
+}
+
+function adminRemoveMirror(i) {
+  NITTER_MIRRORS.splice(i, 1);
+  renderAdminNitterList();
+}
+
+function adminRefreshOsint() {
+  fetchOsintFeeds();
+}
+
+var _mapSettings = { daynight: true, csg: true, exchanges: true };
+function toggleMapSetting(key, val) {
+  _mapSettings[key] = val;
+  if (key === 'daynight') {
+    if (val) drawDayNight(); else mapG.selectAll('.day-night-layer').remove();
+  }
+  if (key === 'csg' || key === 'exchanges') rebuildMap();
+}
+
+</script>
 <script>
 /* ═══════════════════════════════════════════
    Burgerklubben's Situationsrapport
@@ -3653,7 +3785,7 @@ function zoomToConflict(id) {
 // Helper: build complete mapEvents array from all sources
 function buildFullMapEvents() {
   var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
-  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined') ? STOCK_EXCHANGES.map(function(ex) {
+  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined' && _mapSettings.exchanges !== false) ? STOCK_EXCHANGES.map(function(ex) {
     var d = liveIndexData[ex.id];
     var up = d && d.changePct >= 0;
     var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
@@ -3662,7 +3794,7 @@ function buildFullMapEvents() {
       detail:(d?(up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}):'Loading…')+' · '+ex.region,
       severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
   }) : [];
-  var csgDots = (typeof CARRIER_GROUPS !== 'undefined') ? CARRIER_GROUPS.map(function(csg) {
+  var csgDots = (typeof CARRIER_GROUPS !== 'undefined' && _mapSettings.csg !== false) ? CARRIER_GROUPS.map(function(csg) {
     return { lon:csg.lon, lat:csg.lat, layer:'maritime', color:'#1e4a6a', r:6,
       label:csg.name, detail:csg.detail+' · '+csg.updated,
       severity:'INFO', source:'csg', isCSG:true };
@@ -4280,5 +4412,78 @@ setInterval(fetchOsintFeeds,    10*60*1000); // OSINT feeds: every 10 min
 setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
 
 </script>
+
+<!-- Admin Panel -->
+<div id="adminOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;" onclick="closeAdmin()"></div>
+<div id="adminPanel" style="display:none;position:fixed;top:0;right:0;width:420px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:1001;overflow-y:auto;flex-direction:column;">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;">Admin Console</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text-hi);margin-top:3px;">Burgerklubben Situationsrapport</div>
+    </div>
+    <button onclick="closeAdmin()" style="background:none;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:10px;padding:4px 10px;cursor:pointer;">✕ CLOSE</button>
+  </div>
+
+  <!-- Login screen -->
+  <div id="adminLogin" style="padding:40px 20px;">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:20px;">AUTHENTICATION REQUIRED</div>
+    <input id="adminPassInput" type="password" placeholder="Enter admin password"
+      style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);padding:10px 12px;color:var(--text-hi);font-family:var(--mono);font-size:12px;outline:none;margin-bottom:10px;"
+      onkeydown="if(event.key==='Enter') checkAdminPass()">
+    <button onclick="checkAdminPass()" style="width:100%;background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;letter-spacing:2px;padding:10px;cursor:pointer;">AUTHENTICATE</button>
+    <div id="adminLoginError" style="color:var(--crit-hi);font-family:var(--mono);font-size:9px;margin-top:8px;display:none;">Incorrect password</div>
+  </div>
+
+  <!-- Admin content (shown after login) -->
+  <div id="adminContent" style="display:none;padding:0 0 40px;">
+
+    <!-- OSINT Accounts -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">OSINT ACCOUNTS · NITTER/RSS</div>
+      <div id="adminOsintList"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <input id="newHandleInput" type="text" placeholder="@handle"
+          style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <input id="newLabelInput" type="text" placeholder="Label"
+          style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <button onclick="adminAddAccount()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
+      </div>
+      <button onclick="adminRefreshOsint()" style="margin-top:10px;width:100%;background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:7px;cursor:pointer;">⟳ REFRESH OSINT FEEDS NOW</button>
+    </div>
+
+    <!-- RSS Feeds -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">RSS NEWS FEEDS</div>
+      <div id="adminRssList"></div>
+    </div>
+
+    <!-- Nitter Mirrors -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">NITTER MIRRORS</div>
+      <div id="adminNitterList"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input id="newMirrorInput" type="text" placeholder="https://nitter.example.com"
+          style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <button onclick="adminAddMirror()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
+      </div>
+    </div>
+
+    <!-- Map Settings -->
+    <div style="padding:16px 20px;">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">MAP SETTINGS</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="adminDayNight" checked onchange="toggleMapSetting('daynight',this.checked)"> Day/Night overlay
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="adminShowCsg" checked onchange="toggleMapSetting('csg',this.checked)"> Carrier Strike Groups
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="adminShowExchanges" checked onchange="toggleMapSetting('exchanges',this.checked)"> Stock Exchanges
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
