@@ -2301,38 +2301,64 @@ var CARRIER_GROUPS = [
 ];
 
 async function fetchStockIndices() {
-  try {
-    // Fetch each symbol individually via quote endpoint (more reliable through proxies)
-    var fetched = 0;
-    var total = STOCK_EXCHANGES.length;
-    var done = function() {
-      fetched++;
-      if (fetched >= total) {
-        rebuildMap();
-        if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
-      }
-    };
-    STOCK_EXCHANGES.forEach(function(ex) {
-      var url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ex.symbol);
-      proxyFetch(url).then(function(res) {
-        return res.ok ? res.json() : Promise.reject(res.status);
-      }).then(function(data) {
-        var q = data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result[0];
-        if (!q) { done(); return; }
-        var price  = q.regularMarketPrice || 0;
-        var prev   = q.regularMarketPreviousClose || price;
-        var change = price - prev;
-        var pct    = prev ? (change / prev * 100) : 0;
-        liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
-          currency:q.currency||'', name:ex.shortName||ex.name };
-        done();
-      }).catch(function() { done(); });
-    });
-    // Early return — done() handles the rebuild
-    if (true) {
-    // (rebuild triggered in done() callbacks above)
-    return;
+  // Strategy: try multiple free sources in order
+  // 1. Stooq (no key, CORS-friendly via proxy) — CSV format
+  // 2. Finnhub (free key optional, direct CORS)
+  // 3. Static fallback
+  var fetched = 0;
+  var total = STOCK_EXCHANGES.length;
+  function onDone() {
+    fetched++;
+    if (fetched >= total) {
+      rebuildMap();
+      if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
     }
+  }
+
+  // Stooq symbol mapping (different from Yahoo)
+  var STOOQ_MAP = {
+    NYSE:    '^dji',    NASDAQ:  '^ndx',   LSE:     '^ftse',
+    EURONEXT:'^cac',   DAX:     '^dax',   TSE:     '^nkx',
+    SSE:     '000001.cn', HKEX: '^hsi',   BSE:     '^bsesn',
+    ASX:     '^asx',   TADAWUL: '^tasi',
+  };
+
+  try {
+    STOCK_EXCHANGES.forEach(function(ex) {
+      var sym = STOOQ_MAP[ex.id] || ex.symbol.toLowerCase().replace('^','');
+      var url = 'https://stooq.com/q/d/l/?s=' + encodeURIComponent(sym) + '&i=d';
+      proxyFetch(url).then(function(res) {
+        return res.ok ? res.text() : Promise.reject('stooq ' + res.status);
+      }).then(function(csv) {
+        // Stooq CSV: Date,Open,High,Low,Close,Volume
+        var lines = csv.trim().split('\n').filter(function(l){ return l && l.indexOf('Date') !== 0; });
+        if (lines.length < 2) throw new Error('no data');
+        var today = lines[lines.length-1].split(',');
+        var prev  = lines[lines.length-2].split(',');
+        var price  = parseFloat(today[4]);  // Close
+        var prevCl = parseFloat(prev[4]);
+        if (isNaN(price) || price === 0) throw new Error('bad price');
+        var change = price - prevCl;
+        var pct    = prevCl ? (change / prevCl * 100) : 0;
+        liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
+          currency:'', name:ex.name };
+        onDone();
+      }).catch(function() {
+        // Fallback: try financialmodelingprep (no key needed for basic quote)
+        var fmpUrl = 'https://financialmodelingprep.com/api/v3/quote-short/' +
+          encodeURIComponent(ex.symbol.replace('^','%5E')) + '?apikey=demo';
+        proxyFetch(fmpUrl).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(d) {
+          var q = Array.isArray(d) ? d[0] : null;
+          if (!q || !q.price) throw new Error('no fmp data');
+          var price2 = q.price;
+          var change2 = q.changesPercentage ? (price2 * q.changesPercentage / (100 + q.changesPercentage)) : 0;
+          liveIndexData[ex.id] = { price:price2, change:change2,
+            changePct:q.changesPercentage||0, currency:'', name:ex.name };
+          onDone();
+        }).catch(function() { onDone(); });
+      });
+    });
   } catch(e) {
     // Fallback static data
     if (Object.keys(liveIndexData).length === 0) {
@@ -3061,8 +3087,8 @@ function initMap() {
   mapZoom = d3.zoom().scaleExtent([0.8,12]).on('zoom', function(e) {
     mapG.attr('transform', e.transform);
     var k = e.transform.k;
-    mapSvg.selectAll('.event-ring').attr('r', function(d){ return (d.r+5)/k; });
-    mapSvg.selectAll('.event-dot').attr('r',  function(d){ return d.r/k; });
+    mapG.selectAll('.event-group .event-ring').attr('r', function(d){ return d && d.r ? (d.r+5)/k : null; });
+    mapG.selectAll('.event-group .event-dot').attr('r',  function(d){ return d && d.r ? d.r/k : null; });
     mapSvg.selectAll('.day-night-layer').attr('stroke-width', 0.8/k);
     // Rescale capital dots and labels with zoom
     mapG.selectAll('.conflict-capital circle').attr('r', 2/k);
@@ -3073,6 +3099,9 @@ function initMap() {
     mapG.selectAll('.news-pin-label')
       .attr('font-size', 6/k + 'px').attr('x', 5/k)
       .text(function(d){ return k >= 2.5 ? d.label : ''; });
+    // Rescale direct news pin circles (no datum — use fixed size)
+    mapG.selectAll('.news-pin-direct .np-dot').attr('r', 3.5/k);
+    mapG.selectAll('.news-pin-direct .event-ring').attr('r', 7/k);
     mapG.selectAll('.exchange-label')
       .attr('font-size', 5/k + 'px').attr('x', 6/k).attr('y', -3/k)
       .text(function(d) {
@@ -3833,8 +3862,11 @@ async function fetchPolymarket() {
     ];
     for (var pi = 0; pi < polyUrls.length; pi++) {
       try {
-        res = await fetch(polyUrls[pi]);
-        if (res.ok) break;
+        // Try direct first (Polymarket supports CORS), then proxy fallback
+        res = await fetch(polyUrls[pi]).catch(function(){ return null; });
+        if (!res || !res.ok) res = await proxyFetch(polyUrls[pi]).catch(function(){ return null; });
+        if (res && res.ok) break;
+        res = null;
       } catch(fe) { res = null; }
     }
     if (!res || !res.ok) throw new Error('Poly unavailable');
