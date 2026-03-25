@@ -1026,6 +1026,7 @@
       <div class="sidebar-item"><div class="dot dot-green"></div> ReliefWeb</div>
       <div class="sidebar-item"><div class="dot dot-green" id="src-opensky-dot"></div> AISStream / OpenSky</div>
       <div class="sidebar-item"><div class="dot dot-green"></div> Polymarket</div>
+      <div class="sidebar-item" id="src-osint"><div class="src-dot" style="background:var(--dim)"></div><span class="src-name">OSINT/Nitter</span><span class="src-status loading">LOADING</span></div>
       <div class="sidebar-item"><div class="dot dot-green"></div> GPSJam</div>
     </div>
 
@@ -1083,6 +1084,7 @@
           <button class="map-layer-btn active" data-layer="natural" onclick="toggleLayer(this,'natural')"><span style="color:var(--accent-hi)">▪</span> NATURAL</button>
           <button class="map-layer-btn active" data-layer="maritime" onclick="toggleLayer(this,'maritime')"><span style="color:#4a8a9a">▪</span> MARITIME</button>
           <button class="map-layer-btn active" data-layer="markets" onclick="toggleLayer(this,'markets')"><span style="color:#5a9c6a">▪</span> MARKETS</button>
+          <button class="map-layer-btn active" data-layer="osint" onclick="toggleLayer(this,'osint')"><span style="color:#9a7aaa">▪</span> OSINT</button>
           <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
           <button class="map-ctrl-btn" onclick="mapZoomIn()" title="Zoom In">+</button>
           <button class="map-ctrl-btn" onclick="mapZoomOut()" title="Zoom Out">−</button>
@@ -1240,7 +1242,7 @@ var livePolyItems      = [];   // Polymarket geopolitical markets
 var liveJammingCells   = [];   // GPSJam.org EW layer
 var liveNewsPins       = [];   // RSS/GDELT headlines plotted on map
 var mapEvents          = staticEvents.slice();
-var activeLayers       = new Set(['conflict','cyber','natural','maritime','markets']);
+var activeLayers       = new Set(['conflict','cyber','natural','maritime','markets','osint']);
 
 var mapSvg, mapG, mapProjection, mapZoom, mapPath;
 var mapReady = false;
@@ -1444,6 +1446,7 @@ var CAT_META = {
   humanitarian: { label:'HUMANITARIAN',          source:'ReliefWeb · UN OCHA · WFP'             },
   markets:      { label:'MARKETS',    source:'Polymarket · gamma-api · geopolitical odds' },
   space:        { label:'SPACE & AEROSPACE',     source:'—'                                      },
+  osint:        { label:'OSINT FEEDS',            source:'Nitter · Twitter/X mirrors · OSINT accounts' },
 };
 
 function setCol(id, html) {
@@ -1555,6 +1558,27 @@ function renderFeed(cat) {
     setCol('feedColRight',
       colHeader('Conflict Intensity') + conflictItems.map(barItem).join('') +
       '<div style="margin-top:14px">' + colHeader('Cyber Threats') + cyberItems.map(barItem).join('') + '</div>');
+
+  } else if (currentCat === 'osint') {
+    // Group by account
+    var osintByAccount = {};
+    OSINT_ACCOUNTS.filter(function(a){ return a.enabled; }).forEach(function(a){
+      osintByAccount[a.handle] = liveOsintItems.filter(function(i){ return i.handle === a.handle; });
+    });
+    var osintLeft = '', osintMid = '', osintRight = '';
+    var accounts = OSINT_ACCOUNTS.filter(function(a){ return a.enabled; });
+    accounts.forEach(function(a, i) {
+      var items2 = osintByAccount[a.handle] || [];
+      var col2 = items2.length
+        ? (liveCount(items2.length, '@'+a.handle) + items2.slice(0,4).map(feedItem).join(''))
+        : noData('@'+a.handle+' — fetching via Nitter…');
+      if (i % 3 === 0) osintLeft  += col2;
+      else if (i % 3 === 1) osintMid   += col2;
+      else osintRight += col2;
+    });
+    setCol('feedColLeft',  colHeader('OSINT Accounts', 'NITTER') + (osintLeft  || noData('Loading OSINT feeds…')));
+    setCol('feedColMid',   colHeader('Breaking', 'OSINT') + (osintMid   || noData('')));
+    setCol('feedColRight', colHeader('OSINT Settings', '') + buildOsintSettingsHtml());
 
   } else if (currentCat === 'space') {
     setCol('feedColLeft',  colHeader('Coming Soon') + noData('Space feed planned for v6.'));
@@ -1833,6 +1857,7 @@ function loadDeck(name) {
     activeConflictId = null;
     document.querySelectorAll('.hotspot-item').forEach(function(el){ el.classList.remove('active'); });
     updateConflictInfoBox(null);
+    if (mapG) mapG.selectAll('.country-hover-label').remove();
   }
   if (mapSvg && mapZoom) {
     mapSvg.transition().duration(500).ease(d3.easeCubicInOut)
@@ -2380,6 +2405,115 @@ async function fetchStockIndices() {
       if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
     }
   }
+}
+
+
+// ── OSINT ACCOUNTS ──
+// Pulled via Nitter RSS — no API key required
+// Each account has: handle, label, focus, zone keywords for map placement
+var OSINT_ACCOUNTS = [
+  { handle:'sentdefender',   label:'SentDefender',   focus:'Breaking conflict',     cls:'tag-red',    enabled:true  },
+  { handle:'OSINTdefender',  label:'OSINTdefender',  focus:'Global OSINT',          cls:'tag-red',    enabled:true  },
+  { handle:'IntelCrab',      label:'IntelCrab',      focus:'Conflict intelligence', cls:'tag-yellow', enabled:true  },
+  { handle:'WarMonitor3',    label:'WarMonitor',     focus:'War tracking',          cls:'tag-red',    enabled:true  },
+  { handle:'GeoConfirmed',   label:'GeoConfirmed',   focus:'Geolocation/verify',    cls:'tag-yellow', enabled:true  },
+  { handle:'Conflicts',      label:'Conflicts',      focus:'Global conflicts',       cls:'tag-red',    enabled:true  },
+  { handle:'BabakTaghvaee',  label:'Babak Taghvaee', focus:'Middle East/aviation',  cls:'tag-yellow', enabled:true  },
+  { handle:'HawkEye_OSINT',  label:'HawkEye OSINT',  focus:'General OSINT',         cls:'tag-yellow', enabled:true  },
+  { handle:'UAWeapons',      label:'UAWeapons',      focus:'Ukraine/weapons',        cls:'tag-yellow', enabled:true  },
+  { handle:'Terror_Monitor', label:'TerrorMonitor',  focus:'Terrorism/extremism',   cls:'tag-red',    enabled:true  },
+];
+
+// Nitter instances to try in order (public mirrors, no auth)
+var NITTER_MIRRORS = [
+  'https://nitter.privacydev.net',
+  'https://nitter.poast.org',
+  'https://nitter.net',
+  'https://nitter.1d4.us',
+  'https://nitter.kavin.rocks',
+];
+
+var liveOsintItems  = [];   // feed items
+var osintFeedStatus = {};   // handle → 'ok'|'error'
+
+async function fetchOsintFeeds() {
+  if (!OSINT_ACCOUNTS.some(function(a){ return a.enabled; })) return;
+
+  var enabled = OSINT_ACCOUNTS.filter(function(a){ return a.enabled; });
+  var results = [];
+
+  await Promise.all(enabled.map(async function(account) {
+    var fetched = false;
+    for (var mi = 0; mi < NITTER_MIRRORS.length && !fetched; mi++) {
+      var url = NITTER_MIRRORS[mi] + '/' + account.handle + '/rss';
+      try {
+        var res = await proxyFetch(url);
+        if (!res.ok) continue;
+        var xml = await res.text();
+        if (!xml || xml.indexOf('<item') < 0) continue;
+
+        // Parse RSS items
+        var items = xml.match(/<item[\s\S]*?<\/item>/g) || [];
+        items.slice(0, 5).forEach(function(block) {
+          var title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) ||
+                       block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+          title = title.replace(/^RT by @\S+:\s*/, '').replace(/^R to @\S+:\s*/, '').trim();
+          if (!title || title.length < 15) return;
+          if (title.length > 120) title = title.slice(0, 117) + '…';
+
+          var link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '';
+          var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
+          var t = pubDate ? utcTime(pubDate) : '--:--';
+          var dt = pubDate ? (function(d){ try {
+            var dt2 = new Date(d);
+            return String(dt2.getUTCDate()).padStart(2,'0')+'/'+
+              String(dt2.getUTCMonth()+1).padStart(2,'0')+' '+
+              String(dt2.getUTCHours()).padStart(2,'0')+':'+
+              String(dt2.getUTCMinutes()).padStart(2,'0')+' UTC';
+          } catch(e){ return ''; } })(pubDate) : '';
+
+          results.push({
+            time: t, datetime: dt, text: title,
+            tag: account.label, cls: account.cls,
+            handle: account.handle, link: link,
+            source: 'osint'
+          });
+        });
+        osintFeedStatus[account.handle] = 'ok';
+        fetched = true;
+      } catch(e) { continue; }
+    }
+    if (!fetched) osintFeedStatus[account.handle] = 'error';
+  }));
+
+  // Sort by time, dedupe
+  var seen = {};
+  liveOsintItems = results.filter(function(item) {
+    var key = item.text.slice(0, 40).toLowerCase();
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  }).sort(function(a, b) {
+    return (b.datetime || '').localeCompare(a.datetime || '');
+  }).slice(0, 60);
+
+  // Add to RSS items pool so they appear in map pins
+  liveRssItems = liveRssItems.filter(function(i){ return i.source !== 'osint'; })
+    .concat(liveOsintItems);
+
+  // Auto-rebuild map pins if zone active
+  if (activeConflictId) {
+    liveNewsPins = buildZoneNewsPins(activeConflictId);
+    mapEvents = buildFullMapEvents();
+    if (mapReady) plotEvents();
+  }
+
+  if (currentCat === 'all' || currentCat === 'conflict' || currentCat === 'osint') {
+    renderFeed(currentCat);
+  }
+
+  setSourceStatus('osint', liveOsintItems.length > 0 ? 'live' : 'error',
+    liveOsintItems.length > 0 ? liveOsintItems.length + ' posts' : 'OFFLINE');
 }
 
 // Legacy OpenSky fallback — used if no AIS key provided
@@ -3173,10 +3307,31 @@ function initMap() {
         var k = d3.zoomTransform(mapSvg.node()).k;
         if (k < 2) return;
         d3.select(this).attr('fill','#243028');
-        // Keep label visible if this country belongs to the active conflict zone
-      var thisId = parseInt(d.id);
-      var isActiveZoneCountry = activeConflictId && (CONFLICT_COUNTRY_IDS[activeConflictId] || []).indexOf(thisId) >= 0;
-      if (!isActiveZoneCountry) mapG.selectAll('.country-hover-label').remove();
+        // Always remove hover label on mouseout
+      mapG.selectAll('.country-hover-label').remove();
+      // Redraw it for the active conflict zone country (keeps it persistent)
+      if (activeConflictId) {
+        var kMo = d3.zoomTransform(mapSvg.node()).k;
+        var ids4 = CONFLICT_COUNTRY_IDS[activeConflictId] || [];
+        ids4.forEach(function(numId4) {
+          var feat4 = _countriesFeatures.filter(function(f){ return parseInt(f.id) === numId4; })[0];
+          if (!feat4) return;
+          var cname4 = ISO_NAMES[numId4] || '';
+          if (!cname4) return;
+          var cen4 = mapPath.centroid(feat4);
+          if (!cen4 || isNaN(cen4[0])) return;
+          mapG.append('text')
+            .attr('class', 'country-hover-label')
+            .attr('x', cen4[0]).attr('y', cen4[1])
+            .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+            .attr('font-family', "'Barlow Condensed',sans-serif")
+            .attr('font-weight', '400').attr('letter-spacing', '0.08em')
+            .attr('font-size', 6/kMo + 'px')
+            .attr('fill', '#b8ccb8').attr('opacity', 0.75)
+            .attr('pointer-events', 'none')
+            .text(cname4.toUpperCase());
+        });
+      }
       });
     mapG.append('path').datum(mesh).attr('d',mapPath)
       .attr('fill','none').attr('stroke','#1c2a22').attr('stroke-width',0.35);
@@ -3751,6 +3906,38 @@ function openRelatedStory(idx) {
   if (item) openStory(item);
 }
 
+
+// ── OSINT SETTINGS ──
+function buildOsintSettingsHtml() {
+  var html = '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:10px;">Toggle accounts · changes take effect on next refresh</div>';
+  OSINT_ACCOUNTS.forEach(function(a, i) {
+    var status = osintFeedStatus[a.handle];
+    var dot = status === 'ok' ? 'var(--accent)' : status === 'error' ? 'var(--crit-hi)' : 'var(--dim)';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="width:6px;height:6px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">@' + a.handle + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);">' + a.focus + '</div>' +
+      '</div>' +
+      '<button onclick="toggleOsintAccount(' + i + ')" style="' +
+        'font-family:var(--mono);font-size:8px;padding:2px 7px;cursor:pointer;' +
+        'background:' + (a.enabled ? 'rgba(74,124,89,0.15)' : 'transparent') + ';' +
+        'border:1px solid ' + (a.enabled ? 'var(--accent)' : 'var(--dim)') + ';' +
+        'color:' + (a.enabled ? 'var(--accent-hi)' : 'var(--dim)') + ';">' +
+        (a.enabled ? 'ON' : 'OFF') +
+      '</button></div>';
+  });
+  html += '<button onclick="fetchOsintFeeds()" style="margin-top:10px;width:100%;font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:5px;background:transparent;border:1px solid var(--dim);color:var(--muted);cursor:pointer;">⟳ REFRESH OSINT FEEDS</button>';
+  return html;
+}
+
+function toggleOsintAccount(idx) {
+  if (OSINT_ACCOUNTS[idx]) {
+    OSINT_ACCOUNTS[idx].enabled = !OSINT_ACCOUNTS[idx].enabled;
+    if (currentCat === 'osint') renderFeed('osint');
+  }
+}
+
 function escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -4054,6 +4241,7 @@ topoScript.onload = function() {
   setTimeout(fetchFIRMS,       8000);   // NASA FIRMS: satellite fires
   setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
   setTimeout(fetchStockIndices, 11500);  // Yahoo Finance: stock indices
+  setTimeout(fetchOsintFeeds,    14000);  // Nitter: OSINT accounts
   setTimeout(fetchOpenSky,    11000);   // OpenSky fallback (if no AIS key)
   setTimeout(connectAIS,      12000);   // AISStream WebSocket (if key present)
 };
@@ -4088,6 +4276,7 @@ setInterval(fetchPolymarket,  60*60*1000);// Polymarket: every hour
 setInterval(fetchFIRMS,      10*60*1000); // FIRMS: every 10 min
 setInterval(fetchGPSJam,     60*60*1000); // GPSJam: daily data, check hourly
 setInterval(fetchStockIndices,  5*60*1000); // Stock indices: every 5 min
+setInterval(fetchOsintFeeds,    10*60*1000); // OSINT feeds: every 10 min
 setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
 
 </script>
