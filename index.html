@@ -1168,137 +1168,7 @@
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js">
-// ── ADMIN PANEL ──
-var ADMIN_PASSWORD = 'burgerklubben';  // Change this!
-var _adminAuthed = false;
-
-function openAdmin() {
-  document.getElementById('adminOverlay').style.display = 'block';
-  document.getElementById('adminPanel').style.display = 'flex';
-  if (_adminAuthed) showAdminContent();
-}
-
-function closeAdmin() {
-  document.getElementById('adminOverlay').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'none';
-}
-
-function checkAdminPass() {
-  var val = document.getElementById('adminPassInput').value;
-  if (val === ADMIN_PASSWORD) {
-    _adminAuthed = true;
-    document.getElementById('adminLogin').style.display = 'none';
-    showAdminContent();
-  } else {
-    document.getElementById('adminLoginError').style.display = 'block';
-    document.getElementById('adminPassInput').value = '';
-  }
-}
-
-function showAdminContent() {
-  document.getElementById('adminLogin').style.display = 'none';
-  document.getElementById('adminContent').style.display = 'block';
-  renderAdminOsintList();
-  renderAdminRssList();
-  renderAdminNitterList();
-}
-
-function renderAdminOsintList() {
-  var el = document.getElementById('adminOsintList');
-  if (!el) return;
-  el.innerHTML = OSINT_ACCOUNTS.map(function(a, i) {
-    var status = osintFeedStatus[a.handle];
-    var dot = status === 'ok' ? '#5a9c6a' : status === 'error' ? '#d05555' : '#3a4a3a';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
-      '<div style="width:6px;height:6px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
-      '<div style="flex:1;">' +
-        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">@' + a.handle + '</div>' +
-        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);">' + a.focus + '</div>' +
-      '</div>' +
-      '<button onclick="adminToggleOsint(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (a.enabled ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (a.enabled ? 'var(--accent)' : 'var(--dim)') + ';color:' + (a.enabled ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (a.enabled ? 'ON' : 'OFF') + '</button>' +
-      '<button onclick="adminRemoveOsint(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;cursor:pointer;background:transparent;border:1px solid var(--dim);color:var(--dim);">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function renderAdminRssList() {
-  var el = document.getElementById('adminRssList');
-  if (!el) return;
-  el.innerHTML = RSS_FEEDS.map(function(f, i) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
-      '<div style="flex:1;">' +
-        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">' + f.src + '</div>' +
-        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">' + f.url + '</div>' +
-      '</div>' +
-      '<button onclick="adminToggleRss(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (f.enabled !== false ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (f.enabled !== false ? 'var(--accent)' : 'var(--dim)') + ';color:' + (f.enabled !== false ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (f.enabled !== false ? 'ON' : 'OFF') + '</button>' +
-    '</div>';
-  }).join('');
-}
-
-function renderAdminNitterList() {
-  var el = document.getElementById('adminNitterList');
-  if (!el) return;
-  el.innerHTML = NITTER_MIRRORS.map(function(m, i) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
-      '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);flex:1;">' + m + '</div>' +
-      '<button onclick="adminRemoveMirror(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;">✕</button>' +
-    '</div>';
-  }).join('');
-}
-
-function adminToggleOsint(i) {
-  OSINT_ACCOUNTS[i].enabled = !OSINT_ACCOUNTS[i].enabled;
-  renderAdminOsintList();
-}
-
-function adminRemoveOsint(i) {
-  OSINT_ACCOUNTS.splice(i, 1);
-  renderAdminOsintList();
-}
-
-function adminAddAccount() {
-  var handle = (document.getElementById('newHandleInput').value || '').replace('@','').trim();
-  var label  = (document.getElementById('newLabelInput').value || handle).trim();
-  if (!handle) return;
-  OSINT_ACCOUNTS.push({ handle:handle, label:label, focus:'Custom', cls:'tag-yellow', enabled:true });
-  document.getElementById('newHandleInput').value = '';
-  document.getElementById('newLabelInput').value = '';
-  renderAdminOsintList();
-}
-
-function adminToggleRss(i) {
-  RSS_FEEDS[i].enabled = RSS_FEEDS[i].enabled === false ? true : false;
-  renderAdminRssList();
-}
-
-function adminAddMirror() {
-  var url = (document.getElementById('newMirrorInput').value || '').trim().replace(/\/+$/, '');
-  if (!url.startsWith('http')) return;
-  NITTER_MIRRORS.unshift(url);  // Add to front so it's tried first
-  document.getElementById('newMirrorInput').value = '';
-  renderAdminNitterList();
-}
-
-function adminRemoveMirror(i) {
-  NITTER_MIRRORS.splice(i, 1);
-  renderAdminNitterList();
-}
-
-function adminRefreshOsint() {
-  fetchOsintFeeds();
-}
-
-var _mapSettings = { daynight: true, csg: true, exchanges: true };
-function toggleMapSetting(key, val) {
-  _mapSettings[key] = val;
-  if (key === 'daynight') {
-    if (val) drawDayNight(); else mapG.selectAll('.day-night-layer').remove();
-  }
-  if (key === 'csg' || key === 'exchanges') rebuildMap();
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
    Burgerklubben's Situationsrapport
@@ -1708,9 +1578,9 @@ function renderFeed(cat) {
       else if (i % 3 === 1) osintMid   += col2;
       else osintRight += col2;
     });
-    setCol('feedColLeft',  colHeader('OSINT Accounts', 'NITTER') + (osintLeft  || noData('Loading OSINT feeds…')));
-    setCol('feedColMid',   colHeader('Breaking', 'OSINT') + (osintMid   || noData('')));
-    setCol('feedColRight', colHeader('OSINT Settings', '') + buildOsintSettingsHtml());
+    setCol('feedColLeft',  colHeader('OSINT Accounts', 'NITTER') + (osintLeft  || noData('Loading OSINT feeds via Nitter…')));
+    setCol('feedColMid',   colHeader('Breaking', 'OSINT') + (osintMid   || noData('Loading…')));
+    setCol('feedColRight', colHeader('Latest', 'OSINT') + (osintRight || noData('Loading…')));
 
   } else if (currentCat === 'space') {
     setCol('feedColLeft',  colHeader('Coming Soon') + noData('Space feed planned for v6.'));
@@ -1921,14 +1791,14 @@ function toggleLayer(btn, layer) {
 var DECKS = {
   command: {
     label:   'Command Center',
-    layers:  ['conflict','cyber','natural','maritime','markets'],
+    layers:  ['conflict','cyber','natural','maritime','markets','osint'],
     cat:     'all',
     mapNote: 'All layers active — global situational awareness',
     ticker:  'COMMAND · GDELT · USGS · NOAA · NASA FIRMS · RSS · Polymarket · GPSJam · OpenSky',
   },
   conflict: {
     label:   'War & Conflict',
-    layers:  ['conflict','maritime'],
+    layers:  ['conflict','maritime','osint'],
     cat:     'conflict',
     mapNote: 'Conflict + Maritime layers — force posture & zone monitoring',
     ticker:  'CONFLICT DECK · Active conflicts, military movements, maritime security',
@@ -1991,7 +1861,7 @@ function loadDeck(name) {
     updateConflictInfoBox(null);
     if (mapG) mapG.selectAll('.country-hover-label').remove();
   }
-  if (mapSvg && mapZoom) {
+  if (mapSvg && mapZoom && !activeConflictId) {
     mapSvg.transition().duration(500).ease(d3.easeCubicInOut)
       .call(mapZoom.transform, d3.zoomIdentity);
   }
@@ -1999,6 +1869,8 @@ function loadDeck(name) {
 
   // ── 1. Set map layers ──
   activeLayers = new Set(deck.layers);
+  // Always keep osint layer if it was active
+  if (activeLayers.has('osint') || deck.layers.indexOf('osint') >= 0) activeLayers.add('osint');
   document.querySelectorAll('.map-layer-btn').forEach(function(btn) {
     var layer = btn.getAttribute('data-layer');
     var on = activeLayers.has(layer);
@@ -3350,7 +3222,7 @@ function initMap() {
   mapProjection = d3.geoNaturalEarth1().scale(w/6.3).translate([w/2, h/2]);
   mapPath = d3.geoPath().projection(mapProjection);
 
-  mapZoom = d3.zoom().scaleExtent([0.8,12]).on('zoom', function(e) {
+  mapZoom = d3.zoom().scaleExtent([0.5,32]).on('zoom', function(e) {
     mapG.attr('transform', e.transform);
     var k = e.transform.k;
     mapG.selectAll('.event-group .event-ring').attr('r', function(d){ return d && d.r ? (d.r+5)/k : null; });
@@ -3785,7 +3657,7 @@ function zoomToConflict(id) {
 // Helper: build complete mapEvents array from all sources
 function buildFullMapEvents() {
   var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
-  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined' && _mapSettings.exchanges !== false) ? STOCK_EXCHANGES.map(function(ex) {
+  var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined' && (typeof _mapSettings === 'undefined' || _mapSettings.exchanges !== false)) ? STOCK_EXCHANGES.map(function(ex) {
     var d = liveIndexData[ex.id];
     var up = d && d.changePct >= 0;
     var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
@@ -3794,7 +3666,7 @@ function buildFullMapEvents() {
       detail:(d?(up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}):'Loading…')+' · '+ex.region,
       severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
   }) : [];
-  var csgDots = (typeof CARRIER_GROUPS !== 'undefined' && _mapSettings.csg !== false) ? CARRIER_GROUPS.map(function(csg) {
+  var csgDots = (typeof CARRIER_GROUPS !== 'undefined' && (typeof _mapSettings === 'undefined' || _mapSettings.csg !== false)) ? CARRIER_GROUPS.map(function(csg) {
     return { lon:csg.lon, lat:csg.lat, layer:'maritime', color:'#1e4a6a', r:6,
       label:csg.name, detail:csg.detail+' · '+csg.updated,
       severity:'INFO', source:'csg', isCSG:true };
@@ -4410,6 +4282,138 @@ setInterval(fetchGPSJam,     60*60*1000); // GPSJam: daily data, check hourly
 setInterval(fetchStockIndices,  5*60*1000); // Stock indices: every 5 min
 setInterval(fetchOsintFeeds,    10*60*1000); // OSINT feeds: every 10 min
 setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
+
+// ── ADMIN PANEL ──
+var ADMIN_PASSWORD = 'burgerklubben';  // Change this!
+var _adminAuthed = false;
+
+function openAdmin() {
+  document.getElementById('adminOverlay').style.display = 'block';
+  document.getElementById('adminPanel').style.display = 'flex';
+  if (_adminAuthed) showAdminContent();
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'none';
+}
+
+function checkAdminPass() {
+  var val = document.getElementById('adminPassInput').value;
+  if (val === ADMIN_PASSWORD) {
+    _adminAuthed = true;
+    document.getElementById('adminLogin').style.display = 'none';
+    showAdminContent();
+  } else {
+    document.getElementById('adminLoginError').style.display = 'block';
+    document.getElementById('adminPassInput').value = '';
+  }
+}
+
+function showAdminContent() {
+  document.getElementById('adminLogin').style.display = 'none';
+  document.getElementById('adminContent').style.display = 'block';
+  renderAdminOsintList();
+  renderAdminRssList();
+  renderAdminNitterList();
+}
+
+function renderAdminOsintList() {
+  var el = document.getElementById('adminOsintList');
+  if (!el) return;
+  el.innerHTML = OSINT_ACCOUNTS.map(function(a, i) {
+    var status = osintFeedStatus[a.handle];
+    var dot = status === 'ok' ? '#5a9c6a' : status === 'error' ? '#d05555' : '#3a4a3a';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="width:6px;height:6px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">@' + a.handle + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);">' + a.focus + '</div>' +
+      '</div>' +
+      '<button onclick="adminToggleOsint(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (a.enabled ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (a.enabled ? 'var(--accent)' : 'var(--dim)') + ';color:' + (a.enabled ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (a.enabled ? 'ON' : 'OFF') + '</button>' +
+      '<button onclick="adminRemoveOsint(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;cursor:pointer;background:transparent;border:1px solid var(--dim);color:var(--dim);">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAdminRssList() {
+  var el = document.getElementById('adminRssList');
+  if (!el) return;
+  el.innerHTML = RSS_FEEDS.map(function(f, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">' + f.src + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">' + f.url + '</div>' +
+      '</div>' +
+      '<button onclick="adminToggleRss(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (f.enabled !== false ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (f.enabled !== false ? 'var(--accent)' : 'var(--dim)') + ';color:' + (f.enabled !== false ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (f.enabled !== false ? 'ON' : 'OFF') + '</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderAdminNitterList() {
+  var el = document.getElementById('adminNitterList');
+  if (!el) return;
+  el.innerHTML = NITTER_MIRRORS.map(function(m, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);flex:1;">' + m + '</div>' +
+      '<button onclick="adminRemoveMirror(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function adminToggleOsint(i) {
+  OSINT_ACCOUNTS[i].enabled = !OSINT_ACCOUNTS[i].enabled;
+  renderAdminOsintList();
+}
+
+function adminRemoveOsint(i) {
+  OSINT_ACCOUNTS.splice(i, 1);
+  renderAdminOsintList();
+}
+
+function adminAddAccount() {
+  var handle = (document.getElementById('newHandleInput').value || '').replace('@','').trim();
+  var label  = (document.getElementById('newLabelInput').value || handle).trim();
+  if (!handle) return;
+  OSINT_ACCOUNTS.push({ handle:handle, label:label, focus:'Custom', cls:'tag-yellow', enabled:true });
+  document.getElementById('newHandleInput').value = '';
+  document.getElementById('newLabelInput').value = '';
+  renderAdminOsintList();
+}
+
+function adminToggleRss(i) {
+  RSS_FEEDS[i].enabled = RSS_FEEDS[i].enabled === false ? true : false;
+  renderAdminRssList();
+}
+
+function adminAddMirror() {
+  var url = (document.getElementById('newMirrorInput').value || '').trim().replace(/\/+$/, '');
+  if (!url.startsWith('http')) return;
+  NITTER_MIRRORS.unshift(url);  // Add to front so it's tried first
+  document.getElementById('newMirrorInput').value = '';
+  renderAdminNitterList();
+}
+
+function adminRemoveMirror(i) {
+  NITTER_MIRRORS.splice(i, 1);
+  renderAdminNitterList();
+}
+
+function adminRefreshOsint() {
+  fetchOsintFeeds();
+}
+
+var _mapSettings = { daynight: true, csg: true, exchanges: true };
+function toggleMapSetting(key, val) {
+  _mapSettings[key] = val;
+  if (key === 'daynight') {
+    if (val) drawDayNight(); else mapG.selectAll('.day-night-layer').remove();
+  }
+  if (key === 'csg' || key === 'exchanges') rebuildMap();
+}
+
+// Map settings object
+var _mapSettings = { daynight: true, csg: true, exchanges: true };
 
 </script>
 
