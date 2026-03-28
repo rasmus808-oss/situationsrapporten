@@ -4246,6 +4246,7 @@ topoScript.onload = function() {
   setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
   setTimeout(fetchStockIndices, 11500);  // Yahoo Finance: stock indices
   setTimeout(fetchOsintFeeds,    14000);  // Nitter: OSINT accounts
+  // Settings loaded from Gist when user enters credentials in admin panel
   setTimeout(fetchOpenSky,    11000);   // OpenSky fallback (if no AIS key)
   setTimeout(connectAIS,      12000);   // AISStream WebSocket (if key present)
 };
@@ -4293,15 +4294,137 @@ function openAdmin() {
   if (_adminAuthed) showAdminContent();
 }
 
+// ── GITHUB GIST PERSISTENCE ──
+// Set these in the admin panel's "Storage Config" section,
+// or hardcode them here. The token needs only 'gist' scope.
+var _gistId    = '';   // Your Gist ID (from gist.github.com URL)
+var _gistToken = '';   // GitHub PAT with gist scope
+
+// Load settings from GitHub Gist on page start
+async function loadPersistedSettings() {
+  if (!_gistId) return;  // not configured yet
+  try {
+    var url = 'https://api.github.com/gists/' + _gistId;
+    var headers = { 'Accept': 'application/vnd.github+json' };
+    if (_gistToken) headers['Authorization'] = 'Bearer ' + _gistToken;
+    var res = await fetch(url, { headers: headers });
+    if (!res.ok) return;
+    var gist = await res.json();
+    var file = gist.files && (gist.files['settings.json'] || gist.files['sitrep-settings.json']);
+    if (!file || !file.content) return;
+    var s = JSON.parse(file.content);
+    if (s.gistId)    _gistId    = s.gistId;
+    if (s.gistToken) _gistToken = s.gistToken;
+    if (s.osintAccounts && Array.isArray(s.osintAccounts)) {
+      OSINT_ACCOUNTS.length = 0;
+      s.osintAccounts.forEach(function(a){ OSINT_ACCOUNTS.push(a); });
+    }
+    if (s.nitterMirrors && Array.isArray(s.nitterMirrors)) {
+      NITTER_MIRRORS.length = 0;
+      s.nitterMirrors.forEach(function(m){ NITTER_MIRRORS.push(m); });
+    }
+    if (s.rssFeedToggles) {
+      RSS_FEEDS.forEach(function(f){
+        if (s.rssFeedToggles[f.src] !== undefined) f.enabled = s.rssFeedToggles[f.src];
+      });
+    }
+    console.log('[Settings] Loaded from Gist OK');
+  } catch(e) { console.log('[Settings] Gist load failed:', e.message); }
+}
+
+async function saveSettings() {
+  var saveBtn = document.getElementById('adminSaveBtn');
+  if (saveBtn) { saveBtn.textContent = 'SAVING…'; saveBtn.disabled = true; }
+
+  // Read config inputs from admin panel
+  var gidInput = document.getElementById('adminGistId');
+  var gtkInput = document.getElementById('adminGistToken');
+  if (gidInput && gidInput.value.trim()) _gistId    = gidInput.value.trim();
+  if (gtkInput && gtkInput.value.trim()) _gistToken = gtkInput.value.trim();
+
+  if (!_gistId || !_gistToken) {
+    if (saveBtn) { saveBtn.textContent = '✗ SET GIST ID + TOKEN'; saveBtn.disabled = false; }
+    setTimeout(function(){ if(saveBtn) saveBtn.textContent = 'SAVE SETTINGS'; }, 3000);
+    return;
+  }
+
+  try {
+    var rssFeedToggles = {};
+    RSS_FEEDS.forEach(function(f){ rssFeedToggles[f.src] = f.enabled !== false; });
+    var payload = {
+      gistId:        _gistId,
+      osintAccounts: OSINT_ACCOUNTS,
+      nitterMirrors: NITTER_MIRRORS,
+      rssFeedToggles:rssFeedToggles,
+    };
+    var res = await fetch('https://api.github.com/gists/' + _gistId, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + _gistToken,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'settings.json': { content: JSON.stringify(payload, null, 2) } }
+      })
+    });
+    if (saveBtn) {
+      saveBtn.textContent = res.ok ? '✓ SAVED TO GIST' : '✗ ERROR ' + res.status;
+      saveBtn.disabled = false;
+      setTimeout(function(){ if(saveBtn) saveBtn.textContent = 'SAVE SETTINGS'; }, 2500);
+    }
+  } catch(e) {
+    if (saveBtn) { saveBtn.textContent = '✗ FAILED: ' + e.message; saveBtn.disabled = false; }
+  }
+}
+
+// Create a new Gist with initial settings
+async function createGist() {
+  var gtkInput = document.getElementById('adminGistToken');
+  if (!gtkInput || !gtkInput.value.trim()) {
+    alert('Enter your GitHub token first');
+    return;
+  }
+  _gistToken = gtkInput.value.trim();
+  try {
+    var res = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + _gistToken,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        description: 'Burgerklubben Situationsrapport Settings',
+        public: false,
+        files: { 'settings.json': { content: JSON.stringify({
+          osintAccounts: OSINT_ACCOUNTS,
+          nitterMirrors: NITTER_MIRRORS,
+          rssFeedToggles: {}
+        }, null, 2) } }
+      })
+    });
+    var data = await res.json();
+    if (data.id) {
+      _gistId = data.id;
+      var gidInput = document.getElementById('adminGistId');
+      if (gidInput) gidInput.value = _gistId;
+      alert('Gist created! ID: ' + _gistId + '\nSave settings now to store your config.');
+    }
+  } catch(e) { alert('Failed: ' + e.message); }
+}
+
 function closeAdmin() {
   document.getElementById('adminOverlay').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'none';
 }
 
+var _lastPass = '';
 function checkAdminPass() {
   var val = document.getElementById('adminPassInput').value;
   if (val === ADMIN_PASSWORD) {
     _adminAuthed = true;
+    _lastPass = val;
     document.getElementById('adminLogin').style.display = 'none';
     showAdminContent();
   } else {
@@ -4313,6 +4436,11 @@ function checkAdminPass() {
 function showAdminContent() {
   document.getElementById('adminLogin').style.display = 'none';
   document.getElementById('adminContent').style.display = 'block';
+  // Pre-fill stored Gist config
+  var gidInput = document.getElementById('adminGistId');
+  var gtkInput = document.getElementById('adminGistToken');
+  if (gidInput && _gistId)    gidInput.value = _gistId;
+  if (gtkInput && _gistToken) gtkInput.value = _gistToken;
   renderAdminOsintList();
   renderAdminRssList();
   renderAdminNitterList();
@@ -4425,7 +4553,10 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
       <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;">Admin Console</div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--text-hi);margin-top:3px;">Burgerklubben Situationsrapport</div>
     </div>
-    <button onclick="closeAdmin()" style="background:none;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:10px;padding:4px 10px;cursor:pointer;">✕ CLOSE</button>
+    <div style="display:flex;gap:8px;">
+      <button id="adminSaveBtn" onclick="saveSettings()" style="background:rgba(74,124,89,0.2);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 12px;cursor:pointer;">SAVE SETTINGS</button>
+      <button onclick="closeAdmin()" style="background:none;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:10px;padding:4px 10px;cursor:pointer;">✕ CLOSE</button>
+    </div>
   </div>
 
   <!-- Login screen -->
@@ -4440,6 +4571,43 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
 
   <!-- Admin content (shown after login) -->
   <div id="adminContent" style="display:none;padding:0 0 40px;">
+
+    <!-- GitHub Gist Storage Config -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">STORAGE · GITHUB GIST</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:10px;line-height:1.6;">
+        Settings persist via a private GitHub Gist.<br>
+        Create a PAT at github.com/settings/tokens (gist scope only).
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <input id="adminGistToken" type="password" placeholder="GitHub PAT (ghp_...)"
+          style="background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <div style="display:flex;gap:7px;">
+          <input id="adminGistId" type="text" placeholder="Gist ID (leave blank to create new)"
+            style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+          <button onclick="createGist()" style="background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;padding:7px 10px;cursor:pointer;white-space:nowrap;">CREATE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub Gist Config -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">GITHUB GIST · PERSISTENCE</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:10px;line-height:1.6;">
+        Create a secret Gist at gist.github.com with a file named <span style="color:var(--muted)">sitrep-settings.json</span> containing <span style="color:var(--muted)">{}</span>.<br>
+        Generate a GitHub PAT with <span style="color:var(--muted)">gist</span> scope only.
+      </div>
+      <input id="gistIdInput" type="text" placeholder="Gist ID (from URL)"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;margin-bottom:8px;"
+        oninput="_gistId=this.value.trim()">
+      <input id="gistTokenInput" type="password" placeholder="GitHub PAT (gist scope)"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;margin-bottom:8px;"
+        oninput="_gistToken=this.value.trim()">
+      <button onclick="loadPersistedSettings().then(function(){ renderAdminOsintList(); renderAdminRssList(); })"
+        style="width:100%;background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:7px;cursor:pointer;margin-bottom:4px;">
+        ⟳ LOAD FROM GIST
+      </button>
+    </div>
 
     <!-- OSINT Accounts -->
     <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
@@ -4469,6 +4637,19 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
         <input id="newMirrorInput" type="text" placeholder="https://nitter.example.com"
           style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
         <button onclick="adminAddMirror()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
+      </div>
+    </div>
+
+    <!-- GitHub Gist Credentials -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:4px;">GITHUB GIST · SETTINGS PERSISTENCE</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:12px;">Enter once — stored in this browser. Saves OSINT accounts, RSS toggles across devices.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input id="gistIdInput" type="text" placeholder="Gist ID (from gist.github.com URL)"
+          style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <input id="gistTokenInput" type="password" placeholder="GitHub PAT (gist scope only)"
+          style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <div id="gistStatus" style="font-family:var(--mono);font-size:8px;color:var(--dim);"></div>
       </div>
     </div>
 
