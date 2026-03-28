@@ -4419,7 +4419,6 @@ function closeAdmin() {
   document.getElementById('adminPanel').style.display = 'none';
 }
 
-var _lastPass = '';
 function checkAdminPass() {
   var val = document.getElementById('adminPassInput').value;
   if (val === ADMIN_PASSWORD) {
@@ -4554,7 +4553,7 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
       <div style="font-family:var(--mono);font-size:11px;color:var(--text-hi);margin-top:3px;">Burgerklubben Situationsrapport</div>
     </div>
     <div style="display:flex;gap:8px;">
-      <button id="adminSaveBtn" onclick="saveSettings()" style="background:rgba(74,124,89,0.2);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:4px 12px;cursor:pointer;">SAVE SETTINGS</button>
+      
       <button onclick="closeAdmin()" style="background:none;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:10px;padding:4px 10px;cursor:pointer;">✕ CLOSE</button>
     </div>
   </div>
@@ -4637,19 +4636,6 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
         <input id="newMirrorInput" type="text" placeholder="https://nitter.example.com"
           style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
         <button onclick="adminAddMirror()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
-      </div>
-    </div>
-
-    <!-- GitHub Gist Credentials -->
-    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
-      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:4px;">GITHUB GIST · SETTINGS PERSISTENCE</div>
-      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:12px;">Enter once — stored in this browser. Saves OSINT accounts, RSS toggles across devices.</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <input id="gistIdInput" type="text" placeholder="Gist ID (from gist.github.com URL)"
-          style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
-        <input id="gistTokenInput" type="password" placeholder="GitHub PAT (gist scope only)"
-          style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
-        <div id="gistStatus" style="font-family:var(--mono);font-size:8px;color:var(--dim);"></div>
       </div>
     </div>
 
