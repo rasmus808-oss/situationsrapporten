@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v2.1</title>
+<title>Burgerklubben's Situationsrapport · v2.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -1183,13 +1183,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport · v2.1
+   Burgerklubben's Situationsrapport · v2.2
    ─────────────────────────────────────────
-   CHANGES FROM v2.0:
-   · OSINT feed view restructured into 3 purposeful columns:
-     LEFT  — Twitter/X accounts via Nitter (per-account with status dot)
-     MID   — Telegram channels sub-section (clearly labelled, RSS bridge badge)
-     RIGHT — Combined latest from all OSINT sources (TG/TW source badges)
+   CHANGES FROM v2.1:
+   · Added @CENTCOM and @IDF to default Nitter accounts
+   · Nitter feed items no longer show redundant account-name tag
+     (header already shows @handle — tag removed for more text width)
+   · Telegram RSS bridges expanded from 2 → 5 instances
+   · Telegram parser now handles both RSS <item> and Atom <entry>
+     formats (rss-bridge instances return Atom)
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -1593,7 +1595,15 @@ function renderFeed(cat) {
         '<span style="font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;">' + a.focus + '</span>' +
         '</div>';
       var itemsHtml = items2.length
-        ? items2.slice(0,3).map(feedItem).join('')
+        ? items2.slice(0,3).map(function(item) {
+            // Render without the account-name tag — the header already shows it
+            var idx = _feedItems.length;
+            _feedItems.push(item);
+            return '<div class="feed-item" style="cursor:pointer;" onclick="openStoryByIdx(' + idx + ')">' +
+              '<div class="feed-time">' + (item.time||'') + '</div>' +
+              '<div class="feed-text" style="flex:1;">' + (item.text||'') + '</div>' +
+              '</div>';
+          }).join('')
         : '<div style="font-family:var(--mono);font-size:9px;color:var(--dim);padding:4px 0 8px;">fetching via Nitter…</div>';
       nitterHtml += accountHeader + itemsHtml;
     });
@@ -2505,6 +2515,8 @@ var OSINT_ACCOUNTS = [
   { handle:'HawkEye_OSINT',  label:'HawkEye OSINT',  focus:'General OSINT',         cls:'tag-yellow', enabled:true  },
   { handle:'UAWeapons',      label:'UAWeapons',      focus:'Ukraine/weapons',        cls:'tag-yellow', enabled:true  },
   { handle:'Terror_Monitor', label:'TerrorMonitor',  focus:'Terrorism/extremism',   cls:'tag-red',    enabled:true  },
+  { handle:'CENTCOM',        label:'US CENTCOM',     focus:'US Central Command',    cls:'tag-blue',   enabled:true  },
+  { handle:'IDF',            label:'IDF',            focus:'Israel Defense Forces', cls:'tag-blue',   enabled:true  },
 ];
 
 // Nitter instances to try in order (public mirrors, no auth)
@@ -4538,10 +4550,16 @@ var TELEGRAM_CHANNELS = [
   { handle:'osintua',       label:'OSINT Ukraine',  cls:'tag-yellow', enabled:true  },
 ];
 
-// RSS bridge options: rsshub, tg.i-c-a.su, and direct t.me/s/ scrape
+// RSS bridge options — tried in order until one succeeds
+// rsshub.app: public instance, rate-limited but broad support
+// tg.i-c-a.su: dedicated Telegram RSS bridge
+// rssbridge public instances: open-source, community-run
 var TELEGRAM_RSS_BRIDGES = [
-  function(ch){ return 'https://rsshub.app/telegram/channel/' + ch; },
+  function(ch){ return 'https://rsshub.app/telegram/channel/' + ch + '?limit=10'; },
   function(ch){ return 'https://tg.i-c-a.su/rss/' + ch + '?limit=20'; },
+  function(ch){ return 'https://rssbridge.poastis.net/?action=display&bridge=Telegram&username=' + ch + '&format=Atom'; },
+  function(ch){ return 'https://bridge.suumitsu.eu/?action=display&bridge=Telegram&username=' + ch + '&format=Atom'; },
+  function(ch){ return 'https://rss-bridge.org/bridge01/?action=display&bridge=Telegram&username=' + ch + '&format=Atom'; },
 ];
 
 async function fetchTelegramChannels() {
@@ -4559,33 +4577,51 @@ async function fetchTelegramChannels() {
         var res = await proxyFetch(url);
         if (!res.ok) continue;
         var xml = await res.text();
-        if (!xml || xml.indexOf('<item') < 0) continue;
 
-        var items = xml.match(/<item[\s\S]*?<\/item>/g) || [];
-        items.slice(0, 4).forEach(function(block) {
-          var title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) ||
-                       block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
-          title = title.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').trim();
+        // Accept both RSS <item> and Atom <entry> blocks
+        var hasItems  = xml.indexOf('<item') >= 0;
+        var hasEntries = xml.indexOf('<entry') >= 0;
+        if (!hasItems && !hasEntries) continue;
+
+        var blocks = hasItems
+          ? (xml.match(/<item[\s\S]*?<\/item>/g) || [])
+          : (xml.match(/<entry[\s\S]*?<\/entry>/g) || []);
+
+        blocks.slice(0, 5).forEach(function(block) {
+          // Title: try CDATA, plain, or content fallback
+          var title = (block.match(/<title[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) ||
+                       block.match(/<title[^>]*>([\s\S]*?)<\/title>/) ||
+                       block.match(/<content[^>]*>([\s\S]*?)<\/content>/) || [])[1] || '';
+          title = title.replace(/<[^>]+>/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
           if (!title || title.length < 10) return;
-          if (title.length > 110) title = title.slice(0,107) + '…';
+          if (title.length > 120) title = title.slice(0,117) + '…';
 
-          var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
-          var t = pubDate ? utcTime(pubDate) : '--:--';
-          var dt = pubDate ? (function(d){ try {
-            var x=new Date(d);
+          // Date: pubDate (RSS) or published/updated (Atom)
+          var rawDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) ||
+                         block.match(/<published>([\s\S]*?)<\/published>/) ||
+                         block.match(/<updated>([\s\S]*?)<\/updated>/) || [])[1] || '';
+          var t  = rawDate ? utcTime(rawDate) : '--:--';
+          var dt = rawDate ? (function(d){ try {
+            var x = new Date(d);
+            if (isNaN(x)) return '';
             return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+' '+
               String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0')+' UTC';
-          } catch(e){ return ''; } })(pubDate) : '';
+          } catch(e){ return ''; } })(rawDate) : '';
 
-          var link = (block.match(/<link>([^<]+)<\/link>/) || [])[1] || '';
+          // Link: RSS <link> text or Atom <link href="">
+          var link = (block.match(/<link>([^<]+)<\/link>/) ||
+                      block.match(/<link[^>]+href="([^"]+)"/) || [])[1] || '';
+
           results.push({
             time: t, datetime: dt, text: title,
             tag: channel.label, cls: channel.cls,
-            handle: channel.handle, link: link,
+            handle: channel.handle, link: link.trim(),
             source: 'telegram'
           });
         });
-        fetched = true;
+        if (results.filter(function(r){ return r.handle === channel.handle; }).length > 0) {
+          fetched = true;
+        }
       } catch(e) { continue; }
     }
   }));
