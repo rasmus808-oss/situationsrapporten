@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v2.2</title>
+<title>Burgerklubben's Situationsrapport · v2.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -1183,15 +1183,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport · v2.2
+   Burgerklubben's Situationsrapport · v2.3
    ─────────────────────────────────────────
-   CHANGES FROM v2.1:
-   · Added @CENTCOM and @IDF to default Nitter accounts
-   · Nitter feed items no longer show redundant account-name tag
-     (header already shows @handle — tag removed for more text width)
-   · Telegram RSS bridges expanded from 2 → 5 instances
-   · Telegram parser now handles both RSS <item> and Atom <entry>
-     formats (rss-bridge instances return Atom)
+   CHANGES FROM v2.2:
+   · Telegram channels replaced with English-only list:
+     rybar_in_english, OSINTdefender, ourwarstoday,
+     DefenderDome, OsintTv, OsintUpdates,
+     Middle_East_Spectator, warfareanalysis,
+     liveuamap, AMK_Mapping
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -4543,11 +4542,16 @@ async function fetchGDACS() {
 var liveTelegramItems = [];
 
 var TELEGRAM_CHANNELS = [
-  { handle:'intelslava',    label:'Intel Slava',    cls:'tag-red',    enabled:true  },
-  { handle:'rybar_en',      label:'Rybar (EN)',     cls:'tag-red',    enabled:true  },
-  { handle:'wingsofwar1',   label:'Wings of War',   cls:'tag-yellow', enabled:true  },
-  { handle:'terrormonitor', label:'Terror Monitor', cls:'tag-red',    enabled:true  },
-  { handle:'osintua',       label:'OSINT Ukraine',  cls:'tag-yellow', enabled:true  },
+  { handle:'rybar_in_english',      label:'Rybar EN',              cls:'tag-red',    enabled:true  },
+  { handle:'OSINTdefender',         label:'OSINT Defender',        cls:'tag-red',    enabled:true  },
+  { handle:'ourwarstoday',          label:'Our Wars Today',        cls:'tag-red',    enabled:true  },
+  { handle:'DefenderDome',          label:'Defender Dome',         cls:'tag-yellow', enabled:true  },
+  { handle:'OsintTv',               label:'OSINT TV',              cls:'tag-yellow', enabled:true  },
+  { handle:'OsintUpdates',          label:'OSINT Updates',         cls:'tag-yellow', enabled:true  },
+  { handle:'Middle_East_Spectator', label:'Middle East Spectator', cls:'tag-yellow', enabled:true  },
+  { handle:'warfareanalysis',       label:'Warfare Analysis',      cls:'tag-red',    enabled:true  },
+  { handle:'liveuamap',             label:'Live UA Map',           cls:'tag-yellow', enabled:true  },
+  { handle:'AMK_Mapping',           label:'AMK Mapping',           cls:'tag-yellow', enabled:true  },
 ];
 
 // RSS bridge options — tried in order until one succeeds
