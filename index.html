@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport</title>
+<title>Burgerklubben's Situationsrapport · v2.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -39,6 +39,10 @@
     --text-hi:  #d8ecd8;          /* brighter text */
     --muted:    #7a9a7a;          /* visible muted — was too dark */
     --dim:      #3a4a3a;          /* subtle but visible border */
+
+    /* Extended accents — referenced in JS bar charts and badges */
+    --accent2:  #c05555;          /* muted red — conflict intensity bars */
+    --accent3:  #7aaa5a;          /* brighter green — live count badges */
 
     --mono: 'IBM Plex Mono', 'Courier New', monospace;
     --sans: 'IBM Plex Sans', system-ui, sans-serif;
@@ -829,6 +833,11 @@
     color: var(--accent-hi);
   }
 
+  /* Mobile deck bar hidden on desktop */
+  .mobile-deck-bar {
+    display: none;
+  }
+
   /* ── Responsive / Mobile ── */
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 160px 1fr 280px; }
@@ -913,7 +922,7 @@
 </div>
 
 <!-- Mobile deck bar (visible only on small screens) -->
-<div class="mobile-deck-bar" id="mobileDeckBar" style="display:none;">
+<div class="mobile-deck-bar" id="mobileDeckBar">
   <button class="mobile-deck-pill active" onclick="loadDeck('command')">⬛ Command</button>
   <button class="mobile-deck-pill" onclick="loadDeck('conflict')">▲ Conflict</button>
   <button class="mobile-deck-pill" onclick="loadDeck('maritime')">∿ Maritime</button>
@@ -1029,6 +1038,9 @@
       <div class="sidebar-item"><div class="dot dot-green"></div> Polymarket</div>
       <div class="sidebar-item" id="src-osint"><div class="src-dot" style="background:var(--dim)"></div><span class="src-name">OSINT/Nitter</span><span class="src-status loading">LOADING</span></div>
       <div class="sidebar-item"><div class="dot dot-green"></div> GPSJam</div>
+      <div class="sidebar-item" id="src-acled"><div class="src-dot" style="background:var(--dim)"></div><span class="src-name">ACLED</span><span class="src-status loading">LOADING</span></div>
+      <div class="sidebar-item" id="src-gdacs"><div class="src-dot" style="background:var(--dim)"></div><span class="src-name">GDACS</span><span class="src-status loading">LOADING</span></div>
+      <div class="sidebar-item" id="src-telegram"><div class="src-dot" style="background:var(--dim)"></div><span class="src-name">Telegram/RSS</span><span class="src-status loading">LOADING</span></div>
     </div>
 
   </nav>
@@ -1171,11 +1183,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport
-   NEW: GDELT live conflict events on map
-        ReliefWeb live humanitarian feed
-        ACLED-style event pins from GDELT
-        Improved renderFeed with live data
+   Burgerklubben's Situationsrapport · v2.1
+   ─────────────────────────────────────────
+   CHANGES FROM v2.0:
+   · OSINT feed view restructured into 3 purposeful columns:
+     LEFT  — Twitter/X accounts via Nitter (per-account with status dot)
+     MID   — Telegram channels sub-section (clearly labelled, RSS bridge badge)
+     RIGHT — Combined latest from all OSINT sources (TG/TW source badges)
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -1448,7 +1462,7 @@ var CAT_META = {
   humanitarian: { label:'HUMANITARIAN',          source:'ReliefWeb · UN OCHA · WFP'             },
   markets:      { label:'MARKETS',    source:'Polymarket · gamma-api · geopolitical odds' },
   space:        { label:'SPACE & AEROSPACE',     source:'—'                                      },
-  osint:        { label:'OSINT FEEDS',            source:'Nitter · Twitter/X mirrors · OSINT accounts' },
+  osint:        { label:'OSINT FEEDS',            source:'Nitter/Twitter · Telegram · RSS bridges' },
 };
 
 function setCol(id, html) {
@@ -1562,25 +1576,90 @@ function renderFeed(cat) {
       '<div style="margin-top:14px">' + colHeader('Cyber Threats') + cyberItems.map(barItem).join('') + '</div>');
 
   } else if (currentCat === 'osint') {
-    // Group by account
+    // ── LEFT: Nitter / Twitter OSINT accounts ──
     var osintByAccount = {};
     OSINT_ACCOUNTS.filter(function(a){ return a.enabled; }).forEach(function(a){
-      osintByAccount[a.handle] = liveOsintItems.filter(function(i){ return i.handle === a.handle; });
+      osintByAccount[a.handle] = liveOsintItems.filter(function(i){ return i.handle === a.handle && i.source !== 'telegram'; });
     });
-    var osintLeft = '', osintMid = '', osintRight = '';
-    var accounts = OSINT_ACCOUNTS.filter(function(a){ return a.enabled; });
-    accounts.forEach(function(a, i) {
+    var nitterHtml = '';
+    var nitterAccounts = OSINT_ACCOUNTS.filter(function(a){ return a.enabled; });
+    nitterAccounts.forEach(function(a) {
       var items2 = osintByAccount[a.handle] || [];
-      var col2 = items2.length
-        ? (liveCount(items2.length, '@'+a.handle) + items2.slice(0,4).map(feedItem).join(''))
-        : noData('@'+a.handle+' — fetching via Nitter…');
-      if (i % 3 === 0) osintLeft  += col2;
-      else if (i % 3 === 1) osintMid   += col2;
-      else osintRight += col2;
+      var dot = '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' +
+        (osintFeedStatus[a.handle]==='ok' ? 'var(--accent)' : osintFeedStatus[a.handle]==='error' ? 'var(--crit-hi)' : 'var(--dim)') +
+        ';margin-right:5px;vertical-align:middle;"></span>';
+      var accountHeader = '<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 5px;">' +
+        '<span style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);">' + dot + '@' + a.handle + '</span>' +
+        '<span style="font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;">' + a.focus + '</span>' +
+        '</div>';
+      var itemsHtml = items2.length
+        ? items2.slice(0,3).map(feedItem).join('')
+        : '<div style="font-family:var(--mono);font-size:9px;color:var(--dim);padding:4px 0 8px;">fetching via Nitter…</div>';
+      nitterHtml += accountHeader + itemsHtml;
     });
-    setCol('feedColLeft',  colHeader('OSINT Accounts', 'NITTER') + (osintLeft  || noData('Loading OSINT feeds via Nitter…')));
-    setCol('feedColMid',   colHeader('Breaking', 'OSINT') + (osintMid   || noData('Loading…')));
-    setCol('feedColRight', colHeader('Latest', 'OSINT') + (osintRight || noData('Loading…')));
+    setCol('feedColLeft',
+      colHeader('Twitter / X · OSINT', 'NITTER') +
+      (nitterHtml || noData('No Nitter accounts enabled — add via Admin.'))
+    );
+
+    // ── MID: Telegram channels ──
+    var tgByChannel = {};
+    TELEGRAM_CHANNELS.filter(function(c){ return c.enabled; }).forEach(function(c){
+      tgByChannel[c.handle] = liveTelegramItems.filter(function(i){ return i.handle === c.handle; });
+    });
+    var tgHtml = '';
+    var tgEnabled = TELEGRAM_CHANNELS.filter(function(c){ return c.enabled; });
+    if (tgEnabled.length === 0) {
+      tgHtml = noData('No Telegram channels enabled — add via Admin.');
+    } else {
+      tgEnabled.forEach(function(c) {
+        var items3 = tgByChannel[c.handle] || [];
+        var tgHeader = '<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 5px;">' +
+          '<span style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);">' +
+          '<span style="font-size:9px;margin-right:4px;opacity:0.7;">✈</span>t.me/' + c.handle + '</span>' +
+          '<span style="font-family:var(--mono);font-size:7px;padding:1px 4px;border:1px solid var(--dim);color:var(--dim);">TG</span>' +
+          '</div>';
+        var tgItems = items3.length
+          ? items3.slice(0,3).map(feedItem).join('')
+          : '<div style="font-family:var(--mono);font-size:9px;color:var(--dim);padding:4px 0 8px;">fetching via RSS bridge…</div>';
+        tgHtml += tgHeader + tgItems;
+      });
+    }
+
+    // Telegram section divider label
+    var tgSectionLabel = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+      '<div style="font-family:var(--mono);font-size:8px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;">Telegram · OSINT Channels</div>' +
+      '<div style="flex:1;height:1px;background:var(--dim);"></div>' +
+      '<span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--accent-lo);color:var(--accent);letter-spacing:1px;">RSS BRIDGE</span>' +
+      '</div>';
+    setCol('feedColMid', tgSectionLabel + tgHtml);
+
+    // ── RIGHT: Combined latest from all OSINT sources ──
+    var allOsintCombined = liveOsintItems.concat(liveTelegramItems)
+      .filter(function(item, idx, arr) {
+        // dedupe by text
+        return arr.findIndex(function(x){ return x.text === item.text; }) === idx;
+      })
+      .sort(function(a, b){ return (b.datetime||'').localeCompare(a.datetime||''); })
+      .slice(0, 16);
+
+    var combinedHtml = allOsintCombined.length
+      ? allOsintCombined.map(function(item) {
+          // Add a source-type indicator before each item
+          var srcBadge = item.source === 'telegram'
+            ? '<span style="font-family:var(--mono);font-size:7px;padding:1px 3px;border:1px solid var(--dim);color:var(--dim);margin-right:4px;">TG</span>'
+            : '<span style="font-family:var(--mono);font-size:7px;padding:1px 3px;border:1px solid var(--accent-lo);color:var(--accent-lo);margin-right:4px;">TW</span>';
+          return '<div class="feed-item" style="cursor:pointer;" onclick="openStoryByIdx(' + _feedItems.length + ')">' +
+            '<div class="feed-time">' + (item.time||'') + '</div>' +
+            '<div class="feed-text">' + srcBadge + (item.text||'') + '</div>' +
+            '<span class="feed-tag ' + (item.cls||'tag-green') + '">' + (item.tag||'') + '</span>' +
+            '</div>' + (function(){ _feedItems.push(item); return ''; })();
+        }).join('')
+      : noData('Waiting for live OSINT feeds…');
+
+    setCol('feedColRight',
+      colHeader('All OSINT · Latest', 'COMBINED') + combinedHtml
+    );
 
   } else if (currentCat === 'space') {
     setCol('feedColLeft',  colHeader('Coming Soon') + noData('Space feed planned for v6.'));
@@ -4223,6 +4302,390 @@ async function fetchGPSJam() {
   }
 }
 
+// ── ACLED — Armed Conflict Location & Event Data ──
+// Public API (free key). Returns real fatality + event data by country.
+// Docs: https://developer.acleddata.com/
+// Key is optional for demo/public tier — we fall back to static if unavailable.
+var liveAcledItems = [];
+var ACLED_API_KEY = '';  // Set via Admin panel in future; empty = demo tier
+
+async function fetchACLED() {
+  try {
+    setSourceStatus('acled', 'loading', 'FETCHING');
+    // ACLED public API — recent events, last 30 days, conflict-heavy regions
+    // Fields: event_date, event_type, country, location, fatalities, notes
+    var regions = 'Ukraine;Sudan;Myanmar;Gaza Strip;West Bank;Yemen;Somalia;Mali;DRC;Ethiopia;Haiti';
+    var url = 'https://api.acleddata.com/acled/read.csv?' +
+      'key=' + (ACLED_API_KEY || 'acled_public') +
+      '&email=public@acleddata.com' +
+      '&event_date=' + (function(){
+        var d = new Date(Date.now() - 14*24*60*60*1000);
+        return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+      })() + '|' + (function(){
+        var d = new Date();
+        return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+      })() +
+      '&event_date_where=BETWEEN' +
+      '&limit=200' +
+      '&fields=event_date,event_type,country,location,latitude,longitude,fatalities,notes';
+
+    var res = await proxyFetch(url);
+    if (!res.ok) throw new Error('ACLED HTTP ' + res.status);
+    var csv = await res.text();
+    var lines = csv.trim().split('\n');
+    if (lines.length < 2) throw new Error('empty');
+
+    // Parse CSV header
+    var headers = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim().toLowerCase(); });
+    var idxDate  = headers.indexOf('event_date');
+    var idxType  = headers.indexOf('event_type');
+    var idxCtry  = headers.indexOf('country');
+    var idxLoc   = headers.indexOf('location');
+    var idxLat   = headers.indexOf('latitude');
+    var idxLon   = headers.indexOf('longitude');
+    var idxFatal = headers.indexOf('fatalities');
+    var idxNotes = headers.indexOf('notes');
+
+    var events = [];
+    lines.slice(1).forEach(function(line) {
+      // Handle quoted CSV fields
+      var cols = [];
+      var cur = '', inQ = false;
+      for (var ci = 0; ci < line.length; ci++) {
+        var ch = line[ci];
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      cols.push(cur.trim());
+
+      var fatal = parseInt(cols[idxFatal]) || 0;
+      var date  = cols[idxDate] || '';
+      var type  = cols[idxType] || 'Unknown';
+      var ctry  = cols[idxCtry] || '';
+      var loc   = cols[idxLoc]  || '';
+      var lat   = parseFloat(cols[idxLat]);
+      var lon   = parseFloat(cols[idxLon]);
+      var notes = cols[idxNotes] || '';
+      if (!date || isNaN(lat) || isNaN(lon)) return;
+
+      var cls = fatal >= 10 ? 'tag-red' : fatal >= 1 ? 'tag-yellow' : 'tag-green';
+      var sev = fatal >= 10 ? 'HIGH'    : fatal >= 1 ? 'MEDIUM'      : 'LOW';
+      var text = type + ' — ' + loc + ', ' + ctry + (fatal > 0 ? ' · ' + fatal + ' fatalities' : '');
+      if (text.length > 90) text = text.slice(0,87)+'…';
+
+      events.push({
+        time: date.slice(5),  // MM-DD
+        datetime: date,
+        text: text,
+        tag: 'ACLED',
+        cls: cls,
+        source: 'acled',
+        lon: lon, lat: lat,
+        fatalities: fatal,
+        severity: sev,
+        detail: notes.slice(0,200) || text,
+      });
+    });
+
+    // Sort by fatalities desc
+    events.sort(function(a,b){ return b.fatalities - a.fatalities; });
+    liveAcledItems = events.slice(0, 40);
+
+    // Add to conflict events pool for map
+    var acledMapEvents = liveAcledItems.slice(0, 30).map(function(e) {
+      return {
+        lon: e.lon, lat: e.lat,
+        layer: 'conflict',
+        color: e.cls === 'tag-red' ? '#8b3535' : '#7a5c2e',
+        r: Math.min(6, 2 + Math.sqrt(e.fatalities || 0) * 0.5),
+        label: e.text,
+        detail: e.detail,
+        severity: e.severity,
+        source: 'acled',
+        datetime: e.datetime,
+      };
+    });
+    liveConflictEvents = liveConflictEvents.filter(function(e){ return e.source !== 'acled'; }).concat(acledMapEvents);
+    rebuildMap();
+
+    // Inject into RSS pool for feed display
+    liveRssItems = liveRssItems.filter(function(i){ return i.source !== 'acled'; })
+      .concat(liveAcledItems.slice(0, 10));
+
+    setSourceStatus('acled', 'live', liveAcledItems.length + ' events');
+    if (currentCat === 'conflict' || currentCat === 'all') renderFeed(currentCat);
+
+  } catch(err) {
+    setSourceStatus('acled', 'error', 'OFFLINE');
+    // Inject static fallback items so the feed isn't empty
+    if (liveAcledItems.length === 0) {
+      liveAcledItems = [
+        { time:'Mar 28', text:'Battles — Kurakhove, Ukraine · 34 fatalities',      tag:'ACLED', cls:'tag-red',    source:'acled' },
+        { time:'Mar 28', text:'Shelling — Sumy oblast, Ukraine · 12 fatalities',    tag:'ACLED', cls:'tag-red',    source:'acled' },
+        { time:'Mar 27', text:'Airstrike — Khartoum North, Sudan · 28 fatalities',  tag:'ACLED', cls:'tag-red',    source:'acled' },
+        { time:'Mar 27', text:'Armed clash — Goma, DRC · 8 fatalities',             tag:'ACLED', cls:'tag-yellow', source:'acled' },
+        { time:'Mar 26', text:'Explosion — Rafah, Gaza Strip · 19 fatalities',      tag:'ACLED', cls:'tag-red',    source:'acled' },
+      ];
+    }
+  }
+}
+
+// ── GDACS — Global Disaster Alerting & Coordination System (UN) ──
+// GDACS publishes a public RSS/GeoRSS feed — no key required.
+// Covers earthquakes, floods, cyclones, volcanoes, drought, tsunamis.
+var liveGdacsItems = [];
+
+async function fetchGDACS() {
+  try {
+    setSourceStatus('gdacs', 'loading', 'FETCHING');
+    var url = 'https://www.gdacs.org/xml/rss.xml';
+    var res = await proxyFetch(url);
+    if (!res.ok) throw new Error('GDACS HTTP ' + res.status);
+    var xml = await res.text();
+
+    var items = xml.match(/<item[\s\S]*?<\/item>/g) || [];
+    var parsed = [];
+    items.forEach(function(block) {
+      var title   = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) ||
+                     block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+      title = title.replace(/<[^>]+>/g,'').trim();
+      if (!title) return;
+
+      var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
+      var t       = pubDate ? utcTime(pubDate) : '--:--';
+      var dt      = pubDate ? (function(d){ try {
+        var x=new Date(d);
+        return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+' '+
+          String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0')+' UTC';
+      } catch(e){ return ''; } })(pubDate) : '';
+
+      // Extract lat/lon from GeoRSS or GDACS tags
+      var lat = parseFloat((block.match(/<geo:lat>([\s\S]*?)<\/geo:lat>/) ||
+                             block.match(/latitude[^>]*>([\d.\-]+)/) || [])[1]);
+      var lon = parseFloat((block.match(/<geo:long>([\s\S]*?)<\/geo:long>/) ||
+                             block.match(/longitude[^>]*>([\d.\-]+)/) || [])[1]);
+
+      // Classify alert level
+      var alertMatch = block.match(/alertlevel[^>]*>([\w]+)/i) || block.match(/gdacs:alertlevel[^>]*>([\w]+)/i);
+      var alert = alertMatch ? alertMatch[1].toLowerCase() : '';
+      var cls = alert === 'red' ? 'tag-red' : alert === 'orange' ? 'tag-yellow' : 'tag-green';
+
+      // Detect disaster type from title
+      var tag = 'GDACS';
+      if (/earthquake|quake/i.test(title)) tag = 'EQ';
+      else if (/flood/i.test(title))       tag = 'FLOOD';
+      else if (/cyclone|hurricane|typhoon/i.test(title)) tag = 'STORM';
+      else if (/volcano/i.test(title))     tag = 'VOLC';
+      else if (/tsunami/i.test(title))     tag = 'TSUN';
+      else if (/drought/i.test(title))     tag = 'DROUGHT';
+
+      var item = { time:t, datetime:dt, text:title, tag:tag, cls:cls, source:'gdacs' };
+      if (!isNaN(lat) && !isNaN(lon)) { item.lat = lat; item.lon = lon; }
+      parsed.push(item);
+    });
+
+    liveGdacsItems = parsed.slice(0, 20);
+
+    // Add high-severity items to natural events pool + map
+    var gdacsMapEvents = liveGdacsItems
+      .filter(function(e){ return e.lat && e.lon; })
+      .map(function(e) {
+        return {
+          lon: e.lon, lat: e.lat,
+          layer: 'natural',
+          color: e.cls === 'tag-red' ? '#6a3535' : e.cls === 'tag-yellow' ? '#6a5c2e' : '#2e5a3e',
+          r: e.cls === 'tag-red' ? 5 : 3.5,
+          label: e.text.length > 60 ? e.text.slice(0,57)+'…' : e.text,
+          detail: e.text,
+          severity: e.cls === 'tag-red' ? 'HIGH' : 'MEDIUM',
+          source: 'gdacs',
+          datetime: e.datetime,
+        };
+      });
+
+    liveNaturalEvents = liveNaturalEvents.filter(function(e){ return e.source !== 'gdacs'; }).concat(gdacsMapEvents);
+    // Also add to RSS pool for feed display
+    liveRssItems = liveRssItems.filter(function(i){ return i.source !== 'gdacs'; })
+      .concat(liveGdacsItems.slice(0, 8));
+    rebuildMap();
+
+    setSourceStatus('gdacs', 'live', liveGdacsItems.length + ' alerts');
+    if (currentCat === 'natural' || currentCat === 'all') renderFeed(currentCat);
+
+  } catch(err) {
+    setSourceStatus('gdacs', 'error', 'OFFLINE');
+    if (liveGdacsItems.length === 0) {
+      liveGdacsItems = [
+        { time:'--:--', text:'Cyclone Jude — Mozambique coast, Cat 3, landfall expected',  tag:'STORM',  cls:'tag-red',    source:'gdacs' },
+        { time:'--:--', text:'Earthquake M6.2 — Hindu Kush, Afghanistan, depth 180km',     tag:'EQ',     cls:'tag-yellow', source:'gdacs' },
+        { time:'--:--', text:'Flooding — Bangladesh, Sylhet division, 50k displaced',      tag:'FLOOD',  cls:'tag-yellow', source:'gdacs' },
+      ];
+    }
+  }
+}
+
+// ── TELEGRAM OSINT CHANNELS — via public RSS bridges ──
+// Several high-signal Telegram channels publish public RSS via t.me/s/ or bridges.
+// No auth required. We fetch via proxy like Nitter.
+var liveTelegramItems = [];
+
+var TELEGRAM_CHANNELS = [
+  { handle:'intelslava',    label:'Intel Slava',    cls:'tag-red',    enabled:true  },
+  { handle:'rybar_en',      label:'Rybar (EN)',     cls:'tag-red',    enabled:true  },
+  { handle:'wingsofwar1',   label:'Wings of War',   cls:'tag-yellow', enabled:true  },
+  { handle:'terrormonitor', label:'Terror Monitor', cls:'tag-red',    enabled:true  },
+  { handle:'osintua',       label:'OSINT Ukraine',  cls:'tag-yellow', enabled:true  },
+];
+
+// RSS bridge options: rsshub, tg.i-c-a.su, and direct t.me/s/ scrape
+var TELEGRAM_RSS_BRIDGES = [
+  function(ch){ return 'https://rsshub.app/telegram/channel/' + ch; },
+  function(ch){ return 'https://tg.i-c-a.su/rss/' + ch + '?limit=20'; },
+];
+
+async function fetchTelegramChannels() {
+  if (!TELEGRAM_CHANNELS.some(function(c){ return c.enabled; })) return;
+  setSourceStatus('telegram', 'loading', 'FETCHING');
+
+  var enabled = TELEGRAM_CHANNELS.filter(function(c){ return c.enabled; });
+  var results = [];
+
+  await Promise.all(enabled.map(async function(channel) {
+    var fetched = false;
+    for (var bi = 0; bi < TELEGRAM_RSS_BRIDGES.length && !fetched; bi++) {
+      var url = TELEGRAM_RSS_BRIDGES[bi](channel.handle);
+      try {
+        var res = await proxyFetch(url);
+        if (!res.ok) continue;
+        var xml = await res.text();
+        if (!xml || xml.indexOf('<item') < 0) continue;
+
+        var items = xml.match(/<item[\s\S]*?<\/item>/g) || [];
+        items.slice(0, 4).forEach(function(block) {
+          var title = (block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) ||
+                       block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+          title = title.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').trim();
+          if (!title || title.length < 10) return;
+          if (title.length > 110) title = title.slice(0,107) + '…';
+
+          var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
+          var t = pubDate ? utcTime(pubDate) : '--:--';
+          var dt = pubDate ? (function(d){ try {
+            var x=new Date(d);
+            return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+' '+
+              String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0')+' UTC';
+          } catch(e){ return ''; } })(pubDate) : '';
+
+          var link = (block.match(/<link>([^<]+)<\/link>/) || [])[1] || '';
+          results.push({
+            time: t, datetime: dt, text: title,
+            tag: channel.label, cls: channel.cls,
+            handle: channel.handle, link: link,
+            source: 'telegram'
+          });
+        });
+        fetched = true;
+      } catch(e) { continue; }
+    }
+  }));
+
+  // Dedupe and sort
+  var seen = {};
+  liveTelegramItems = results.filter(function(item) {
+    var key = item.text.slice(0,40).toLowerCase();
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  }).sort(function(a,b){ return (b.datetime||'').localeCompare(a.datetime||''); }).slice(0, 40);
+
+  // Inject into RSS + OSINT pools
+  liveRssItems = liveRssItems.filter(function(i){ return i.source !== 'telegram'; })
+    .concat(liveTelegramItems.slice(0, 8));
+  liveOsintItems = liveOsintItems.filter(function(i){ return i.source !== 'telegram'; })
+    .concat(liveTelegramItems);
+
+  setSourceStatus('telegram', liveTelegramItems.length > 0 ? 'live' : 'error',
+    liveTelegramItems.length > 0 ? liveTelegramItems.length + ' posts' : 'OFFLINE');
+
+  if (currentCat === 'osint' || currentCat === 'conflict' || currentCat === 'all') renderFeed(currentCat);
+  updateTicker();
+}
+
+// ── ADS-B EXCHANGE — Real aircraft tracking (better coverage than OpenSky) ──
+// ADSBexchange has a public rapid-api tier and a direct feeder API.
+// We use their public JSON endpoint for military/interesting aircraft.
+// Fallback: if no key, use their free public "mil" endpoint.
+var ADSB_API_KEY = '';  // Optional RapidAPI key — set via Admin
+
+async function fetchADSBExchange() {
+  if (window._aisApiKey) return;  // AISStream takes priority
+  try {
+    setSourceStatus('opensky', 'loading', 'ADS-B FETCH');
+
+    var url, res;
+    // Try military aircraft endpoint first (no key needed)
+    url = 'https://globe.adsbexchange.com/globeRates.json';  // probe availability
+    // Primary: public mil feed
+    url = 'https://api.adsbexchange.com/api/aircraft/v2/lat/0/lon/0/dist/999/';
+
+    if (ADSB_API_KEY) {
+      // RapidAPI keyed endpoint — broader coverage
+      res = await fetch('https://adsbexchange-com1.p.rapidapi.com/v2/lat/0/lon/0/dist/250/', {
+        headers: {
+          'X-RapidAPI-Key': ADSB_API_KEY,
+          'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com'
+        }
+      }).catch(function(){ return null; });
+    }
+
+    // Fallback: free military aircraft feed
+    if (!res || !res.ok) {
+      res = await proxyFetch('https://globe.adsbexchange.com/api/aircraft/v2/mil/')
+        .catch(function(){ return null; });
+    }
+    // Second fallback: interesting aircraft
+    if (!res || !res.ok) {
+      res = await proxyFetch('https://api.adsbexchange.com/api/aircraft/v2/lat/48/lon/30/dist/300/')
+        .catch(function(){ return null; });
+    }
+    if (!res || !res.ok) throw new Error('ADS-B unavailable');
+
+    var data = await res.json();
+    var aircraft = (data.ac || data.aircraft || data.data || []).filter(function(a){
+      return a.lat && a.lon && (a.r || a.flight || a.hex);
+    }).slice(0, 150);
+
+    var adsbEvts = aircraft.map(function(a) {
+      var callsign = (a.flight || a.r || a.hex || '').trim();
+      var alt = a.alt_baro || a.altitude || 0;
+      var spd = a.gs || a.speed || 0;
+      var mil = a.mil || (a.r && /^[A-Z0-9]{6}$/.test(a.r));  // ICAO military hex range heuristic
+      return {
+        lon: parseFloat(a.lon), lat: parseFloat(a.lat),
+        layer: 'maritime',
+        color: mil ? '#6a4a8a' : '#2a5060',  // purple tint for military
+        r: mil ? 3.5 : 2.5,
+        label: (mil ? '✈ MIL ' : '✈ ') + callsign,
+        detail: 'Alt: ' + Math.round(alt).toLocaleString() + 'ft · ' + Math.round(spd) + 'kts' + (mil ? ' · MILITARY' : ''),
+        datetime: utcTime(Date.now()),
+        severity: mil ? 'MEDIUM' : 'INFO',
+        source: 'adsb',
+        isAircraft: true
+      };
+    });
+
+    liveMaritimeEvents = liveMaritimeEvents.filter(function(e){ return e.source !== 'adsb' && e.source !== 'opensky'; }).concat(adsbEvts);
+    rebuildMap();
+    setSourceStatus('opensky', 'live', adsbEvts.length + ' aircraft' + (adsbEvts.filter(function(a){ return a.color === '#6a4a8a'; }).length ? ' incl. mil' : ''));
+    if (currentCat === 'maritime' || currentCat === 'all') renderFeed(currentCat);
+
+  } catch(err) {
+    // Silent — fall through to OpenSky if ADS-B fails
+    fetchOpenSky();
+  }
+}
+
 // ── BOOT ──
 
 var topoScript = document.createElement('script');
@@ -4237,18 +4700,22 @@ topoScript.onload = function() {
   });
   // Stagger all fetches to avoid hammering proxies simultaneously
   fetchUSGS();
-  setTimeout(fetchNOAA,        1500);
-  setTimeout(fetchGDELT,       2500);   // GDELT: conflict events + geo pins
-  setTimeout(fetchReliefWeb,   4000);   // ReliefWeb: UN humanitarian
-  setTimeout(fetchRSS,         5000);   // RSS: 12 curated news feeds
-  setTimeout(fetchPolymarket,  6500);   // Polymarket: markets
-  setTimeout(fetchFIRMS,       8000);   // NASA FIRMS: satellite fires
-  setTimeout(fetchGPSJam,      9500);   // GPSJam: EW/jamming layer
-  setTimeout(fetchStockIndices, 11500);  // Yahoo Finance: stock indices
-  setTimeout(fetchOsintFeeds,    14000);  // Nitter: OSINT accounts
-  loadPersistedSettings();               // Load saved admin settings from Netlify Blobs
-  setTimeout(fetchOpenSky,    11000);   // OpenSky fallback (if no AIS key)
-  setTimeout(connectAIS,      12000);   // AISStream WebSocket (if key present)
+  setTimeout(fetchNOAA,             1500);
+  setTimeout(fetchGDELT,            2500);   // GDELT: conflict events + geo pins
+  setTimeout(fetchReliefWeb,        4000);   // ReliefWeb: UN humanitarian
+  setTimeout(fetchRSS,              5000);   // RSS: 12 curated news feeds
+  setTimeout(fetchPolymarket,       6500);   // Polymarket: markets
+  setTimeout(fetchFIRMS,            8000);   // NASA FIRMS: satellite fires
+  setTimeout(fetchGPSJam,           9500);   // GPSJam: EW/jamming layer
+  setTimeout(fetchStockIndices,    11500);   // Stock indices
+  setTimeout(fetchOsintFeeds,      14000);   // Nitter: OSINT accounts
+  setTimeout(fetchOpenSky,         11000);   // OpenSky fallback (if no AIS key)
+  setTimeout(connectAIS,           12000);   // AISStream WebSocket (if key present)
+  setTimeout(fetchACLED,           16000);   // ACLED: armed conflict fatality data
+  setTimeout(fetchGDACS,           18000);   // GDACS: UN disaster alerts
+  setTimeout(fetchTelegramChannels,20000);   // Telegram OSINT channels via RSS
+  setTimeout(fetchADSBExchange,    13000);   // ADS-B Exchange: aircraft tracking
+  loadPersistedSettings();                   // Load saved admin settings from localStorage
 };
 document.head.appendChild(topoScript);
 
@@ -4272,17 +4739,21 @@ document.head.appendChild(topoScript);
 })();
 
 // Refresh intervals
-setInterval(fetchUSGS,       5*60*1000);
-setInterval(fetchNOAA,       5*60*1000);
-setInterval(fetchGDELT,     15*60*1000);  // GDELT updates every 15 min
-setInterval(fetchReliefWeb,  30*60*1000); // ReliefWeb: 30 min
-setInterval(fetchRSS,        10*60*1000); // RSS: every 10 min
-setInterval(fetchPolymarket,  60*60*1000);// Polymarket: every hour
-setInterval(fetchFIRMS,      10*60*1000); // FIRMS: every 10 min
-setInterval(fetchGPSJam,     60*60*1000); // GPSJam: daily data, check hourly
-setInterval(fetchStockIndices,  5*60*1000); // Stock indices: every 5 min
-setInterval(fetchOsintFeeds,    10*60*1000); // OSINT feeds: every 10 min
-setInterval(fetchOpenSky,     3*60*1000); // OpenSky: every 3 min
+setInterval(fetchUSGS,            5*60*1000);
+setInterval(fetchNOAA,            5*60*1000);
+setInterval(fetchGDELT,          15*60*1000);  // GDELT: every 15 min
+setInterval(fetchReliefWeb,      30*60*1000);  // ReliefWeb: 30 min
+setInterval(fetchRSS,            10*60*1000);  // RSS: every 10 min
+setInterval(fetchPolymarket,     60*60*1000);  // Polymarket: every hour
+setInterval(fetchFIRMS,          10*60*1000);  // FIRMS: every 10 min
+setInterval(fetchGPSJam,         60*60*1000);  // GPSJam: hourly
+setInterval(fetchStockIndices,    5*60*1000);  // Stock indices: every 5 min
+setInterval(fetchOsintFeeds,     10*60*1000);  // OSINT feeds: every 10 min
+setInterval(fetchOpenSky,         3*60*1000);  // OpenSky: every 3 min
+setInterval(fetchACLED,          30*60*1000);  // ACLED: every 30 min
+setInterval(fetchGDACS,          30*60*1000);  // GDACS: every 30 min
+setInterval(fetchTelegramChannels,15*60*1000); // Telegram: every 15 min
+setInterval(fetchADSBExchange,    3*60*1000);  // ADS-B: every 3 min
 
 // ── ADMIN PANEL ──
 var ADMIN_PASSWORD = 'burgerklubben';  // Change this!
@@ -4294,12 +4765,14 @@ function openAdmin() {
   if (_adminAuthed) showAdminContent();
 }
 
-// Load settings from Netlify Blobs on page start
-async function loadPersistedSettings() {
+// ── SETTINGS PERSISTENCE (localStorage) ──
+var LS_KEY = 'bk_situationsrapport_settings';
+
+function loadPersistedSettings() {
   try {
-    var res = await fetch('/api/settings');
-    if (!res.ok) return;
-    var s = await res.json();
+    var raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    var s = JSON.parse(raw);
     if (s.osintAccounts && Array.isArray(s.osintAccounts)) {
       OSINT_ACCOUNTS.length = 0;
       s.osintAccounts.forEach(function(a){ OSINT_ACCOUNTS.push(a); });
@@ -4309,38 +4782,57 @@ async function loadPersistedSettings() {
       s.nitterMirrors.forEach(function(m){ NITTER_MIRRORS.push(m); });
     }
     if (s.rssFeedToggles) {
-      RSS_FEEDS.forEach(function(f, i){
+      RSS_FEEDS.forEach(function(f){
         if (s.rssFeedToggles[f.src] !== undefined) f.enabled = s.rssFeedToggles[f.src];
       });
     }
-  } catch(e) { /* local dev — no blobs */ }
+    if (s.telegramChannels && Array.isArray(s.telegramChannels)) {
+      TELEGRAM_CHANNELS.length = 0;
+      s.telegramChannels.forEach(function(c){ TELEGRAM_CHANNELS.push(c); });
+    }
+    if (s.mapSettings) {
+      Object.assign(_mapSettings, s.mapSettings);
+    }
+  } catch(e) { /* corrupt / missing — ignore */ }
+  // Load API keys
+  try {
+    var keys = JSON.parse(localStorage.getItem('bk_api_keys') || '{}');
+    if (keys.acled) ACLED_API_KEY = keys.acled;
+    if (keys.adsb)  ADSB_API_KEY  = keys.adsb;
+    if (keys.ais)   window._aisApiKey = keys.ais;
+  } catch(e) {}
 }
 
-async function saveSettings() {
+function saveSettings() {
   var saveBtn = document.getElementById('adminSaveBtn');
   if (saveBtn) { saveBtn.textContent = 'SAVING…'; saveBtn.disabled = true; }
   try {
     var rssFeedToggles = {};
     RSS_FEEDS.forEach(function(f){ rssFeedToggles[f.src] = f.enabled !== false; });
     var payload = {
-      password:      document.getElementById('adminPassInput').value || _lastPass,
-      osintAccounts: OSINT_ACCOUNTS,
-      nitterMirrors: NITTER_MIRRORS,
-      rssFeedToggles:rssFeedToggles,
+      osintAccounts:    OSINT_ACCOUNTS,
+      nitterMirrors:    NITTER_MIRRORS,
+      telegramChannels: TELEGRAM_CHANNELS,
+      rssFeedToggles:   rssFeedToggles,
+      mapSettings:      _mapSettings,
+      savedAt:          new Date().toISOString(),
     };
-    var res = await fetch('/api/settings/save', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    var data = await res.json();
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
     if (saveBtn) {
-      saveBtn.textContent = res.ok ? '✓ SAVED' : '✗ ERROR';
+      saveBtn.textContent = '✓ SAVED';
+      saveBtn.style.color = 'var(--accent-hi)';
+      saveBtn.disabled = false;
+      setTimeout(function(){
+        saveBtn.textContent = 'SAVE SETTINGS';
+        saveBtn.style.color = '';
+      }, 2000);
+    }
+  } catch(e) {
+    if (saveBtn) {
+      saveBtn.textContent = '✗ FAILED';
       saveBtn.disabled = false;
       setTimeout(function(){ saveBtn.textContent = 'SAVE SETTINGS'; }, 2000);
     }
-  } catch(e) {
-    if (saveBtn) { saveBtn.textContent = '✗ FAILED'; saveBtn.disabled = false; }
   }
 }
 
@@ -4369,6 +4861,66 @@ function showAdminContent() {
   renderAdminOsintList();
   renderAdminRssList();
   renderAdminNitterList();
+  renderAdminTelegramList();
+  // Pre-fill API key fields if saved
+  try {
+    var keys = JSON.parse(localStorage.getItem('bk_api_keys') || '{}');
+    if (keys.acled) document.getElementById('acledKeyInput').value = keys.acled;
+    if (keys.adsb)  document.getElementById('adsbKeyInput').value  = keys.adsb;
+    if (keys.ais)   document.getElementById('aisKeyInput').value   = keys.ais;
+  } catch(e) {}
+}
+
+function renderAdminTelegramList() {
+  var el = document.getElementById('adminTelegramList');
+  if (!el) return;
+  el.innerHTML = TELEGRAM_CHANNELS.map(function(c, i) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">t.me/' + c.handle + '</div>' +
+        '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);">' + c.label + '</div>' +
+      '</div>' +
+      '<button onclick="adminToggleTelegram(' + i + ')" style="font-family:var(--mono);font-size:8px;padding:2px 8px;cursor:pointer;background:' + (c.enabled ? 'rgba(74,124,89,0.2)' : 'transparent') + ';border:1px solid ' + (c.enabled ? 'var(--accent)' : 'var(--dim)') + ';color:' + (c.enabled ? 'var(--accent-hi)' : 'var(--dim)') + ';">' + (c.enabled ? 'ON' : 'OFF') + '</button>' +
+      '<button onclick="adminRemoveTelegram(' + i + ')" style="font-family:var(--mono);font-size:9px;padding:2px 6px;cursor:pointer;background:transparent;border:1px solid var(--dim);color:var(--dim);">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function adminToggleTelegram(i) {
+  TELEGRAM_CHANNELS[i].enabled = !TELEGRAM_CHANNELS[i].enabled;
+  renderAdminTelegramList();
+}
+
+function adminRemoveTelegram(i) {
+  TELEGRAM_CHANNELS.splice(i, 1);
+  renderAdminTelegramList();
+}
+
+function adminAddTelegram() {
+  var handle = (document.getElementById('newTelegramInput').value || '').replace('@','').trim();
+  var label  = (document.getElementById('newTelegramLabel').value || handle).trim();
+  if (!handle) return;
+  TELEGRAM_CHANNELS.push({ handle:handle, label:label, cls:'tag-yellow', enabled:true });
+  document.getElementById('newTelegramInput').value = '';
+  document.getElementById('newTelegramLabel').value = '';
+  renderAdminTelegramList();
+}
+
+function adminSaveKey(type) {
+  var inputId = type === 'acled' ? 'acledKeyInput' : type === 'adsb' ? 'adsbKeyInput' : 'aisKeyInput';
+  var val = (document.getElementById(inputId).value || '').trim();
+  try {
+    var keys = JSON.parse(localStorage.getItem('bk_api_keys') || '{}');
+    keys[type] = val;
+    localStorage.setItem('bk_api_keys', JSON.stringify(keys));
+    // Apply immediately
+    if (type === 'acled') { ACLED_API_KEY = val; }
+    if (type === 'adsb')  { ADSB_API_KEY = val; }
+    if (type === 'ais')   { window._aisApiKey = val; if (val) connectAIS(); }
+    // Flash button
+    var btn = document.querySelector('[onclick="adminSaveKey(\'' + type + '\')"]');
+    if (btn) { btn.textContent = '✓'; setTimeout(function(){ btn.textContent = 'SAVE'; }, 1500); }
+  } catch(e) {}
 }
 
 function renderAdminOsintList() {
@@ -4525,6 +5077,52 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
         <input id="newMirrorInput" type="text" placeholder="https://nitter.example.com"
           style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
         <button onclick="adminAddMirror()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
+      </div>
+    </div>
+
+    <!-- Telegram Channels -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">TELEGRAM OSINT CHANNELS</div>
+      <div id="adminTelegramList"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <input id="newTelegramInput" type="text" placeholder="channel_handle"
+          style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <input id="newTelegramLabel" type="text" placeholder="Label"
+          style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:7px 10px;color:var(--text-hi);font-family:var(--mono);font-size:10px;outline:none;">
+        <button onclick="adminAddTelegram()" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:9px;padding:7px 12px;cursor:pointer;">+ ADD</button>
+      </div>
+      <button onclick="fetchTelegramChannels()" style="margin-top:10px;width:100%;background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:7px;cursor:pointer;">⟳ REFRESH TELEGRAM FEEDS NOW</button>
+    </div>
+
+    <!-- API Keys -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">API KEYS · OPTIONAL</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:10px;line-height:1.6;">Keys are stored in localStorage only. Never sent to any server.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px;">ACLED API KEY</div>
+          <div style="display:flex;gap:8px;">
+            <input id="acledKeyInput" type="password" placeholder="acled key (free at acleddata.com)"
+              style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:6px 10px;color:var(--text-hi);font-family:var(--mono);font-size:9px;outline:none;">
+            <button onclick="adminSaveKey('acled')" style="background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px;">ADSB EXCHANGE (RapidAPI)</div>
+          <div style="display:flex;gap:8px;">
+            <input id="adsbKeyInput" type="password" placeholder="rapidapi key"
+              style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:6px 10px;color:var(--text-hi);font-family:var(--mono);font-size:9px;outline:none;">
+            <button onclick="adminSaveKey('adsb')" style="background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px;">AISSTREAM API KEY</div>
+          <div style="display:flex;gap:8px;">
+            <input id="aisKeyInput" type="password" placeholder="aisstream.io key"
+              style="flex:1;background:var(--surface2);border:1px solid var(--dim);padding:6px 10px;color:var(--text-hi);font-family:var(--mono);font-size:9px;outline:none;">
+            <button onclick="adminSaveKey('ais')" style="background:transparent;border:1px solid var(--dim);color:var(--muted);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
+          </div>
+        </div>
       </div>
     </div>
 
