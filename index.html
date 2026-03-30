@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v2.4</title>
+<title>Burgerklubben's Situationsrapport · v2.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -938,7 +938,7 @@
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
-    <div class="time-display" id="clock">--:--:-- UTC</div>
+    <div class="time-display" id="clock">--:--:-- CPH</div>
   </div>
 </header>
 
@@ -1080,7 +1080,7 @@
           </div>
           <div style="width:1px;height:24px;background:var(--border);"></div>
           <div style="text-align:center;">
-            <div style="font-family:var(--mono);font-size:11px;font-weight:300;color:var(--muted);" id="lastUpdate">14:22 UTC</div>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:300;color:var(--muted);" id="lastUpdate">--:-- CPH</div>
             <div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;">Last update</div>
           </div>
         </div>
@@ -1183,17 +1183,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport · v2.4
+   Burgerklubben's Situationsrapport · v2.7
    ─────────────────────────────────────────
-   CHANGES FROM v2.3:
-   · Stock exchanges now show OPEN/CLOSED status using
-     timezone-aware trading hours (Intl.DateTimeFormat)
-   · Exchange map dots: vivid when open, dimmed when closed,
-     ●/○ indicator prefix, dashed ring when closed
-   · Previous trading day data stored from Stooq CSV (lines[-3])
-   · Markets feed panel right column: exchange status table
-     showing today % + prev day % + OPEN/CLOSED badge per exchange
-   · Prev day sub-label appears on map dots at zoom ≥ 3
+   CHANGES FROM v2.6:
+   · Added Copenhagen Stock Exchange (Nasdaq Copenhagen)
+     OMX C25 index, Europe/Copenhagen tz, Mon–Fri 09:00–17:00
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -1349,12 +1343,50 @@ var GDELT_CONFLICT_CODES = {
 
 // ── UTILITIES ──
 
-function utcTime(input) {
+// ── TIMEZONE: Copenhagen (Europe/Copenhagen) ──
+// All user-facing timestamps are shown in Copenhagen local time (CET/CEST).
+var USER_TZ = 'Europe/Copenhagen';
+
+// Returns HH:MM in Copenhagen time from any Date-parseable input
+function tzTime(input) {
   try {
     var d = new Date(input);
     if (isNaN(d.getTime())) return '--:--';
-    return String(d.getUTCHours()).padStart(2,'0') + ':' + String(d.getUTCMinutes()).padStart(2,'0');
+    var fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: USER_TZ, hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    return fmt.format(d).replace(',','').trim();
   } catch(e) { return '--:--'; }
+}
+
+// Returns "DD/MM HH:MM CET" in Copenhagen time
+function tzDateTime(input) {
+  try {
+    var d = new Date(input);
+    if (isNaN(d.getTime())) return '';
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: USER_TZ,
+      day: '2-digit', month: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(d);
+    var get = function(t){ return (parts.find(function(p){ return p.type===t; })||{value:'??'}).value; };
+    return get('day') + '/' + get('month') + ' ' + get('hour') + ':' + get('minute') + ' CPH';
+  } catch(e) { return ''; }
+}
+
+// Returns abbreviated TZ label — CET in winter, CEST in summer
+function tzLabel() {
+  try {
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: USER_TZ, timeZoneName: 'short'
+    }).formatToParts(new Date());
+    return (parts.find(function(p){ return p.type==='timeZoneName'; })||{value:'CPH'}).value;
+  } catch(e) { return 'CPH'; }
+}
+
+// utcTime kept as alias for backward compat — now returns Copenhagen time
+function utcTime(input) {
+  return tzTime(input);
 }
 
 // proxyFetch: tries multiple CORS proxies in sequence.
@@ -1432,10 +1464,19 @@ function liveCount(n, label) {
 function updateClock() {
   var el = document.getElementById('clock');
   if (!el) return;
-  var n = new Date();
-  el.textContent = String(n.getUTCHours()).padStart(2,'0') + ':' +
-    String(n.getUTCMinutes()).padStart(2,'0') + ':' +
-    String(n.getUTCSeconds()).padStart(2,'0') + ' UTC';
+  try {
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: USER_TZ,
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).formatToParts(new Date());
+    var get = function(t){ return (parts.find(function(p){ return p.type===t; })||{value:'??'}).value; };
+    el.textContent = get('hour') + ':' + get('minute') + ':' + get('second') + ' ' + tzLabel();
+  } catch(e) {
+    var n = new Date();
+    el.textContent = String(n.getUTCHours()).padStart(2,'0') + ':' +
+      String(n.getUTCMinutes()).padStart(2,'0') + ':' +
+      String(n.getUTCSeconds()).padStart(2,'0') + ' UTC';
+  }
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -1587,11 +1628,30 @@ function renderFeed(cat) {
       var statusTxt = '<span style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:' +
         (open ? 'var(--accent)' : 'var(--dim)') + ';padding:1px 4px;border:1px solid ' +
         (open ? 'var(--accent-lo)' : 'var(--dim)') + ';">' + (open ? 'OPEN' : 'CLOSED') + '</span>';
-      return '<div style="display:grid;grid-template-columns:20px 1fr auto auto auto;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+      // CPH open time hint for closed exchanges
+      var cphHint = '';
+      if (!open) {
+        try {
+          var nowCphMins = (function(){
+            var p = new Intl.DateTimeFormat('en-GB',{timeZone:USER_TZ,hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+            return parseInt((p.find(function(x){return x.type==='hour';})||{value:'0'}).value)*60 +
+                   parseInt((p.find(function(x){return x.type==='minute';})||{value:'0'}).value);
+          })();
+          var exParts = new Intl.DateTimeFormat('en-GB',{timeZone:ex.tz,hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+          var exNowH = parseInt((exParts.find(function(x){return x.type==='hour';})||{value:'0'}).value);
+          var exNowM = parseInt((exParts.find(function(x){return x.type==='minute';})||{value:'0'}).value);
+          var offsetMins = (exNowH*60+exNowM) - nowCphMins;
+          var openInCph = ex.openH*60 + ex.openM - offsetMins;
+          var oh = Math.floor(((openInCph % 1440) + 1440) % 1440 / 60);
+          var om = ((openInCph % 1440) + 1440) % 1440 % 60;
+          cphHint = String(oh).padStart(2,'0') + ':' + String(om).padStart(2,'0');
+        } catch(e) {}
+      }
+      return '<div style="display:grid;grid-template-columns:20px 1fr auto auto auto;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--dim);cursor:pointer;" onclick="openExchangeStory(\'' + ex.id + '\')">' +
         '<div>' + statusDot + '</div>' +
         '<div>' +
           '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">' + ex.name + ' <span style="color:var(--dim);">' + ex.index + '</span></div>' +
-          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">' + ex.region + '</div>' +
+          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">' + ex.region + (cphHint ? ' · opens ' + cphHint + ' CPH' : '') + '</div>' +
         '</div>' +
         '<div style="text-align:right;">' +
           '<div style="font-family:var(--mono);font-size:9px;color:' + pctCol + ';">' + pctStr + '</div>' +
@@ -2441,6 +2501,7 @@ var STOCK_EXCHANGES = [
   { id:'BSE',      lon:72.88,  lat:18.94,  name:'Mumbai',   index:'SENSEX', symbol:'^BSESN',    color:'#6a5a2a', region:'Asia',      tz:'Asia/Kolkata',      openH:9,  openM:15,  closeH:15, closeM:30, days:[1,2,3,4,5] },
   { id:'ASX',      lon:151.21, lat:-33.87, name:'Sydney',   index:'ASX200', symbol:'^AXJO',     color:'#2a6a5a', region:'Pacific',   tz:'Australia/Sydney',  openH:10, openM:0,   closeH:16, closeM:0,  days:[1,2,3,4,5] },
   { id:'TADAWUL',  lon:46.72,  lat:24.69,  name:'Riyadh',   index:'TASI',   symbol:'^TASI',     color:'#5a4a2a', region:'MiddleEast',tz:'Asia/Riyadh',       openH:10, openM:0,   closeH:15, closeM:0,  days:[0,1,2,3,4] }, // Sun–Thu
+  { id:'CPH',      lon:12.58,  lat:55.68,  name:'Copenhagen',index:'OMXC25', symbol:'^OMXC25',   color:'#2a5a7a', region:'Europe',    tz:'Europe/Copenhagen', openH:9,  openM:0,   closeH:17, closeM:0,  days:[1,2,3,4,5] },
 ];
 
 // ── Market open/closed detection ──
@@ -2502,7 +2563,7 @@ async function fetchStockIndices() {
     NYSE:    '^dji',    NASDAQ:  '^ndx',   LSE:     '^ftse',
     EURONEXT:'^cac',   DAX:     '^dax',   TSE:     '^nkx',
     SSE:     '000001.cn', HKEX: '^hsi',   BSE:     '^bsesn',
-    ASX:     '^asx',   TADAWUL: '^tasi',
+    ASX:     '^asx',   TADAWUL: '^tasi',  CPH:     '^omxc25',
   };
 
   try {
@@ -2632,13 +2693,7 @@ async function fetchOsintFeeds() {
           var link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '';
           var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
           var t = pubDate ? utcTime(pubDate) : '--:--';
-          var dt = pubDate ? (function(d){ try {
-            var dt2 = new Date(d);
-            return String(dt2.getUTCDate()).padStart(2,'0')+'/'+
-              String(dt2.getUTCMonth()+1).padStart(2,'0')+' '+
-              String(dt2.getUTCHours()).padStart(2,'0')+':'+
-              String(dt2.getUTCMinutes()).padStart(2,'0')+' UTC';
-          } catch(e){ return ''; } })(pubDate) : '';
+          var dt = pubDate ? (function(d){ try { return tzDateTime(new Date(d)); } catch(e){ return ''; } })(pubDate) : '';
 
           results.push({
             time: t, datetime: dt, text: title,
@@ -3082,13 +3137,13 @@ function buildZoneSummaryDots() {
   });
 }
 
-// Smart timestamp: "Today HH:MM UTC" if < 12h, else "DD MMM"
+// Smart timestamp: "Today HH:MM CPH" if < 12h, else "DD MMM"
 function smartTimestamp(dtStr) {
   if (!dtStr) return '';
   try {
     var dt = new Date(dtStr);
     if (isNaN(dt)) {
-      // Try parsing "DD/MM HH:MM UTC" format from our own formatting
+      // Try parsing "DD/MM HH:MM CPH" or "DD/MM HH:MM UTC" format
       var m = dtStr.match(/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
       if (m) {
         var now = new Date();
@@ -3100,11 +3155,16 @@ function smartTimestamp(dtStr) {
     var ageMs = Date.now() - dt.getTime();
     var h = ageMs / 3600000;
     if (h < 12) {
-      return 'Today ' + String(dt.getUTCHours()).padStart(2,'0') + ':' +
-             String(dt.getUTCMinutes()).padStart(2,'0') + ' UTC';
+      return 'Today ' + tzTime(dt);
     }
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return dt.getUTCDate() + ' ' + months[dt.getUTCMonth()];
+    // Get day/month in Copenhagen time
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: USER_TZ, day: 'numeric', month: 'numeric'
+    }).formatToParts(dt);
+    var day   = parseInt((parts.find(function(p){ return p.type==='day';   })||{value:dt.getUTCDate()}).value);
+    var month = parseInt((parts.find(function(p){ return p.type==='month'; })||{value:dt.getUTCMonth()+1}).value);
+    return day + ' ' + months[month - 1];
   } catch(e) { return dtStr; }
 }
 
@@ -3669,6 +3729,20 @@ function plotEvents() {
     })
     .style('cursor', 'pointer');
 
+  // Exchange dot click opens exchange brief in intel reader
+  groups.filter(function(d){ return d.isExchange; })
+    .on('click', function(event, d) {
+      openExchangeStory(d.exchangeId);
+    })
+    .style('cursor', 'pointer');
+
+  // CSG click opens brief in intel reader
+  groups.filter(function(d){ return d.isCSG; })
+    .on('click', function(event, d) {
+      openStory({ text: d.label, tag: 'CSG', cls: 'tag-blue', datetime: d.detail, desc: d.detail });
+    })
+    .style('cursor', 'pointer');
+
   // News pin click opens story panel
   groups.filter(function(d){ return d.isNewsPin; })
     .on('click', function(event, d) {
@@ -4084,6 +4158,193 @@ function focusFeedPinFromStory() {
   focusFeedPin(fakeEl);
 }
 
+// ── EXCHANGE INTEL READER ──
+// Opens a rich market brief in the story panel when an exchange dot is clicked.
+function openExchangeStory(exchangeId) {
+  var ex   = STOCK_EXCHANGES.filter(function(e){ return e.id === exchangeId; })[0];
+  if (!ex) return;
+  var d    = liveIndexData[exchangeId];
+  var prev = prevDayData[exchangeId];
+  var open = isMarketOpen(ex);
+
+  _currentStoryItem = { text: ex.name + ' · ' + ex.index, tag: 'MARKETS', cls: 'tag-green' };
+
+  // Meta bar
+  var metaEl = document.getElementById('storyMeta');
+  metaEl.textContent = ex.region + '  ·  ' + (open ? '● MARKET OPEN' : '○ MARKET CLOSED');
+
+  // Helper: colour a pct value
+  function pctColor(v) {
+    if (v == null) return 'var(--dim)';
+    return v >= 0 ? 'var(--accent-hi)' : 'var(--crit-hi)';
+  }
+  function pctStr(v, decimals) {
+    if (v == null) return '—';
+    return (v >= 0 ? '+' : '') + v.toFixed(decimals != null ? decimals : 2) + '%';
+  }
+  function priceStr(v) {
+    if (v == null) return '—';
+    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  var statusColor  = open ? 'var(--accent)' : 'var(--muted)';
+  var statusBorder = open ? 'var(--accent-lo)' : 'var(--dim)';
+  var statusBg     = open ? 'rgba(74,124,89,0.10)' : 'transparent';
+
+  var html = '';
+
+  // ── Headline ──
+  html += '<div class="story-headline" style="font-size:16px;">' + ex.name + ' <span style="color:var(--muted);font-weight:300;">' + ex.index + '</span></div>';
+
+  // ── Source / status row ──
+  html += '<div class="story-source-row">';
+  html += '<span class="story-tag" style="color:' + statusColor + ';border-color:' + statusBorder + ';background:' + statusBg + ';">' +
+    (open ? '● OPEN' : '○ CLOSED') + '</span>';
+  html += '<span class="story-datetime">' + ex.region + '</span>';
+
+  // Local time at exchange + Copenhagen conversion
+  try {
+    var localTime = new Intl.DateTimeFormat('en-GB', {
+      timeZone: ex.tz, hour:'2-digit', minute:'2-digit', hour12: false
+    }).format(new Date());
+    var cphTime = tzTime(new Date());
+    html += '<span class="story-datetime" style="color:var(--accent);">CPH ' + cphTime + '</span>';
+    html += '<span class="story-datetime" style="color:var(--dim);">Local ' + localTime + '</span>';
+  } catch(e) {}
+  html += '</div>';
+
+  // ── Main price block ──
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">';
+
+  // Today
+  html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:12px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;">TODAY</div>';
+  if (d) {
+    html += '<div style="font-family:var(--mono);font-size:22px;font-weight:300;color:var(--text-hi);letter-spacing:-1px;">' + priceStr(d.price) + '</div>';
+    html += '<div style="font-family:var(--mono);font-size:13px;color:' + pctColor(d.changePct) + ';margin-top:4px;">' + pctStr(d.changePct) + '</div>';
+    html += '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;">' +
+      (d.changePct >= 0 ? '▲' : '▼') + ' ' + priceStr(Math.abs(d.change)) + ' pts</div>';
+  } else {
+    html += '<div style="font-family:var(--mono);font-size:13px;color:var(--dim);">Fetching…</div>';
+  }
+  html += '</div>';
+
+  // Previous day
+  html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:12px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;">PREV SESSION' + (prev && prev.date ? ' · ' + prev.date.slice(5) : '') + '</div>';
+  if (prev) {
+    html += '<div style="font-family:var(--mono);font-size:22px;font-weight:300;color:var(--text-hi);letter-spacing:-1px;">' + priceStr(prev.price) + '</div>';
+    html += '<div style="font-family:var(--mono);font-size:13px;color:' + pctColor(prev.changePct) + ';margin-top:4px;">' + pctStr(prev.changePct) + '</div>';
+    html += '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;">' +
+      (prev.changePct >= 0 ? '▲' : '▼') + ' ' + priceStr(Math.abs(prev.change)) + ' pts</div>';
+  } else {
+    html += '<div style="font-family:var(--mono);font-size:13px;color:var(--dim);">No data</div>';
+  }
+  html += '</div>';
+  html += '</div>';  // end grid
+
+  // ── Trading hours ──
+  var openTime  = String(ex.openH).padStart(2,'0') + ':' + String(ex.openM).padStart(2,'0');
+  var closeTime = String(ex.closeH).padStart(2,'0') + ':' + String(ex.closeM).padStart(2,'0');
+  var dayNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var tradingDays = ex.days.map(function(d){ return dayNames[d]; }).join(' · ');
+
+  // Convert exchange open/close to Copenhagen time
+  function exchangeTimeToCph(h, m) {
+    try {
+      var now = new Date();
+      // Build a date at today's date with the given exchange local time
+      var exParts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: ex.tz, year:'numeric', month:'2-digit', day:'2-digit', hour12:false
+      }).formatToParts(now);
+      var get = function(t){ return (exParts.find(function(p){ return p.type===t; })||{value:'00'}).value; };
+      // Construct ISO string in exchange local time, then parse as UTC offset using Intl trick
+      var candidate = new Date(parseInt(get('year')), parseInt(get('month'))-1, parseInt(get('day')), h, m, 0);
+      // Use the offset between exchange tz and UTC at this moment
+      var exHour = parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:ex.tz,hour:'numeric',hour12:false}).format(now));
+      var utcHour = now.getUTCHours();
+      var offsetH = exHour - utcHour;
+      var utcEquiv = new Date(now);
+      utcEquiv.setUTCHours(h - offsetH, m, 0, 0);
+      return tzTime(utcEquiv);
+    } catch(e){ return openTime; }
+  }
+  var cphOpenTime  = exchangeTimeToCph(ex.openH,  ex.openM);
+  var cphCloseTime = exchangeTimeToCph(ex.closeH, ex.closeM);
+
+  html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:10px;margin-bottom:14px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">TRADING HOURS</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+  html += '<div>';
+  html += '<div style="font-family:var(--mono);font-size:11px;color:var(--text-hi);">' +
+    cphOpenTime + ' – ' + cphCloseTime +
+    ' <span style="color:var(--accent);font-size:9px;">CPH</span></div>';
+  html += '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:2px;">' +
+    openTime + ' – ' + closeTime + ' local · ' + tradingDays + '</div>';
+  html += '</div>';
+  // Mini visual session bar
+  html += '<div style="position:relative;width:100px;height:6px;background:var(--dim);border-radius:1px;">';
+  var nowMins   = (function(){
+    try {
+      var fmt2 = new Intl.DateTimeFormat('en-GB',{ timeZone:ex.tz, hour:'numeric', minute:'numeric', hour12:false });
+      var parts2 = fmt2.formatToParts(new Date());
+      var h2 = parseInt((parts2.find(function(p){ return p.type==='hour'; })||{value:'0'}).value);
+      var m2 = parseInt((parts2.find(function(p){ return p.type==='minute'; })||{value:'0'}).value);
+      return h2*60 + m2;
+    } catch(e){ return -1; }
+  })();
+  var openM2  = ex.openH*60+ex.openM;
+  var closeM2 = ex.closeH*60+ex.closeM;
+  var totalMins = closeM2 - openM2;
+  var elapsed   = Math.max(0, Math.min(nowMins - openM2, totalMins));
+  var pctElapsed = totalMins > 0 ? (elapsed / totalMins * 100) : 0;
+  if (open && pctElapsed > 0) {
+    html += '<div style="position:absolute;left:0;top:0;height:100%;width:' + pctElapsed.toFixed(1) + '%;background:var(--accent);border-radius:1px;opacity:0.8;"></div>';
+  }
+  // Now marker
+  if (open && nowMins >= openM2 && nowMins <= closeM2) {
+    html += '<div style="position:absolute;top:-3px;height:12px;width:2px;background:var(--accent-hi);border-radius:1px;left:' + pctElapsed.toFixed(1) + '%"></div>';
+  }
+  html += '</div>';
+  html += '</div></div>';
+
+  // ── Trend indicator ──
+  if (d && prev) {
+    var streak = (d.changePct >= 0) === (prev.changePct >= 0);
+    var streakDir = d.changePct >= 0 ? '▲ UP' : '▼ DOWN';
+    html += '<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:14px;letter-spacing:1px;">';
+    html += streak
+      ? streakDir + ' two sessions in a row · ' + pctStr(d.changePct + prev.changePct, 2) + ' combined'
+      : 'Session reversal — prev ' + pctStr(prev.changePct) + ' → today ' + pctStr(d.changePct);
+    html += '</div>';
+  }
+
+  // ── Switch to Markets deck button ──
+  html += '<button class="story-map-btn" onclick="loadDeck(\'markets\');selectFeedCat(\'markets\');">' +
+    '↗ VIEW MARKETS DECK</button>';
+
+  document.getElementById('storyBody').innerHTML = html;
+
+  // Related — other exchanges, sorted by % change magnitude
+  var relHtml = '<div class="story-related-label">Other Exchanges</div>';
+  STOCK_EXCHANGES.filter(function(e){ return e.id !== exchangeId; }).forEach(function(e) {
+    var ed   = liveIndexData[e.id];
+    var eOpen = isMarketOpen(e);
+    var ePct  = ed ? pctStr(ed.changePct) : '—';
+    var eCol  = ed ? pctColor(ed.changePct) : 'var(--dim)';
+    relHtml += '<div class="story-related-item" onclick="openExchangeStory(\'' + e.id + '\')">';
+    relHtml += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    relHtml += '<div class="story-related-text" style="margin:0;">' +
+      '<span style="color:' + (eOpen?'var(--accent)':'var(--dim)') + ';margin-right:5px;">' + (eOpen?'●':'○') + '</span>' +
+      e.name + ' <span style="color:var(--dim);">' + e.index + '</span></div>';
+    relHtml += '<div style="font-family:var(--mono);font-size:10px;color:' + eCol + ';font-weight:500;">' + ePct + '</div>';
+    relHtml += '</div>';
+    relHtml += '<div class="story-related-meta">' + e.region + (eOpen ? ' · OPEN' : ' · CLOSED') + '</div>';
+    relHtml += '</div>';
+  });
+  document.getElementById('storyRelated').innerHTML = relHtml;
+}
+
 function findRelatedStories(item, zoneMatch) {
   if (!zoneMatch) return [];
   var kws = ZONE_KEYWORDS[zoneMatch.id] || [];
@@ -4179,9 +4440,7 @@ async function fetchRSS() {
           if (title.length > 90) title = title.slice(0,87) + '…';
           var pubDate = (block.match(/<(?:pubDate|published|updated)>([\s\S]*?)<\/(?:pubDate|published|updated)>/) || [])[1] || '';
           var t = pubDate ? utcTime(pubDate) : '--:--';
-          var rssDate = pubDate ? (function(d){ try{ var dt=new Date(d); if(isNaN(dt)) return '';
-            return String(dt.getUTCDate()).padStart(2,'0')+'/'+String(dt.getUTCMonth()+1).padStart(2,'0')+' '+
-            String(dt.getUTCHours()).padStart(2,'0')+':'+String(dt.getUTCMinutes()).padStart(2,'0')+' UTC'; }catch(e){return '';} })(pubDate) : '';
+          var rssDate = pubDate ? (function(d){ try{ var dt=new Date(d); if(isNaN(dt)) return ''; return tzDateTime(dt); }catch(e){return '';} })(pubDate) : '';
           // Extract description / summary for reader panel
           var desc = (block.match(/<(?:description|summary|content:encoded)>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:description|summary|content:encoded)>/) || [])[1] || '';
           desc = desc.replace(/<[^>]+>/g, ' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').replace(/\s+/g,' ').trim();
@@ -4574,11 +4833,7 @@ async function fetchGDACS() {
 
       var pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
       var t       = pubDate ? utcTime(pubDate) : '--:--';
-      var dt      = pubDate ? (function(d){ try {
-        var x=new Date(d);
-        return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+' '+
-          String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0')+' UTC';
-      } catch(e){ return ''; } })(pubDate) : '';
+      var dt      = pubDate ? (function(d){ try { return tzDateTime(new Date(d)); } catch(e){ return ''; } })(pubDate) : '';
 
       // Extract lat/lon from GeoRSS or GDACS tags
       var lat = parseFloat((block.match(/<geo:lat>([\s\S]*?)<\/geo:lat>/) ||
@@ -4714,12 +4969,7 @@ async function fetchTelegramChannels() {
                          block.match(/<published>([\s\S]*?)<\/published>/) ||
                          block.match(/<updated>([\s\S]*?)<\/updated>/) || [])[1] || '';
           var t  = rawDate ? utcTime(rawDate) : '--:--';
-          var dt = rawDate ? (function(d){ try {
-            var x = new Date(d);
-            if (isNaN(x)) return '';
-            return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+' '+
-              String(x.getUTCHours()).padStart(2,'0')+':'+String(x.getUTCMinutes()).padStart(2,'0')+' UTC';
-          } catch(e){ return ''; } })(rawDate) : '';
+          var dt = rawDate ? (function(d){ try { var x=new Date(d); if(isNaN(x)) return ''; return tzDateTime(x); } catch(e){ return ''; } })(rawDate) : '';
 
           // Link: RSS <link> text or Atom <link href="">
           var link = (block.match(/<link>([^<]+)<\/link>/) ||
