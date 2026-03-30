@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v2.3</title>
+<title>Burgerklubben's Situationsrapport · v2.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -1183,14 +1183,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport · v2.3
+   Burgerklubben's Situationsrapport · v2.4
    ─────────────────────────────────────────
-   CHANGES FROM v2.2:
-   · Telegram channels replaced with English-only list:
-     rybar_in_english, OSINTdefender, ourwarstoday,
-     DefenderDome, OsintTv, OsintUpdates,
-     Middle_East_Spectator, warfareanalysis,
-     liveuamap, AMK_Mapping
+   CHANGES FROM v2.3:
+   · Stock exchanges now show OPEN/CLOSED status using
+     timezone-aware trading hours (Intl.DateTimeFormat)
+   · Exchange map dots: vivid when open, dimmed when closed,
+     ●/○ indicator prefix, dashed ring when closed
+   · Previous trading day data stored from Stooq CSV (lines[-3])
+   · Markets feed panel right column: exchange status table
+     showing today % + prev day % + OPEN/CLOSED badge per exchange
+   · Prev day sub-label appears on map dots at zoom ≥ 3
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -1568,13 +1571,46 @@ function renderFeed(cat) {
     setCol('feedColRight', colHeader('Aid Operations') + aidItems.map(feedItem).join(''));
 
   } else if (currentCat === 'markets') {
+    // Build exchange status table for right column
+    var exchStatusHtml = STOCK_EXCHANGES.map(function(ex) {
+      var d    = liveIndexData[ex.id];
+      var prev = prevDayData[ex.id];
+      var open = isMarketOpen(ex);
+      var pct  = d ? d.changePct : null;
+      var pctStr  = pct != null ? ((pct>=0?'+':'')+pct.toFixed(2)+'%') : '—';
+      var pctCol  = pct == null ? 'var(--dim)' : pct >= 0 ? 'var(--accent-hi)' : 'var(--crit-hi)';
+      var prevPct = prev ? prev.changePct : null;
+      var prevStr = prevPct != null ? ((prevPct>=0?'+':'')+prevPct.toFixed(2)+'%') : '—';
+      var prevCol = prevPct == null ? 'var(--dim)' : prevPct >= 0 ? 'var(--accent)' : 'var(--crit)';
+      var statusDot = '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' +
+        (open ? 'var(--accent)' : 'var(--dim)') + ';flex-shrink:0;"></span>';
+      var statusTxt = '<span style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:' +
+        (open ? 'var(--accent)' : 'var(--dim)') + ';padding:1px 4px;border:1px solid ' +
+        (open ? 'var(--accent-lo)' : 'var(--dim)') + ';">' + (open ? 'OPEN' : 'CLOSED') + '</span>';
+      return '<div style="display:grid;grid-template-columns:20px 1fr auto auto auto;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--dim);">' +
+        '<div>' + statusDot + '</div>' +
+        '<div>' +
+          '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);">' + ex.name + ' <span style="color:var(--dim);">' + ex.index + '</span></div>' +
+          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">' + ex.region + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-family:var(--mono);font-size:9px;color:' + pctCol + ';">' + pctStr + '</div>' +
+          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">today</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-family:var(--mono);font-size:9px;color:' + prevCol + ';">' + prevStr + '</div>' +
+          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">prev</div>' +
+        '</div>' +
+        '<div>' + statusTxt + '</div>' +
+      '</div>';
+    }).join('');
+
     setCol('feedColLeft',
       colHeader('Markets', 'POLYMARKET') + polyHtml);
     setCol('feedColMid',
       colHeader('Breaking News', 'RSS LIVE') + rssHtml);
     setCol('feedColRight',
-      colHeader('Conflict Intensity') + conflictItems.map(barItem).join('') +
-      '<div style="margin-top:14px">' + colHeader('Cyber Threats') + cyberItems.map(barItem).join('') + '</div>');
+      colHeader('Exchanges · Status', 'LIVE') + exchStatusHtml);
 
   } else if (currentCat === 'osint') {
     // ── LEFT: Nitter / Twitter OSINT accounts ──
@@ -2394,18 +2430,47 @@ var _aisUpdatePending = false;
 // ── STOCK EXCHANGES + CARRIER STRIKE GROUPS ──
 
 var STOCK_EXCHANGES = [
-  { id:'NYSE',     lon:-74.01, lat:40.71,  name:'NYSE',     index:'DJI',    symbol:'^DJI',      color:'#2a6a3a', region:'Americas'   },
-  { id:'NASDAQ',   lon:-73.98, lat:40.76,  name:'NASDAQ',   index:'COMP',   symbol:'^IXIC',     color:'#2a7a3a', region:'Americas'   },
-  { id:'LSE',      lon:-0.09,  lat:51.51,  name:'LSE',      index:'FTSE',   symbol:'^FTSE',     color:'#2a5a6a', region:'Europe'     },
-  { id:'EURONEXT', lon:2.35,   lat:48.86,  name:'Euronext', index:'CAC40',  symbol:'^FCHI',     color:'#2a5a6a', region:'Europe'     },
-  { id:'DAX',      lon:8.68,   lat:50.11,  name:'Frankfurt',index:'DAX',    symbol:'^GDAXI',    color:'#2a5a6a', region:'Europe'     },
-  { id:'TSE',      lon:139.69, lat:35.68,  name:'Tokyo',    index:'N225',   symbol:'^N225',     color:'#6a4a2a', region:'Asia'       },
-  { id:'SSE',      lon:121.47, lat:31.23,  name:'Shanghai', index:'CSI300', symbol:'000001.SS', color:'#6a2a2a', region:'Asia'       },
-  { id:'HKEX',     lon:114.16, lat:22.28,  name:'HK',       index:'HSI',    symbol:'^HSI',      color:'#6a4a2a', region:'Asia'       },
-  { id:'BSE',      lon:72.88,  lat:18.94,  name:'Mumbai',   index:'SENSEX', symbol:'^BSESN',    color:'#6a5a2a', region:'Asia'       },
-  { id:'ASX',      lon:151.21, lat:-33.87, name:'Sydney',   index:'ASX200', symbol:'^AXJO',     color:'#2a6a5a', region:'Pacific'    },
-  { id:'TADAWUL',  lon:46.72,  lat:24.69,  name:'Riyadh',   index:'TASI',   symbol:'^TASI',     color:'#5a4a2a', region:'MiddleEast' },
+  { id:'NYSE',     lon:-74.01, lat:40.71,  name:'NYSE',     index:'DJI',    symbol:'^DJI',      color:'#2a6a3a', region:'Americas',  tz:'America/New_York',  openH:9,  openM:30,  closeH:16, closeM:0,  days:[1,2,3,4,5] },
+  { id:'NASDAQ',   lon:-73.98, lat:40.76,  name:'NASDAQ',   index:'COMP',   symbol:'^IXIC',     color:'#2a7a3a', region:'Americas',  tz:'America/New_York',  openH:9,  openM:30,  closeH:16, closeM:0,  days:[1,2,3,4,5] },
+  { id:'LSE',      lon:-0.09,  lat:51.51,  name:'LSE',      index:'FTSE',   symbol:'^FTSE',     color:'#2a5a6a', region:'Europe',    tz:'Europe/London',     openH:8,  openM:0,   closeH:16, closeM:30, days:[1,2,3,4,5] },
+  { id:'EURONEXT', lon:2.35,   lat:48.86,  name:'Euronext', index:'CAC40',  symbol:'^FCHI',     color:'#2a5a6a', region:'Europe',    tz:'Europe/Paris',      openH:9,  openM:0,   closeH:17, closeM:30, days:[1,2,3,4,5] },
+  { id:'DAX',      lon:8.68,   lat:50.11,  name:'Frankfurt',index:'DAX',    symbol:'^GDAXI',    color:'#2a5a6a', region:'Europe',    tz:'Europe/Berlin',     openH:9,  openM:0,   closeH:17, closeM:30, days:[1,2,3,4,5] },
+  { id:'TSE',      lon:139.69, lat:35.68,  name:'Tokyo',    index:'N225',   symbol:'^N225',     color:'#6a4a2a', region:'Asia',      tz:'Asia/Tokyo',        openH:9,  openM:0,   closeH:15, closeM:30, days:[1,2,3,4,5] },
+  { id:'SSE',      lon:121.47, lat:31.23,  name:'Shanghai', index:'CSI300', symbol:'000001.SS', color:'#6a2a2a', region:'Asia',      tz:'Asia/Shanghai',     openH:9,  openM:30,  closeH:15, closeM:0,  days:[1,2,3,4,5] },
+  { id:'HKEX',     lon:114.16, lat:22.28,  name:'HK',       index:'HSI',    symbol:'^HSI',      color:'#6a4a2a', region:'Asia',      tz:'Asia/Hong_Kong',    openH:9,  openM:30,  closeH:16, closeM:0,  days:[1,2,3,4,5] },
+  { id:'BSE',      lon:72.88,  lat:18.94,  name:'Mumbai',   index:'SENSEX', symbol:'^BSESN',    color:'#6a5a2a', region:'Asia',      tz:'Asia/Kolkata',      openH:9,  openM:15,  closeH:15, closeM:30, days:[1,2,3,4,5] },
+  { id:'ASX',      lon:151.21, lat:-33.87, name:'Sydney',   index:'ASX200', symbol:'^AXJO',     color:'#2a6a5a', region:'Pacific',   tz:'Australia/Sydney',  openH:10, openM:0,   closeH:16, closeM:0,  days:[1,2,3,4,5] },
+  { id:'TADAWUL',  lon:46.72,  lat:24.69,  name:'Riyadh',   index:'TASI',   symbol:'^TASI',     color:'#5a4a2a', region:'MiddleEast',tz:'Asia/Riyadh',       openH:10, openM:0,   closeH:15, closeM:0,  days:[0,1,2,3,4] }, // Sun–Thu
 ];
+
+// ── Market open/closed detection ──
+// Uses Intl.DateTimeFormat to get local time at each exchange's timezone
+function isMarketOpen(ex) {
+  try {
+    var now = new Date();
+    var fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: ex.tz,
+      hour: 'numeric', minute: 'numeric',
+      weekday: 'short',
+      hour12: false
+    });
+    var parts = fmt.formatToParts(now);
+    var get = function(t){ return parseInt((parts.find(function(p){ return p.type===t; })||{value:'0'}).value); };
+    var hour = get('hour'), minute = get('minute');
+    var weekday = (parts.find(function(p){ return p.type==='weekday'; })||{value:''}).value;
+    // Map abbreviated weekday to JS day index (Sun=0)
+    var dayMap = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+    var dayIdx = dayMap[weekday];
+    if (!ex.days.includes(dayIdx)) return false;
+    var nowMins  = hour * 60 + minute;
+    var openMins = ex.openH * 60 + ex.openM;
+    var closeMins= ex.closeH * 60 + ex.closeM;
+    return nowMins >= openMins && nowMins < closeMins;
+  } catch(e) { return false; }
+}
+
+// Previous day data stored separately from today's live data
+var prevDayData = {};  // exchangeId → { price, changePct }
 
 var liveIndexData = {};
 
@@ -2459,6 +2524,15 @@ async function fetchStockIndices() {
         var pct    = prevCl ? (change / prevCl * 100) : 0;
         liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
           currency:'', name:ex.name };
+        // Store previous trading day separately
+        if (lines.length >= 3) {
+          var prev2 = lines[lines.length-3].split(',');
+          var prevPrice = parseFloat(prev[4]);
+          var prev2Close = parseFloat(prev2[4]);
+          var prevChange = prevPrice - prev2Close;
+          var prevPct = prev2Close ? (prevChange / prev2Close * 100) : 0;
+          prevDayData[ex.id] = { price:prevPrice, change:prevChange, changePct:prevPct, date:prev[0] };
+        }
         onDone();
       }).catch(function() {
         // Fallback: try financialmodelingprep (no key needed for basic quote)
@@ -3334,22 +3408,18 @@ function initMap() {
       .attr('font-size', 5/k + 'px').attr('x', 6/k).attr('y', -3/k)
       .text(function(d) {
         var idx = liveIndexData[d.exchangeId];
-        if (!idx) return d.label ? d.label.split(' ')[0] : '';
-        return d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
+        var openMark = d.isOpen ? '●' : '○';
+        if (!idx) return openMark + ' ' + (d.label ? d.label.split(' ')[0] : '');
+        return openMark + ' ' + d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
       });
-    mapG.selectAll('.csg-label')
-      .attr('font-size', 5/k + 'px').attr('x', 8/k)
-      .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
-    // Rescale exchange labels
-    mapG.selectAll('.exchange-label')
-      .attr('font-size', 5/k + 'px').attr('x', 6/k).attr('y', -3/k)
+    mapG.selectAll('.exchange-prev-label')
+      .attr('font-size', 4/k + 'px').attr('x', 6/k).attr('y', 3/k)
       .text(function(d) {
-        var idx = liveIndexData[d.exchangeId];
-        if (!idx) return d.label ? d.label.split(' ')[0] : '';
-        var sign = idx.changePct >= 0 ? '+' : '';
-        return d.label.split(' ')[0] + ' ' + sign + idx.changePct.toFixed(1) + '%';
+        if (k < 3) return '';
+        var prev = prevDayData[d.exchangeId];
+        if (!prev) return '';
+        return 'prev ' + (prev.changePct>=0?'+':'') + prev.changePct.toFixed(1)+'%';
       });
-    // Rescale CSG labels
     mapG.selectAll('.csg-label')
       .attr('font-size', 5/k + 'px').attr('x', 8/k)
       .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
@@ -3530,12 +3600,23 @@ function plotEvents() {
 
   // ── Exchange dots ──
   var exchG = groups.filter(function(d){ return d.isExchange; });
+  // Outer ring — pulses when open, static when closed
   exchG.append('circle').attr('class','event-ring')
     .attr('r', function(){ return 9/k; }).attr('fill','none')
-    .attr('stroke', function(d){ return d.color; }).attr('stroke-width', 0.7).attr('opacity', 0.45);
+    .attr('stroke', function(d){ return d.color; })
+    .attr('stroke-width', function(d){ return d.isOpen ? 1.0 : 0.4; })
+    .attr('opacity', function(d){ return d.isOpen ? 0.6 : 0.2; })
+    .attr('stroke-dasharray', function(d){ return d.isOpen ? 'none' : (3/k+' '+2/k); });
   exchG.append('circle').attr('class','event-dot')
     .attr('r', function(){ return 4/k; })
-    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.9);
+    .attr('fill', function(d){ return d.color; })
+    .attr('opacity', function(d){ return d.isOpen ? 0.95 : 0.45; });
+  // Open/closed status dot in centre
+  exchG.append('circle')
+    .attr('r', function(){ return 1.5/k; })
+    .attr('fill', function(d){ return d.isOpen ? '#aaffaa' : '#555555'; })
+    .attr('opacity', 0.9).attr('pointer-events','none');
+  // Name + % change label
   exchG.append('text').attr('class','exchange-label')
     .attr('x', function(){ return 6/k; }).attr('y', function(){ return -3/k; })
     .attr('font-family', "'IBM Plex Mono',monospace").attr('font-weight','500')
@@ -3544,8 +3625,22 @@ function plotEvents() {
     .attr('pointer-events', 'none')
     .text(function(d) {
       var idx = liveIndexData[d.exchangeId];
-      if (!idx) return d.label ? d.label.split(' ')[0] : '';
-      return d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
+      var openMark = d.isOpen ? '●' : '○';
+      if (!idx) return openMark + ' ' + (d.label ? d.label.split(' ')[0] : '');
+      return openMark + ' ' + d.label.split(' ')[0] + ' ' + (idx.changePct>=0?'+':'') + idx.changePct.toFixed(1)+'%';
+    });
+  // Previous day sub-label (shown at higher zoom)
+  exchG.append('text').attr('class','exchange-prev-label')
+    .attr('x', function(){ return 6/k; }).attr('y', function(){ return 3/k; })
+    .attr('font-family', "'IBM Plex Mono',monospace")
+    .attr('font-size', function(){ return 4/k + 'px'; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.55)
+    .attr('pointer-events', 'none')
+    .text(function(d) {
+      if (k < 3) return '';  // only show at zoom ≥3
+      var prev = prevDayData[d.exchangeId];
+      if (!prev) return '';
+      return 'prev ' + (prev.changePct>=0?'+':'') + prev.changePct.toFixed(1)+'%';
     });
 
   // ── CSG dots ──
@@ -3748,12 +3843,26 @@ function zoomToConflict(id) {
 function buildFullMapEvents() {
   var zoneDots = activeConflictId ? [] : buildZoneSummaryDots();
   var exchangeDots = (typeof STOCK_EXCHANGES !== 'undefined' && (typeof _mapSettings === 'undefined' || _mapSettings.exchanges !== false)) ? STOCK_EXCHANGES.map(function(ex) {
-    var d = liveIndexData[ex.id];
-    var up = d && d.changePct >= 0;
-    var color = !d ? '#3a7a4a' : up ? '#2a8a3a' : '#8a2a2a';
+    var d    = liveIndexData[ex.id];
+    var prev = prevDayData[ex.id];
+    var open = isMarketOpen(ex);
+    var up   = d && d.changePct >= 0;
+    // Color: open=vivid, closed=dim; green/red for direction
+    var color;
+    if (!d)        color = open ? '#3a6a4a' : '#2a3a2a';
+    else if (open) color = up ? '#2a9a3a' : '#9a2a2a';
+    else           color = up ? '#2a5a3a' : '#5a2a2a';  // dimmed when closed
+
+    var statusLabel = open ? 'OPEN' : 'CLOSED';
+    var pctStr = d ? ((d.changePct>=0?'+':'')+d.changePct.toFixed(2)+'%') : '—';
+    var prevStr = prev ? ('prev: '+(prev.changePct>=0?'+':'')+prev.changePct.toFixed(2)+'%  '+prev.price.toLocaleString(undefined,{maximumFractionDigits:0})) : '';
+    var detail = statusLabel + ' · ' + pctStr + (d ? '  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}) : '') +
+      (prevStr ? ' · ' + prevStr : '') + ' · ' + ex.region;
+
     return { lon:ex.lon, lat:ex.lat, layer:'markets', color:color, r:5,
       label:ex.name+' '+ex.index,
-      detail:(d?(up?'+':'')+d.changePct.toFixed(2)+'%  '+d.price.toLocaleString(undefined,{maximumFractionDigits:0}):'Loading…')+' · '+ex.region,
+      detail:detail,
+      isOpen:open,
       severity:'INFO', source:'exchange', isExchange:true, exchangeId:ex.id };
   }) : [];
   var csgDots = (typeof CARRIER_GROUPS !== 'undefined' && (typeof _mapSettings === 'undefined' || _mapSettings.csg !== false)) ? CARRIER_GROUPS.map(function(csg) {
