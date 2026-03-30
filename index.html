@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v2.7</title>
+<title>Burgerklubben's Situationsrapport · v2.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -915,8 +915,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v2.8 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v2.8 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -934,7 +934,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT</div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v2.8</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1096,6 +1096,7 @@
           <button class="map-layer-btn active" data-layer="cyber" onclick="toggleLayer(this,'cyber')"><span style="color:var(--warn-hi)">▪</span> CYBER</button>
           <button class="map-layer-btn active" data-layer="natural" onclick="toggleLayer(this,'natural')"><span style="color:var(--accent-hi)">▪</span> NATURAL</button>
           <button class="map-layer-btn active" data-layer="maritime" onclick="toggleLayer(this,'maritime')"><span style="color:#4a8a9a">▪</span> MARITIME</button>
+          <button class="map-layer-btn active" data-layer="harbour" onclick="toggleLayer(this,'harbour')"><span style="color:#4a9aaa">▪</span> PORTS</button>
           <button class="map-layer-btn active" data-layer="markets" onclick="toggleLayer(this,'markets')"><span style="color:#5a9c6a">▪</span> MARKETS</button>
           <button class="map-layer-btn active" data-layer="osint" onclick="toggleLayer(this,'osint')"><span style="color:#9a7aaa">▪</span> OSINT</button>
           <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
@@ -1183,11 +1184,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
-   Burgerklubben's Situationsrapport · v2.7
+   Burgerklubben's Situationsrapport · v2.8
    ─────────────────────────────────────────
-   CHANGES FROM v2.6:
-   · Added Copenhagen Stock Exchange (Nasdaq Copenhagen)
-     OMX C25 index, Europe/Copenhagen tz, Mon–Fri 09:00–17:00
+   CHANGES FROM v2.7:
+   · Top 10 container ports plotted on map as PORTS layer
+     (square markers, rank label, TEU sub-label at zoom ≥2.5)
+   · PORTS layer visible in Maritime + Command Center decks
+   · Earthquakes removed from Maritime deck (natural layer out)
+   · Clicking a port dot opens full Intel Reader brief:
+     – Rank, TEU, berths, max depth, operator
+     – Live AIS vessel count in port bounding box
+     – Risk factors & chokepoint proximity
+     – Live RSS/GDELT/Telegram mention scan
+     – All other ports as clickable related items
+   · Maritime feed right column: Top Container Ports table
+     (live vessel count, risk level, live mention alert dot)
+   · countVesselsNearPort() + getPortMentions() helpers
    ═══════════════════════════════════════════ */
 
 // ── STATE ──
@@ -1256,7 +1268,7 @@ var livePolyItems      = [];   // Polymarket geopolitical markets
 var liveJammingCells   = [];   // GPSJam.org EW layer
 var liveNewsPins       = [];   // RSS/GDELT headlines plotted on map
 var mapEvents          = staticEvents.slice();
-var activeLayers       = new Set(['conflict','cyber','natural','maritime','markets','osint']);
+var activeLayers       = new Set(['conflict','cyber','natural','maritime','harbour','markets','osint']);
 
 var mapSvg, mapG, mapProjection, mapZoom, mapPath;
 var mapReady = false;
@@ -1602,9 +1614,30 @@ function renderFeed(cat) {
       '<div style="margin-top:14px">' + colHeader('GPS Jamming', 'GPSJAM') + jammingNote + '</div>');
 
   } else if (currentCat === 'maritime') {
+    // Build top ports summary for right column
+    var portsHtml = CONTAINER_PORTS.map(function(port) {
+      var vessels = countVesselsNearPort(port);
+      var mentions = getPortMentions(port);
+      var riskColor = port.chokepointRisk === 'HIGH' ? 'var(--crit-hi)' : port.chokepointRisk === 'MEDIUM' ? 'var(--warn-hi)' : 'var(--accent)';
+      var alertDot = mentions.length > 0
+        ? '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--warn-hi);flex-shrink:0;margin-right:4px;" title="' + mentions.length + ' live mentions"></span>'
+        : '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--dim);flex-shrink:0;margin-right:4px;"></span>';
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--dim);cursor:pointer;" onclick="openHarbourStory(\'' + port.id + '\')">' +
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--dim);min-width:16px;">#' + port.rank + '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);display:flex;align-items:center;">' + alertDot + port.name + '</div>' +
+          '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">' + port.teu + 'M TEU · ' + port.country + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          (vessels ? '<div style="font-family:var(--mono);font-size:9px;color:#4a8a9a;">' + vessels + ' ⛵</div>' : '') +
+          '<div style="font-family:var(--mono);font-size:7px;color:' + riskColor + ';">' + port.chokepointRisk + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
     setCol('feedColLeft',  colHeader('Maritime Alerts') + maritimeItems.map(feedItem).join(''));
-    setCol('feedColMid',   colHeader('Live Aircraft', 'OPENSKY') + acHtml);
-    setCol('feedColRight', colHeader('Chokepoints') + chokeItems.map(feedItem).join(''));
+    setCol('feedColMid',   colHeader('Chokepoints') + chokeItems.map(feedItem).join(''));
+    setCol('feedColRight', colHeader('Top Container Ports', 'LIVE') + portsHtml);
 
   } else if (currentCat === 'humanitarian') {
     setCol('feedColLeft',  colHeader('Crisis Reports', 'RELIEFWEB LIVE') + reliefHtml);
@@ -1975,7 +2008,7 @@ function toggleLayer(btn, layer) {
 var DECKS = {
   command: {
     label:   'Command Center',
-    layers:  ['conflict','cyber','natural','maritime','markets','osint'],
+    layers:  ['conflict','cyber','natural','maritime','harbour','markets','osint'],
     cat:     'all',
     mapNote: 'All layers active — global situational awareness',
     ticker:  'COMMAND · GDELT · USGS · NOAA · NASA FIRMS · RSS · Polymarket · GPSJam · OpenSky',
@@ -1989,10 +2022,10 @@ var DECKS = {
   },
   maritime: {
     label:   'Maritime & Trade',
-    layers:  ['maritime','natural'],
+    layers:  ['maritime','harbour'],
     cat:     'maritime',
-    mapNote: 'Maritime + Natural layers — shipping lanes & weather',
-    ticker:  'MARITIME DECK · AIS tracking, chokepoint status, weather routing',
+    mapNote: 'Maritime + Ports layers — shipping lanes, chokepoints & container traffic',
+    ticker:  'MARITIME DECK · AIS tracking, chokepoint status, top container ports',
   },
   cyber: {
     label:   'Cyber & Tech',
@@ -2542,6 +2575,123 @@ var CARRIER_GROUPS = [
   { name:'USS Gerald R. Ford CSG',     hull:'CVN-78', lon:-68.0, lat:37.5,  detail:'Second Fleet — N. Atlantic',           updated:'Mar 2026' },
   { name:'USS Theodore Roosevelt CSG', hull:'CVN-71', lon:-117.2,lat:32.7,  detail:'Third Fleet — Eastern Pacific/CONUS',  updated:'Mar 2026' },
 ];
+
+// ── TOP 10 CONTAINER PORTS ──
+// Source: Alphaliner / Lloyd's List 2024 rankings
+// TEU = Twenty-foot Equivalent Units (annual throughput in millions)
+// bbox = [minLon, minLat, maxLon, maxLat] for AIS vessel proximity counting
+var CONTAINER_PORTS = [
+  {
+    id:'shanghai', rank:1, name:'Shanghai', country:'China', lon:121.85, lat:31.35,
+    teu:49.2, operator:'SIPG (Shanghai International Port Group)',
+    chokepoint:'Taiwan Strait', chokepointRisk:'HIGH',
+    depth:17, berths:130,
+    desc:'World\'s busiest container port since 2010. Handles ~20% of China\'s total container trade. Key hub for trans-Pacific and Asia-Europe routes.',
+    risks:'Taiwan Strait tensions could disrupt feeder traffic. Typhoon season Jun–Oct.',
+    bbox:[121.2, 30.8, 122.4, 31.8]
+  },
+  {
+    id:'singapore', rank:2, name:'Singapore', country:'Singapore', lon:103.82, lat:1.26,
+    teu:39.0, operator:'PSA International',
+    chokepoint:'Strait of Malacca', chokepointRisk:'MEDIUM',
+    depth:16, berths:67,
+    desc:'Critical transhipment hub at the intersection of Indian Ocean and South China Sea. ~90% of vessels calling are transhipment traffic.',
+    risks:'Malacca Strait piracy risk. Any South China Sea escalation affects routing.',
+    bbox:[103.6, 1.1, 104.1, 1.5]
+  },
+  {
+    id:'ningbo', rank:3, name:'Ningbo-Zhoushan', country:'China', lon:121.95, lat:29.95,
+    teu:35.3, operator:'Ningbo Zhoushan Port Co.',
+    chokepoint:'Taiwan Strait', chokepointRisk:'HIGH',
+    depth:20, berths:113,
+    desc:'China\'s largest bulk cargo port and #2 container hub. Largest port by cargo tonnage globally. Key for iron ore, crude oil and containers.',
+    risks:'Single-port closure in 2021 (COVID) caused global supply shock for 2 weeks.',
+    bbox:[121.5, 29.6, 122.3, 30.3]
+  },
+  {
+    id:'qingdao', rank:4, name:'Qingdao', country:'China', lon:120.38, lat:36.08,
+    teu:26.7, operator:'Qingdao Port International',
+    chokepoint:'Yellow Sea', chokepointRisk:'MEDIUM',
+    depth:17, berths:79,
+    desc:'Northern China\'s primary container gateway. Key export hub for electronics, machinery and chemicals. Major recipient of imported iron ore and crude.',
+    risks:'Korea-China tensions, Yellow Sea military exercises.',
+    bbox:[120.0, 35.7, 120.8, 36.4]
+  },
+  {
+    id:'guangzhou', rank:5, name:'Guangzhou (Nansha)', country:'China', lon:113.58, lat:22.72,
+    teu:25.8, operator:'Guangzhou Port Group',
+    chokepoint:'South China Sea', chokepointRisk:'HIGH',
+    depth:17, berths:87,
+    desc:'Pearl River Delta hub serving manufacturing heartland of Guangdong province. Closely linked to Hong Kong cargo operations.',
+    risks:'South China Sea territorial disputes. Taiwan contingency would directly affect routing.',
+    bbox:[113.2, 22.4, 114.0, 23.1]
+  },
+  {
+    id:'shenzhen', rank:6, name:'Shenzhen', country:'China', lon:114.02, lat:22.52,
+    teu:29.9, operator:'COSCO, Hutchison Ports, MTL',
+    chokepoint:'South China Sea', chokepointRisk:'HIGH',
+    depth:16, berths:72,
+    desc:'Yantian and Shekou terminals serve as primary gateway for Hong Kong region electronics and consumer goods exports to the US and Europe.',
+    risks:'US-China trade tariff exposure. South China Sea escalation risk.',
+    bbox:[113.7, 22.2, 114.4, 22.8]
+  },
+  {
+    id:'busan', rank:7, name:'Busan', country:'South Korea', lon:129.04, lat:35.10,
+    teu:23.1, operator:'BPA / Hutchison Ports / DP World',
+    chokepoint:'Korea Strait', chokepointRisk:'MEDIUM',
+    depth:18, berths:34,
+    desc:'Northeast Asia\'s primary transhipment hub. Gateway for Korean exports (electronics, autos, ships). Handles Japan overflow traffic.',
+    risks:'North Korea missile tests periodically close approach corridors. Korea Strait naval activity.',
+    bbox:[128.7, 34.8, 129.4, 35.4]
+  },
+  {
+    id:'tianjin', rank:8, name:'Tianjin (Xingang)', country:'China', lon:117.72, lat:38.98,
+    teu:22.2, operator:'Tianjin Port Group',
+    chokepoint:'Bohai Gulf', chokepointRisk:'LOW',
+    depth:19, berths:159,
+    desc:'Primary gateway for Beijing and North China. Major import hub for crude oil and LNG. 2015 explosion caused $1.1B damage and 6-week disruption.',
+    risks:'Bohai Gulf icing Dec–Mar. Northern China industrial slowdown risk.',
+    bbox:[117.4, 38.7, 118.1, 39.3]
+  },
+  {
+    id:'rotterdam', rank:9, name:'Rotterdam', country:'Netherlands', lon:4.05, lat:51.90,
+    teu:14.8, operator:'Port of Rotterdam Authority',
+    chokepoint:'English Channel', chokepointRisk:'LOW',
+    depth:24, berths:540,
+    desc:'Europe\'s largest port and primary gateway for continental Europe. Handles ~12% of all EU seaborne trade. Major oil refining and chemical hub.',
+    risks:'English Channel traffic density. North Sea weather disruption (Nov–Feb).',
+    bbox:[3.8, 51.7, 4.6, 52.1]
+  },
+  {
+    id:'dubai', rank:10, name:'Dubai (Jebel Ali)', country:'UAE', lon:55.02, lat:24.98,
+    teu:14.4, operator:'DP World',
+    chokepoint:'Strait of Hormuz', chokepointRisk:'HIGH',
+    depth:17, berths:67,
+    desc:'Middle East\'s dominant transhipment hub. Free zone hosts 7,000+ companies. Critical relay point for India-Europe and Asia-Africa trade.',
+    risks:'Strait of Hormuz closure would be existential. Iran-UAE tensions, Houthi attacks in Red Sea rerouting cargo pressure.',
+    bbox:[54.7, 24.7, 55.4, 25.3]
+  },
+];
+
+// Count AIS vessels within a port's bounding box
+function countVesselsNearPort(port) {
+  if (!port.bbox) return 0;
+  var minLon = port.bbox[0], minLat = port.bbox[1], maxLon = port.bbox[2], maxLat = port.bbox[3];
+  return liveMaritimeEvents.filter(function(v) {
+    return v.lon >= minLon && v.lon <= maxLon && v.lat >= minLat && v.lat <= maxLat;
+  }).length;
+}
+
+// Scan live feeds for mentions of a port
+function getPortMentions(port) {
+  var keywords = [port.name.toLowerCase(), port.id];
+  var all = liveRssItems.concat(liveGdeltItems).concat(liveTelegramItems);
+  return all.filter(function(item) {
+    if (!item || !item.text) return false;
+    var txt = item.text.toLowerCase();
+    return keywords.some(function(k){ return txt.indexOf(k) >= 0; });
+  }).slice(0, 5);
+}
 
 async function fetchStockIndices() {
   // Strategy: try multiple free sources in order
@@ -3483,6 +3633,20 @@ function initMap() {
     mapG.selectAll('.csg-label')
       .attr('font-size', 5/k + 'px').attr('x', 8/k)
       .text(function(d){ return k >= 2 ? d.label.replace('USS ','').replace(' CSG','') : ''; });
+    mapG.selectAll('.harbour-label')
+      .attr('font-size', 5/k + 'px').attr('x', 8/k).attr('y', -2/k)
+      .text(function(d){
+        var port = CONTAINER_PORTS.filter(function(p){ return p.id===d.portId; })[0];
+        if (!port) return d.label;
+        return k >= 1.5 ? '#'+port.rank+' '+port.name : '#'+port.rank;
+      });
+    mapG.selectAll('.harbour-sub-label')
+      .attr('font-size', 4/k + 'px').attr('x', 8/k).attr('y', 3/k)
+      .text(function(d){
+        if (k < 2.5) return '';
+        var port = CONTAINER_PORTS.filter(function(p){ return p.id===d.portId; })[0];
+        return port ? port.teu + 'M TEU' : '';
+      });
   });
 
   mapSvg.call(mapZoom).on('dblclick.zoom', null).style('cursor','grab');
@@ -3644,8 +3808,8 @@ function plotEvents() {
       return 'translate('+p[0]+','+p[1]+')';
     }).style('cursor','pointer');
 
-  // Static outer ring — skip exchange/CSG/newspin (custom rendered below)
-  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG;}).append('circle').attr('class','event-ring')
+  // Static outer ring — skip exchange/CSG/newspin/harbour (custom rendered below)
+  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;}).append('circle').attr('class','event-ring')
     .attr('r', function(d){return (d.r+5)/k;}).attr('fill','none')
     .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.5).attr('opacity',0.35);
 
@@ -3655,8 +3819,48 @@ function plotEvents() {
     .attr('fill', function(d){return d.color;}).attr('opacity',0.75);
 
   // Core dot — standard events only
-  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG;}).append('circle').attr('class','event-dot')
+  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;}).append('circle').attr('class','event-dot')
     .attr('r', function(d){return d.r/k;}).attr('fill', function(d){return d.color;}).attr('opacity',0.85);
+
+  // ── Harbour (container port) dots ──
+  var harbG = groups.filter(function(d){ return d.isHarbour; });
+  // Outer square ring — port/dock aesthetic
+  harbG.append('rect')
+    .attr('width', function(){ return 14/k; }).attr('height', function(){ return 14/k; })
+    .attr('x', function(){ return -7/k; }).attr('y', function(){ return -7/k; })
+    .attr('fill', 'none')
+    .attr('stroke', function(d){ return d.color; })
+    .attr('stroke-width', 0.8).attr('opacity', 0.5);
+  // Inner filled square
+  harbG.append('rect')
+    .attr('width', function(){ return 6/k; }).attr('height', function(){ return 6/k; })
+    .attr('x', function(){ return -3/k; }).attr('y', function(){ return -3/k; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.85).attr('class','event-dot');
+  // Rank label
+  harbG.append('text').attr('class','harbour-label')
+    .attr('x', function(){ return 8/k; }).attr('y', function(){ return -2/k; })
+    .attr('font-family', "'IBM Plex Mono',monospace").attr('font-weight','500')
+    .attr('font-size', function(){ return 5/k + 'px'; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.9)
+    .attr('pointer-events', 'none')
+    .text(function(d){
+      var port = CONTAINER_PORTS.filter(function(p){ return p.id===d.portId; })[0];
+      if (!port) return d.label;
+      return '#'+port.rank+' '+port.name;
+    });
+  // TEU sub-label
+  harbG.append('text').attr('class','harbour-sub-label')
+    .attr('x', function(){ return 8/k; }).attr('y', function(){ return 3/k; })
+    .attr('font-family', "'IBM Plex Mono',monospace")
+    .attr('font-size', function(){ return 4/k + 'px'; })
+    .attr('fill', function(d){ return d.color; }).attr('opacity', 0.5)
+    .attr('pointer-events', 'none')
+    .text(function(d){
+      if (k < 2.5) return '';
+      var port = CONTAINER_PORTS.filter(function(p){ return p.id===d.portId; })[0];
+      if (!port) return '';
+      return port.teu + 'M TEU';
+    });
 
   // ── Exchange dots ──
   var exchG = groups.filter(function(d){ return d.isExchange; });
@@ -3740,6 +3944,13 @@ function plotEvents() {
   groups.filter(function(d){ return d.isCSG; })
     .on('click', function(event, d) {
       openStory({ text: d.label, tag: 'CSG', cls: 'tag-blue', datetime: d.detail, desc: d.detail });
+    })
+    .style('cursor', 'pointer');
+
+  // Harbour click opens port brief in intel reader
+  groups.filter(function(d){ return d.isHarbour; })
+    .on('click', function(event, d) {
+      openHarbourStory(d.portId);
     })
     .style('cursor', 'pointer');
 
@@ -3944,8 +4155,24 @@ function buildFullMapEvents() {
       label:csg.name, detail:csg.detail+' · '+csg.updated,
       severity:'INFO', source:'csg', isCSG:true };
   }) : [];
+  var harbourDots = CONTAINER_PORTS.map(function(port) {
+    var vessels = countVesselsNearPort(port);
+    var riskColor = port.chokepointRisk === 'HIGH' ? '#7a3535' : port.chokepointRisk === 'MEDIUM' ? '#7a5c2e' : '#2a5a6a';
+    return {
+      lon: port.lon, lat: port.lat,
+      layer: 'harbour',
+      color: riskColor,
+      r: 5.5,
+      label: '#' + port.rank + ' ' + port.name,
+      detail: port.teu + 'M TEU · ' + port.country + ' · ' + port.chokepoint + ' (' + port.chokepointRisk + ' risk)' + (vessels ? ' · ' + vessels + ' vessels nearby' : ''),
+      severity: port.chokepointRisk,
+      source: 'harbour',
+      isHarbour: true,
+      portId: port.id,
+    };
+  });
   return staticEvents.concat(zoneDots, liveConflictEvents, liveNaturalEvents,
-    liveMaritimeEvents, liveNewsPins, exchangeDots, csgDots);
+    liveMaritimeEvents, liveNewsPins, exchangeDots, csgDots, harbourDots);
 }
 
 // Build the hotspot navigator from CONFLICT_ZONES
@@ -4345,6 +4572,129 @@ function openExchangeStory(exchangeId) {
   document.getElementById('storyRelated').innerHTML = relHtml;
 }
 
+// ── HARBOUR INTEL READER ──
+function openHarbourStory(portId) {
+  var port = CONTAINER_PORTS.filter(function(p){ return p.id === portId; })[0];
+  if (!port) return;
+
+  var vessels  = countVesselsNearPort(port);
+  var mentions = getPortMentions(port);
+  var riskColor = port.chokepointRisk === 'HIGH' ? 'var(--crit-hi)' : port.chokepointRisk === 'MEDIUM' ? 'var(--warn-hi)' : 'var(--accent-hi)';
+  var riskBorder = port.chokepointRisk === 'HIGH' ? 'var(--crit)' : port.chokepointRisk === 'MEDIUM' ? 'var(--warn)' : 'var(--accent)';
+  var riskBg = port.chokepointRisk === 'HIGH' ? 'rgba(139,53,53,0.12)' : port.chokepointRisk === 'MEDIUM' ? 'rgba(122,92,46,0.12)' : 'rgba(74,124,89,0.10)';
+
+  _currentStoryItem = { text: port.name + ' Container Port', tag: 'MARITIME', cls: 'tag-blue' };
+  document.getElementById('storyMeta').textContent = '#' + port.rank + ' globally · ' + port.country;
+
+  var html = '';
+
+  // ── Headline ──
+  html += '<div class="story-headline" style="font-size:15px;">' + port.name +
+    ' <span style="color:var(--muted);font-weight:300;font-size:12px;">' + port.country + '</span></div>';
+
+  // ── Source row ──
+  html += '<div class="story-source-row">';
+  html += '<span class="story-tag" style="color:' + riskColor + ';border-color:' + riskBorder + ';background:' + riskBg + ';">' +
+    port.chokepointRisk + ' RISK</span>';
+  html += '<span class="story-datetime">#' + port.rank + ' world ranking</span>';
+  html += '<span class="story-datetime" style="color:#4a8a9a;">' + port.teu + 'M TEU/yr</span>';
+  html += '</div>';
+
+  // ── Key stats grid ──
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">';
+
+  function statBox(label, val, sub, color) {
+    return '<div style="background:var(--surface2);border:1px solid var(--dim);padding:9px;">' +
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">' + label + '</div>' +
+      '<div style="font-family:var(--mono);font-size:16px;font-weight:300;color:' + (color||'var(--text-hi)') + ';letter-spacing:-0.5px;">' + val + '</div>' +
+      (sub ? '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:2px;">' + sub + '</div>' : '') +
+      '</div>';
+  }
+
+  html += statBox('ANNUAL TEU', port.teu + 'M', 'Twenty-foot equiv. units');
+  html += statBox('WORLD RANK', '#' + port.rank, '2024 Alphaliner');
+  html += statBox('MAX DEPTH', port.depth + 'm', 'Draught clearance');
+  html += statBox('BERTHS', port.berths, 'Total berth capacity');
+  html += '</div>';
+
+  // ── AIS vessel activity ──
+  html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:10px;margin-bottom:12px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;">LIVE VESSEL ACTIVITY</div>';
+  if (vessels > 0) {
+    var actLevel = vessels > 20 ? 'HIGH' : vessels > 8 ? 'MODERATE' : 'LOW';
+    var actColor = vessels > 20 ? 'var(--accent-hi)' : vessels > 8 ? 'var(--warn-hi)' : 'var(--muted)';
+    var barPct = Math.min(100, vessels * 3);
+    html += '<div style="display:flex;align-items:center;gap:10px;">';
+    html += '<div style="font-family:var(--mono);font-size:20px;font-weight:300;color:' + actColor + ';">' + vessels + '</div>';
+    html += '<div style="flex:1;">';
+    html += '<div style="height:3px;background:var(--dim);margin-bottom:4px;"><div style="height:100%;width:' + barPct + '%;background:' + actColor + ';"></div></div>';
+    html += '<div style="font-family:var(--mono);font-size:8px;color:' + actColor + ';">' + actLevel + ' · AIS vessels tracked nearby</div>';
+    html += '</div></div>';
+  } else {
+    html += '<div style="font-family:var(--mono);font-size:9px;color:var(--dim);">No AIS data in range — connect AISStream key for live vessel tracking</div>';
+  }
+  html += '</div>';
+
+  // ── Operator & chokepoint ──
+  html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:10px;margin-bottom:12px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">OPERATOR & ROUTING</div>';
+  html += '<div style="font-family:var(--mono);font-size:9px;color:var(--text-hi);margin-bottom:5px;">' + port.operator + '</div>';
+  html += '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;">';
+  html += '<span style="font-family:var(--mono);font-size:8px;color:' + riskColor + ';padding:1px 5px;border:1px solid ' + riskBorder + ';background:' + riskBg + ';">' + port.chokepointRisk + ' RISK</span>';
+  html += '<span style="font-family:var(--mono);font-size:8px;color:var(--muted);">Near ' + port.chokepoint + '</span>';
+  html += '</div></div>';
+
+  // ── Description ──
+  html += '<div class="story-summary">' + port.desc + '</div>';
+
+  // ── Risk factors ──
+  html += '<div style="background:rgba(139,53,53,0.06);border:1px solid var(--dim);border-left:2px solid ' + riskBorder + ';padding:10px;margin-bottom:14px;">';
+  html += '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:' + riskColor + ';margin-bottom:5px;">RISK FACTORS</div>';
+  html += '<div style="font-family:var(--sans);font-size:10px;color:var(--muted);line-height:1.6;">' + port.risks + '</div>';
+  html += '</div>';
+
+  // ── Switch to maritime deck ──
+  html += '<button class="story-map-btn" onclick="loadDeck(\'maritime\');selectFeedCat(\'maritime\');">∿ VIEW MARITIME DECK</button>';
+
+  document.getElementById('storyBody').innerHTML = html;
+
+  // ── Related: live feed mentions ──
+  var relHtml = '';
+  if (mentions.length > 0) {
+    relHtml += '<div class="story-related-label">Live mentions · ' + mentions.length + ' items</div>';
+    mentions.forEach(function(item) {
+      var ridx = _relatedItems.length;
+      _relatedItems.push(item);
+      relHtml += '<div class="story-related-item" onclick="openRelatedStory(' + ridx + ')">';
+      relHtml += '<div class="story-related-text">' + escHtml((item.text||'').slice(0,85)) + (item.text && item.text.length > 85 ? '…' : '') + '</div>';
+      relHtml += '<div class="story-related-meta">' + escHtml(item.tag||'') + (item.datetime ? ' · ' + escHtml(item.datetime) : '') + '</div>';
+      relHtml += '</div>';
+    });
+  }
+
+  // ── Related: other top ports ──
+  relHtml += '<div class="story-related-label" style="margin-top:' + (mentions.length ? '10px' : '0') + ';">Other top ports</div>';
+  CONTAINER_PORTS.filter(function(p){ return p.id !== portId; }).forEach(function(p) {
+    var pRisk  = p.chokepointRisk === 'HIGH' ? 'var(--crit-hi)' : p.chokepointRisk === 'MEDIUM' ? 'var(--warn-hi)' : 'var(--accent)';
+    var pVes   = countVesselsNearPort(p);
+    relHtml += '<div class="story-related-item" onclick="openHarbourStory(\'' + p.id + '\')">';
+    relHtml += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    relHtml += '<div class="story-related-text" style="margin:0;">#' + p.rank + ' ' + p.name + ' <span style="color:var(--dim);">' + p.country + '</span></div>';
+    relHtml += '<div style="font-family:var(--mono);font-size:9px;color:' + pRisk + ';">' + p.teu + 'M</div>';
+    relHtml += '</div>';
+    relHtml += '<div class="story-related-meta">' + p.chokepoint + ' · ' + p.chokepointRisk + ' risk' + (pVes ? ' · ' + pVes + ' vessels' : '') + '</div>';
+    relHtml += '</div>';
+  });
+  document.getElementById('storyRelated').innerHTML = relHtml;
+}
+
+var _relatedItems = [];
+
+function openRelatedStory(idx) {
+  var item = _relatedItems[idx];
+  if (item) openStory(item);
+}
+
 function findRelatedStories(item, zoneMatch) {
   if (!zoneMatch) return [];
   var kws = ZONE_KEYWORDS[zoneMatch.id] || [];
@@ -4361,13 +4711,6 @@ function findRelatedStories(item, zoneMatch) {
     }
   });
   return related.slice(0, 8);
-}
-
-var _relatedItems = [];
-
-function openRelatedStory(idx) {
-  var item = _relatedItems[idx];
-  if (item) openStory(item);
 }
 
 
