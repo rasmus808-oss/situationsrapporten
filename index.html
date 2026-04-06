@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.5</title>
+<title>Burgerklubben's Situationsrapport · v4.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -915,8 +915,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.5 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.5 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.6 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.6 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -935,7 +935,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.5</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.6</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -2853,7 +2853,13 @@ var PIPELINES = [
     length:1213, risk:'MEDIUM',
     desc:'Crosses Black Sea floor to Turkey. Operational since 2003. Predates TurkStream. Supplies Ankara distribution.',
     keywords:['blue stream','bluestream','russia turkey gas'],
-    coords:[[41.5,45.5],[40.5,44.5],[39.5,43.5],[38.5,42.5],[37.8,41.8],[37.2,41.4],[36.4,41.5],[36.0,40.5],[32.8,39.9]] },
+    coords:[
+      // Izobilnoye compressor → Beregovaya coastal terminal
+      [41.4,45.4],[40.0,44.8],[38.5,44.0],[37.5,43.9],
+      // Seabed crossing — straight south under Black Sea
+      [37.0,43.2],[36.8,42.5],[36.5,41.8],[36.3,41.3],
+      // Samsun landing → inland to Ankara
+      [36.0,41.3],[34.5,40.5],[32.8,39.9]] },
 
   { id:'tap_tanap', name:'TANAP / TAP', type:'gas', status:'OPERATIONAL',
     from:'Azerbaijan (Shah Deniz)', to:'Italy (Lecce)', capacity:'20 bcm/yr', operator:'BP/SOCAR/Snam',
@@ -3210,12 +3216,19 @@ var SUBMARINE_CABLES = [
 
   { id:'peace_cable', name:'PEACE Cable', length:12000, capacity:'16 Tbps', risk:'HIGH',
     year:2021, owners:['PEACE Cable International'],
-    landingPoints:['Pakistan','Kenya','South Africa','France'],
+    landingPoints:['Pakistan (Karachi)','Kenya (Mombasa)','South Africa (Cape Town)','France (Marseille)'],
     route:[
-      [62,22],[58,18],[54,12],[50,8],[48,4],[46,0],[44,-6],[42,-10],[40,-16],
-      [34,-28],[28,-34],[20,-34],[14,-32],[8,-26],[4,-18],[2,-8],[2,8],[0,18],
-      [-2,28],[-4,36],[-4,43],[0,47],[2,51]],
-    desc:'Chinese-backed cable. Only one directly linking China-backed interests through Africa to Europe.',
+      // Pakistan coast → Arabian Sea → around Horn of Africa
+      [66.9,24.9],[65,22],[62,19],[59,15],[55,12],[51,10],[48,8],[46,5],[44,2],[42,-2],
+      // East African coast south
+      [40,-8],[38,-15],[36,-20],[34,-26],[28,-34],
+      // Around Cape of Good Hope → up West African coast
+      [20,-34],[14,-32],[10,-25],[8,-18],[5,-10],[2,-2],[0,5],
+      // West Africa north
+      [-2,10],[-8,15],[-14,18],[-16,16],[-16,12],[-14,8],[-10,4],
+      // Across to Europe - Atlantic crossing near North Africa
+      [-6,35],[-2,38],[3,43],[5,43.3]],
+    desc:'Chinese-backed cable. Connects Pakistan to East & West Africa and Europe. Only cable directly linking China-backed interests through Africa to Europe.',
     keywords:['peace cable','chinese cable africa'] },
 
   { id:'eig', name:'EIG (Europe India Gateway)', length:15000, capacity:'3.84 Tbps', risk:'HIGH',
@@ -3261,9 +3274,12 @@ var SUBMARINE_CABLES = [
     year:2008, owners:['China Telecom','AT&T','Level 3'],
     landingPoints:['USA (Oregon)','Japan','S.Korea','Taiwan','China'],
     route:[
-      [-124,46],[-132,46],[-140,44],[-148,42],[-156,38],[-162,34],[-166,30],
-      [-170,26],[-174,22],[180,20],[174,19],[168,19],[162,19],[156,18],
-      [150,20],[144,22],[140,28],[136,32],[132,34],[128,35],[124,26],[122,24]],
+      // Oregon coast → across North Pacific (stay in negative lon until antimeridian)
+      [-124,46],[-130,46],[-140,44],[-150,42],[-158,38],[-164,34],[-168,30],[-172,26],[-176,22],[-179,19],
+      // Cross antimeridian — new segment continues in positive lon
+      [178,17],[172,17],[166,18],[160,19],[154,19],
+      // Into Western Pacific → Japan/Korea/Taiwan/China
+      [148,20],[143,26],[140,30],[137,33],[132,34],[128,35],[124,26],[122,24]],
     desc:'Key trans-Pacific cable. Taiwan landing strategically significant.',
     keywords:['trans pacific express','tpe cable'] },
 
@@ -3271,9 +3287,12 @@ var SUBMARINE_CABLES = [
     year:2020, owners:['Facebook','Amazon','KDDI','SoftBank'],
     landingPoints:['USA (Los Angeles)','Japan','Philippines'],
     route:[
-      [-118,34],[-126,36],[-136,40],[-146,43],[-156,42],[-164,40],[-170,36],
-      [-176,32],[180,28],[174,26],[168,24],[162,22],[156,20],[150,22],[144,24],
-      [140,28],[136,33],[132,34],[126,22],[124,18],[122,15]],
+      // LA → across Central Pacific (stay negative)
+      [-118,34],[-126,34],[-136,36],[-146,38],[-154,36],[-160,34],[-166,31],[-170,28],[-175,25],[-179,22],
+      // Cross antimeridian → Western Pacific
+      [177,20],[172,19],[167,18],[162,18],[157,19],[152,21],
+      // Into Japan and Philippines
+      [145,24],[141,28],[138,33],[134,34],[130,33],[125,22],[122,16]],
     desc:'High-capacity Pacific cable. Philippines landing adds SE Asia connectivity.',
     keywords:['jupiter cable','facebook pacific'] },
 
@@ -3290,8 +3309,12 @@ var SUBMARINE_CABLES = [
     year:2024, owners:['Google','Meta','NTT','PLDT'],
     landingPoints:['Japan','Taiwan','Philippines','Singapore','Indonesia','India'],
     route:[
-      [136,34],[130,32],[126,24],[122,18],[118,14],[116,10],[112,4],[108,0],[106,-4],
-      [104,1],[98,6],[88,8],[82,8],[78,9],[74,12],[72,20]],
+      // Japan → Taiwan → Philippines
+      [136,34],[130,32],[126,24],[122,18],
+      // Philippines → South China Sea → Singapore
+      [118,14],[116,10],[114,5],[110,2],[106,1],[104,1],
+      // Singapore → Strait of Malacca → Bay of Bengal → India
+      [100,5],[96,8],[92,10],[88,12],[84,10],[80,9],[78,9],[76,10],[74,12],[72,19]],
     desc:'New hyperscaler Asia-Pacific ring. South China Sea section vulnerable to Chinese operations.',
     keywords:['apricot cable','google asia cable'] },
 
@@ -3326,11 +3349,14 @@ var SUBMARINE_CABLES = [
 
   { id:'eassy', name:'EASSy', length:10000, capacity:'4.72 Tbps', risk:'MEDIUM',
     year:2010, owners:['Telkom SA','MTN'],
-    landingPoints:['Sudan','Djibouti','Kenya','Tanzania','S.Africa'],
+    landingPoints:['Sudan (Port Sudan)','Djibouti','Somalia','Kenya (Mombasa)','Tanzania (Dar es Salaam)','Mozambique','S.Africa (Durban)'],
     route:[
-      [42,12],[42,8],[42,4],[42,0],[42,-4],[42,-8],[40,-12],
-      [38,-16],[36,-22],[34,-28],[32,-32],[28,-34]],
-    desc:'East African Submarine System. Primary backbone for East African internet.',
+      // Port Sudan → down coast
+      [37.2,19.6],[43.1,11.5],[43.2,11.3],
+      // Djibouti → Somalia coast → Mombasa → Dar es Salaam → Mozambique → Durban
+      [44.0,8.0],[41.5,2.0],[40.1,-2.0],[39.7,-4.0],[39.7,-6.8],
+      [39.6,-11.3],[35.3,-17.9],[35.4,-19.8],[35.0,-23.9],[32.6,-25.9],[31.0,-29.9]],
+    desc:'East African Submarine System. Primary backbone for East African internet. Hugs the coast from Port Sudan south to Durban.',
     keywords:['eassy cable','east africa submarine'] },
 
   { id:'bay_bengal', name:'Bay of Bengal Gateway', length:8100, capacity:'16 Tbps', risk:'HIGH',
@@ -3346,8 +3372,11 @@ var SUBMARINE_CABLES = [
     year:2025, owners:['Cinia (Finland)'],
     landingPoints:['Finland','Norway','Japan','Alaska'],
     route:[
+      // Finland → Norway → across Arctic Ocean (negative lon side)
       [26,60],[22,68],[16,72],[8,76],[0,79],[-16,81],[-40,82],[-70,80],
-      [-100,77],[-130,72],[-148,64],[142,48],[136,34]],
+      [-100,77],[-130,72],[-148,64],[-154,60],[-160,57],[-168,55],[-175,52],[-179,50],
+      // Cross antimeridian → NW Pacific → Japan
+      [177,48],[172,46],[166,45],[160,44],[154,44],[148,44],[143,44],[140,40],[138,37],[136,34]],
     desc:'Proposed Arctic route. Post-2022 Russia exclusion forces extreme northern routing.',
     keywords:['arctic cable','arctic connect'] },
 ];
@@ -3417,6 +3446,29 @@ function openCableStory(id) {
   document.getElementById('storyRelated').innerHTML = relHtml;
 }
 
+// Split a [lon,lat] route into segments at the antimeridian (±180°).
+// Returns an array of segments, each a projected [x,y] array.
+// This prevents D3 drawing a chord straight across the map when a cable
+// crosses the ±180° meridian (trans-Pacific routes).
+function splitCableAtAntimeridian(route) {
+  var segments = [];
+  var current = [];
+  for (var i = 0; i < route.length; i++) {
+    if (i === 0) { current.push(route[i]); continue; }
+    var prev = route[i-1], cur = route[i];
+    var dLon = cur[0] - prev[0];
+    // If longitude jump > 180° we crossed the antimeridian
+    if (Math.abs(dLon) > 180) {
+      if (current.length >= 2) segments.push(current);
+      current = [cur];
+    } else {
+      current.push(cur);
+    }
+  }
+  if (current.length >= 2) segments.push(current);
+  return segments;
+}
+
 function drawCables() {
   if (!mapG || !mapProjection) return;
   mapG.selectAll('.cables-group').remove();
@@ -3427,48 +3479,53 @@ function drawCables() {
 
   SUBMARINE_CABLES.forEach(function(cable) {
     if (!cable.route || cable.route.length < 2) return;
-    var proj = cable.route.map(function(c){ return mapProjection([c[0],c[1]]); }).filter(Boolean);
-    if (proj.length < 2) return;
 
     var isActive = (_activeCableId === cable.id);
     var color    = CABLE_COLOR[cable.risk] || '#4a6aaa';
     var baseOp   = cable.risk === 'CRITICAL' ? 0.45 : cable.risk === 'HIGH' ? 0.38 : 0.28;
     var opacity  = isActive ? 1.0 : baseOp;
     var w        = isActive ? baseW * 3.5 : baseW;
-    var d = proj.map(function(pt,i){ return (i===0?'M':'L')+pt[0].toFixed(1)+','+pt[1].toFixed(1); }).join('');
     var cid = cable.id;
 
-    g.append('path')
-      .attr('d', d).attr('fill','none').attr('stroke', color)
-      .attr('stroke-width', w).attr('opacity', opacity)
-      .attr('stroke-linecap','round').attr('stroke-linejoin','round')
-      .attr('cursor','pointer').attr('pointer-events','all')
-      .attr('data-cid', cid)
-      .on('mousemove', function(event) {
-        var container = document.getElementById('mapContainer');
-        var rect = container.getBoundingClientRect();
-        var tip = document.getElementById('mapTooltip');
-        tip.innerHTML =
-          '<div style="color:var(--text-hi);font-family:var(--mono);font-size:10px;font-weight:500;margin-bottom:2px;">' + cable.name + '</div>' +
-          '<div style="color:' + color + ';font-family:var(--mono);font-size:8px;">' + cable.risk + ' RISK</div>' +
-          '<div style="color:var(--muted);font-family:var(--mono);font-size:8px;">' + cable.length.toLocaleString() + 'km · ' + cable.capacity + '</div>';
-        tip.style.left=(event.clientX-rect.left+14)+'px'; tip.style.top=(event.clientY-rect.top-60)+'px'; tip.style.opacity='1';
-        if (_activeCableId !== cid) g.selectAll('[data-cid="'+cid+'"]').attr('opacity',1).attr('stroke-width',baseW*2.5);
-      })
-      .on('mouseout', function() {
-        document.getElementById('mapTooltip').style.opacity='0';
-        var active = (_activeCableId === cid);
-        g.selectAll('[data-cid="'+cid+'"]').attr('opacity', active ? 1 : baseOp).attr('stroke-width', active ? baseW*3.5 : baseW);
-      })
-      .on('click', function() {
-        if (_activeCableId && _activeCableId !== cid) {
-          var prev = SUBMARINE_CABLES.filter(function(x){ return x.id===_activeCableId; })[0];
-          if (prev) { var pOp = prev.risk==='CRITICAL'?0.45:prev.risk==='HIGH'?0.38:0.28; g.selectAll('[data-cid="'+_activeCableId+'"]').attr('opacity',pOp).attr('stroke-width',baseW); }
-        }
-        _activeCableId = cid;
-        g.selectAll('[data-cid="'+cid+'"]').attr('opacity',1).attr('stroke-width',baseW*3.5);
-        openCableStory(cid);
-      });
+    // Split at antimeridian then project each segment independently
+    var segments = splitCableAtAntimeridian(cable.route);
+    segments.forEach(function(seg) {
+      var proj = seg.map(function(c){ return mapProjection([c[0],c[1]]); }).filter(Boolean);
+      if (proj.length < 2) return;
+      var d = proj.map(function(pt,i){ return (i===0?'M':'L')+pt[0].toFixed(1)+','+pt[1].toFixed(1); }).join('');
+
+      g.append('path')
+        .attr('d', d).attr('fill','none').attr('stroke', color)
+        .attr('stroke-width', w).attr('opacity', opacity)
+        .attr('stroke-linecap','round').attr('stroke-linejoin','round')
+        .attr('cursor','pointer').attr('pointer-events','all')
+        .attr('data-cid', cid)
+        .on('mousemove', function(event) {
+          var container = document.getElementById('mapContainer');
+          var rect = container.getBoundingClientRect();
+          var tip = document.getElementById('mapTooltip');
+          tip.innerHTML =
+            '<div style="color:var(--text-hi);font-family:var(--mono);font-size:10px;font-weight:500;margin-bottom:2px;">' + cable.name + '</div>' +
+            '<div style="color:' + color + ';font-family:var(--mono);font-size:8px;">' + cable.risk + ' RISK</div>' +
+            '<div style="color:var(--muted);font-family:var(--mono);font-size:8px;">' + cable.length.toLocaleString() + 'km · ' + cable.capacity + '</div>';
+          tip.style.left=(event.clientX-rect.left+14)+'px'; tip.style.top=(event.clientY-rect.top-60)+'px'; tip.style.opacity='1';
+          if (_activeCableId !== cid) g.selectAll('[data-cid="'+cid+'"]').attr('opacity',1).attr('stroke-width',baseW*2.5);
+        })
+        .on('mouseout', function() {
+          document.getElementById('mapTooltip').style.opacity='0';
+          var active = (_activeCableId === cid);
+          g.selectAll('[data-cid="'+cid+'"]').attr('opacity', active ? 1 : baseOp).attr('stroke-width', active ? baseW*3.5 : baseW);
+        })
+        .on('click', function() {
+          if (_activeCableId && _activeCableId !== cid) {
+            var prev = SUBMARINE_CABLES.filter(function(x){ return x.id===_activeCableId; })[0];
+            if (prev) { var pOp = prev.risk==='CRITICAL'?0.45:prev.risk==='HIGH'?0.38:0.28; g.selectAll('[data-cid="'+_activeCableId+'"]').attr('opacity',pOp).attr('stroke-width',baseW); }
+          }
+          _activeCableId = cid;
+          g.selectAll('[data-cid="'+cid+'"]').attr('opacity',1).attr('stroke-width',baseW*3.5);
+          openCableStory(cid);
+        });
+    });
   });
 }
 
@@ -4912,21 +4969,27 @@ function buildZoneNewsPins(zoneId) {
   // Take up to 10 best (most recent)
   var live = unique.slice(0, 10);
 
-  // Convert to map pins with jittered positions
+  // Convert to map pins with deterministic positions (golden-angle spread, not random)
+  // This prevents pins from dancing on every feed refresh.
+  // Geo-extracted pins get tiny deterministic jitter; ring-scattered pins use
+  // golden angle so they're evenly spread and stable between redraws.
+  var PHI = 2.399;  // golden angle in radians
   var pins = live.map(function(item, i) {
     // Try to extract precise location from headline text
     var extracted = extractHeadlineLocation(item.text);
     var lon, lat;
     if (extracted) {
-      // Precise geographic placement from headline
-      lon = extracted[0] + (Math.random() - 0.5) * 0.15;  // tiny jitter only
-      lat = extracted[1] + (Math.random() - 0.5) * 0.15;
+      // Precise geographic placement — tiny deterministic offset per index
+      var microJitter = 0.08;
+      lon = extracted[0] + Math.cos(i * PHI) * microJitter;
+      lat = extracted[1] + Math.sin(i * PHI) * microJitter * 0.5;
     } else {
-      // No location found — spread in ring around zone centre
-      var angle = (i / Math.max(live.length, 1)) * Math.PI * 2 + Math.PI / 6;
-      var minR  = zone.radius * 0.5;
-      var maxR  = zone.radius * 0.85;
-      var r     = minR + Math.random() * (maxR - minR);
+      // No location found — spread evenly in ring around zone centre using golden angle.
+      // Radius varies deterministically across the ring (not randomly).
+      var angle = i * PHI;
+      var minR  = zone.radius * 0.45;
+      var maxR  = zone.radius * 0.82;
+      var r     = minR + ((i % 3) / 2) * (maxR - minR);
       lon = zone.lon + Math.cos(angle) * r;
       lat = zone.lat + Math.sin(angle) * r * 0.65;
     }
@@ -4949,11 +5012,26 @@ function buildZoneNewsPins(zoneId) {
     };
   });
 
-  // Pad with fallback static pins if fewer than 3 live items
+  // ── Geo-quality filter ──
+  // Prefer geo-precise pins on the map. Only show ring-scattered (unlocated)
+  // pins if we have fewer than 4 geo-precise pins — this suppresses pure noise
+  // while still giving the map content when live geo data is sparse.
+  var geoPins  = pins.filter(function(p){ return p.isGeo; });
+  var ringPins = pins.filter(function(p){ return !p.isGeo; });
+  var mapPins;
+  if (geoPins.length >= 4) {
+    // Good geo coverage — show only geo-precise pins on map
+    mapPins = geoPins;
+  } else {
+    // Sparse geo coverage — show geo pins plus enough ring pins to reach 5 total
+    mapPins = geoPins.concat(ringPins.slice(0, Math.max(0, 5 - geoPins.length)));
+  }
+
+  // Pad with fallback static pins if fewer than 3 pins total
   var fallbacks = ZONE_FALLBACK_PINS[zoneId] || [];
-  if (pins.length < 3) {
-    fallbacks.slice(0, 10 - pins.length).forEach(function(fb, i) {
-      pins.push({
+  if (mapPins.length < 3) {
+    fallbacks.slice(0, 10 - mapPins.length).forEach(function(fb, i) {
+      mapPins.push({
         lon: fb.lon, lat: fb.lat,
         layer: 'conflict', color: fb.cls === 'tag-red' ? '#8b3535' : fb.cls === 'tag-blue' ? '#2e5a6a' : '#7a5c2e',
         r: 3.5,
@@ -4961,13 +5039,14 @@ function buildZoneNewsPins(zoneId) {
         detail: fb.text,
         datetime: 'Background brief',
         source: 'newspin', isNewsPin: true,
+        isGeo: true,
         tag: fb.tag, cls: fb.cls,
         zoneId: zoneId
       });
     });
   }
 
-  return pins.slice(0, 10);
+  return mapPins.slice(0, 10);
 }
 
 // Legacy: keep liveNewsPins for compatibility but now populated per-zone
@@ -5469,6 +5548,42 @@ function mapReset()   { if(mapZoom&&mapSvg) mapSvg.transition().duration(500).ca
 function zoomToConflict(id) {
   var zone = CONFLICT_ZONES.filter(function(z){ return z.id === id; })[0];
   if (!zone || !mapProjection || !mapSvg) return;
+
+  // ── Ensure Command Center is the background deck ──
+  // If any other deck is active, switch to command silently (no zone reset).
+  // loadDeck() normally nulls activeConflictId, so we bypass that by setting
+  // activeDeck + layers directly here, then letting the zone logic run below.
+  if (activeDeck !== 'command') {
+    var cmdDeck = DECKS['command'];
+    if (cmdDeck) {
+      // Update sidebar active state
+      document.querySelectorAll('.deck-item').forEach(function(el){ el.classList.remove('active'); });
+      var cmdEl = document.getElementById('deck-command');
+      if (cmdEl) cmdEl.classList.add('active');
+      activeDeck = 'command';
+      // Switch layers to command deck layers (preserves conflict layer below)
+      activeLayers = new Set(cmdDeck.layers);
+      document.querySelectorAll('.map-layer-btn').forEach(function(btn) {
+        var layer = btn.getAttribute('data-layer');
+        btn.classList.toggle('active', activeLayers.has(layer));
+      });
+      // Switch feed to conflict category since that's what we're zooming to
+      document.querySelectorAll('.feed-pill').forEach(function(p){ p.classList.remove('active'); });
+      var cpill = document.querySelector('.feed-pill[onclick*="\'conflict\'"]');
+      if (cpill) cpill.classList.add('active');
+      renderFeed('conflict');
+      // Update ticker
+      var tickerEl = document.querySelector('.ticker-label');
+      if (tickerEl) tickerEl.textContent = 'COMMAND CENTER';
+      // Hide shipping lanes if they were on
+      if (_lanesVisible) {
+        _lanesVisible = false;
+        var lanesBtn = document.getElementById('lanesBtn');
+        if (lanesBtn) lanesBtn.classList.remove('active');
+        if (mapReady) drawShippingLanes();
+      }
+    }
+  }
 
   // Toggle: clicking the active zone turns it off
   var prev = activeConflictId;
