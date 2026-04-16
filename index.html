@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.7</title>
+<title>Burgerklubben's Situationsrapport · v4.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -916,8 +916,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.7 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.7 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +936,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.7</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1111,6 +1111,11 @@
           <button class="map-layer-btn active" data-layer="osint" onclick="toggleLayer(this,'osint')"><span style="color:#9a7aaa">▪</span> OSINT</button>
           <button class="map-layer-btn" data-layer="energy" onclick="toggleLayer(this,'energy')"><span style="color:#c09050">▪</span> ENERGY</button>
           <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
+          <button onclick="generateDeckBriefing()" title="Generate AI situation report for current deck"
+            style="font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:3px 9px;background:rgba(74,124,89,0.12);border:1px solid var(--accent-lo);color:var(--accent);cursor:pointer;white-space:nowrap;transition:all 0.15s;"
+            onmouseover="this.style.background='rgba(74,124,89,0.22)';this.style.color='var(--accent-hi)'"
+            onmouseout="this.style.background='rgba(74,124,89,0.12)';this.style.color='var(--accent)'">⚡ AI BRIEF</button>
+          <div style="width:1px;height:14px;background:var(--border);margin:0 4px;"></div>
           <button class="map-ctrl-btn" onclick="mapZoomIn()" title="Zoom In">+</button>
           <button class="map-ctrl-btn" onclick="mapZoomOut()" title="Zoom Out">-</button>
           <button class="map-ctrl-btn" onclick="mapReset()" title="Reset">⌂</button>
@@ -1136,6 +1141,49 @@
           </div>
         </div>
         <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:rgba(8,12,10,0.94);border:1px solid #2a2e2a;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
+
+        <!-- Icon legend — bottom-left of map -->
+        <div id="mapIconLegend" style="position:absolute;bottom:8px;left:8px;z-index:15;background:rgba(6,9,8,0.88);border:1px solid #2a2e2a;padding:6px 8px;pointer-events:none;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:6px;letter-spacing:2px;color:#3a4a3a;margin-bottom:5px;">ICON KEY</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><polygon points="0,-5 2.5,-1.5 5,-1.5 3,0.5 4,4 0,2 -4,4 -3,0.5 -5,-1.5 -2.5,-1.5" fill="#b04444" opacity="0.9"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">EXPLOSION</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><path d="M0,5 L3.5,-2.5 L1,-0.5 L0,-5 L-1,-0.5 L-3.5,-2.5Z" fill="#b04444" opacity="0.9"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">AIRSTRIKE</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><line x1="-4" y1="-4" x2="4" y2="4" stroke="#a07840" stroke-width="1.8" stroke-linecap="round"/><line x1="4" y1="-4" x2="-4" y2="4" stroke="#a07840" stroke-width="1.8" stroke-linecap="round"/><circle r="1.5" fill="#a07840"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">DRONE/UAV</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><path d="M0,-5 L3.5,3 L1,1 L1,5 L-1,5 L-1,1 L-3.5,3Z" fill="#a07840" opacity="0.9"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">MILITARY</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><polygon points="0,-5 4,3.5 -4,3.5" fill="#a07840" opacity="0.9"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">PROTEST</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-1.5" y="-5" width="3" height="10" fill="#b04444" rx="0.5"/><rect x="-5" y="-1.5" width="10" height="3" fill="#b04444" rx="0.5"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">CASUALTY</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><polygon points="4.5,0 2.25,3.9 -2.25,3.9 -4.5,0 -2.25,-3.9 2.25,-3.9" fill="none" stroke="#c09050" stroke-width="1.2"/><circle r="1.8" fill="#c09050"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">CYBER</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5" fill="none" stroke="#4a8a9a" stroke-width="0.9" opacity="0.4"/><circle r="3" fill="none" stroke="#4a8a9a" stroke-width="1" opacity="0.6"/><circle r="1.5" fill="#4a8a9a"/></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#7a8a7a;">SEISMIC</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="1.8" fill="#8acc8a"/><text x="3" y="1.5" font-family="monospace" font-size="6" fill="#8acc8a" font-weight="700">2</text></svg>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#8acc8a;">CORROBORATED</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2278,6 +2326,10 @@ async function fetchGDELT() {
     // For proper geo: use GDELT Event API separately
     await fetchGDELTEvents();
 
+    // If AI crawler enabled, send headlines for NLP geolocation
+    var headlines = liveGdeltItems.map(function(i) { return i.text; });
+    maybeRunAiCrawler(headlines);
+
     if (currentCat === 'all' || currentCat === 'conflict') renderFeed(currentCat);
 
   } catch(err) {
@@ -2297,6 +2349,137 @@ async function fetchGDELT() {
       if (currentCat === 'all' || currentCat === 'conflict') renderFeed(currentCat);
     }
   }
+}
+
+// ── AI NLP CRAWLER — Claude-powered geolocation + event extraction ──
+// When enabled (admin toggle), sends batches of headlines to Claude Haiku
+// via Anthropic API to extract: {location, lat, lon, event_type, confidence}
+// This dramatically improves pin accuracy over keyword-regex approach.
+
+var _aiCrawlerEnabled = false;
+var _aiCrawlerBusy    = false;
+
+function toggleAiCrawler(enabled) {
+  _aiCrawlerEnabled = enabled;
+  var btn = document.getElementById('aiCrawlerBtn');
+  var status = document.getElementById('aiCrawlerStatus');
+  if (btn) {
+    btn.textContent = enabled ? '◉ AI CRAWLER ON — click to run now' : '○ AI CRAWLER OFF';
+    btn.style.color = enabled ? 'var(--accent-hi)' : 'var(--muted)';
+    btn.style.borderColor = enabled ? 'var(--accent-lo)' : 'var(--dim)';
+  }
+  if (status) {
+    status.textContent = enabled ? 'Active — fires every GDELT refresh (~5 min)' : 'Idle — toggle to activate';
+    status.style.color = enabled ? 'var(--accent)' : 'var(--dim)';
+  }
+}
+
+// Process a batch of headline strings through Claude API
+// Returns array of {text, lat, lon, event_type, confidence, location_name}
+async function aiExtractGeoEvents(headlines) {
+  if (!headlines || headlines.length === 0) return [];
+  if (_aiCrawlerBusy) return [];
+  _aiCrawlerBusy = true;
+
+  var prompt = [
+    'You are a geopolitical intelligence analyst. Extract structured data from these conflict/security headlines.',
+    'For each headline, return JSON with fields:',
+    '  text: original headline (max 60 chars)',
+    '  location_name: most specific place name mentioned',
+    '  lat: decimal latitude (null if unknown)',
+    '  lon: decimal longitude (null if unknown)',
+    '  event_type: one of: explosion|airstrike|drone|military|protest|casualty|cyber|diplomacy|generic',
+    '  confidence: 0.0-1.0 (how confident you are in the lat/lon)',
+    '',
+    'Return ONLY a JSON array, no other text. If location is unknown or too vague, set lat/lon to null.',
+    'Use real-world coordinates. Be precise — city level or better when possible.',
+    '',
+    'Headlines:',
+    headlines.slice(0, 15).map(function(h, i) { return (i+1) + '. ' + h; }).join('\n')
+  ].join('\n');
+
+  if (!ANTHROPIC_API_KEY) {
+    console.warn('AI crawler: no Anthropic API key set — add key in Admin panel');
+    var status = document.getElementById('aiCrawlerStatus');
+    if (status) { status.textContent = '✗ No API key — set in Admin → API Keys'; status.style.color = 'var(--warn-hi)'; }
+    _aiCrawlerBusy = false;
+    return [];
+  }
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) throw new Error('API ' + response.status);
+    var data = await response.json();
+    var text = (data.content && data.content[0] && data.content[0].text) || '[]';
+    // Strip any markdown fences
+    text = text.replace(/```json|```/g, '').trim();
+    var results = JSON.parse(text);
+
+    // Convert to map event objects
+    var mapEvts = results
+      .filter(function(r) { return r.lat != null && r.lon != null && r.confidence >= 0.4; })
+      .map(function(r) {
+        var colorMap = {
+          explosion:'#b04444', airstrike:'#b04444', drone:'#a07840',
+          military:'#7a5c2e', protest:'#7a5c2e', casualty:'#b04444',
+          cyber:'#c09050', diplomacy:'#2a5a7a', generic:'#5a3535'
+        };
+        var sevMap = {
+          explosion:'CRITICAL', airstrike:'HIGH', drone:'HIGH',
+          military:'MEDIUM', protest:'MEDIUM', casualty:'HIGH',
+          cyber:'HIGH', diplomacy:'LOW', generic:'MEDIUM'
+        };
+        return {
+          lon: parseFloat(r.lon), lat: parseFloat(r.lat),
+          layer: 'conflict',
+          color: colorMap[r.event_type] || '#5a3535',
+          r: r.confidence >= 0.8 ? 3.5 : 3,
+          label: (r.location_name || 'Unknown') + ' — ' + (r.event_type || 'event'),
+          detail: r.text || '',
+          severity: sevMap[r.event_type] || 'MEDIUM',
+          source: 'ai-crawler',
+          datetime: new Date().toISOString(),
+          aiConfidence: r.confidence,
+          eventType: r.event_type
+        };
+      });
+
+    // Merge into liveConflictEvents, replacing previous ai-crawler events
+    liveConflictEvents = liveConflictEvents
+      .filter(function(e) { return e.source !== 'ai-crawler'; })
+      .concat(mapEvts);
+
+    rebuildMap();
+    setSourceStatus('gdelt', 'live', 'AI+GDELT · ' + mapEvts.length + ' events');
+    return mapEvts;
+
+  } catch(e) {
+    console.warn('AI crawler error:', e);
+    return [];
+  } finally {
+    _aiCrawlerBusy = false;
+  }
+}
+
+// Hook into GDELT fetch — if AI crawler enabled, enrich the headlines batch
+async function maybeRunAiCrawler(headlines) {
+  if (!_aiCrawlerEnabled) return;
+  if (!headlines || headlines.length === 0) return;
+  await aiExtractGeoEvents(headlines);
 }
 
 // GDELT Event Stream: geolocated conflict events for map pins
@@ -5126,6 +5309,7 @@ function buildNewsPins() {
 function rebuildMap() {
   buildNewsPins();
   mapEvents = buildFullMapEvents();
+  runCorroboration(mapEvents);
   if (mapReady) {
     drawConflictZones(activeConflictId ? undefined : false);
     drawShippingLanes();
@@ -5133,6 +5317,107 @@ function rebuildMap() {
     drawCables();
     plotEvents();
   }
+}
+
+// ── CORROBORATION ENGINE ──
+// Groups events within 150km and 30min window. Events confirmed by 2+ sources
+// get a corroborated=true flag and higher visual weight.
+var _corroborationClusters = [];
+
+function haversineKm(lon1, lat1, lon2, lat2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function runCorroboration(events) {
+  // Only cluster live conflict events (exclude static, harbour, exchange, CSG)
+  var live = events.filter(function(e) {
+    return e.source && e.source !== 'static' && e.source !== 'zone-dot' &&
+           !e.isHarbour && !e.isExchange && !e.isCSG && !e.isZoneDot &&
+           e.lon != null && e.lat != null;
+  });
+
+  var now = Date.now();
+  var clusters = [];
+  var assigned = new Array(live.length).fill(false);
+
+  for (var i = 0; i < live.length; i++) {
+    if (assigned[i]) continue;
+    var cluster = { events: [live[i]], sources: new Set([live[i].source]), lon: live[i].lon, lat: live[i].lat };
+    assigned[i] = true;
+
+    for (var j = i + 1; j < live.length; j++) {
+      if (assigned[j]) continue;
+      var dist = haversineKm(live[i].lon, live[i].lat, live[j].lon, live[j].lat);
+      if (dist <= 150) {
+        // Time check — if datetime available, within 30 min; otherwise always cluster
+        var tOk = true;
+        if (live[i].datetime && live[j].datetime) {
+          var t1 = new Date(live[i].datetime).getTime();
+          var t2 = new Date(live[j].datetime).getTime();
+          if (!isNaN(t1) && !isNaN(t2)) tOk = Math.abs(t1 - t2) <= 30 * 60 * 1000;
+        }
+        if (tOk) {
+          cluster.events.push(live[j]);
+          cluster.sources.add(live[j].source);
+          assigned[j] = true;
+          cluster.lon = (cluster.lon + live[j].lon) / 2;
+          cluster.lat = (cluster.lat + live[j].lat) / 2;
+        }
+      }
+    }
+
+    var sourceCount = cluster.sources.size;
+    var corroborated = sourceCount >= 2;
+    cluster.events.forEach(function(ev) {
+      ev.corroborated = corroborated;
+      ev.sourceCount  = sourceCount;
+      // Boost severity if multi-source confirmed
+      if (corroborated && ev.severity === 'MEDIUM') ev.severity = 'HIGH';
+      if (corroborated && ev.severity === 'HIGH')   ev.corrobBoost = true;
+    });
+    if (corroborated) clusters.push(cluster);
+  }
+  _corroborationClusters = clusters;
+}
+
+// ── EVENT TYPE ICON CLASSIFIER ──
+// Assigns a symbolic icon type to each event based on its label/detail text
+// Types: 'explosion', 'airstrike', 'military', 'protest', 'cyber', 'quake',
+//        'fire', 'ship', 'drone', 'casualty', 'diplomacy', 'generic'
+function classifyEventIcon(ev) {
+  if (ev.isHarbour)  return 'harbour';
+  if (ev.isExchange) return 'exchange';
+  if (ev.isCSG)      return 'csg';
+  if (ev.isAircraft) return 'aircraft';
+  if (ev.isNewsPin)  return 'newspin';
+  if (ev.isZoneDot)  return 'zonedot';
+
+  var txt = ((ev.label || '') + ' ' + (ev.detail || '')).toLowerCase();
+  var src = (ev.source || '').toLowerCase();
+
+  if (src === 'usgs')  return 'quake';
+  if (src === 'firms') return 'fire';
+  if (src === 'gpsjam') return 'gps';
+  if (ev.layer === 'maritime' && !ev.isCSG) return 'ship';
+  if (ev.layer === 'cyber') return 'cyber';
+
+  if (/drone|uav|shahed|kamikaze|loitering/.test(txt))               return 'drone';
+  if (/airstrike|airstr|aircraft|jet|bomb|f-16|su-\d|strike/.test(txt)) return 'airstrike';
+  if (/explo|blast|detonat|shell|shelling|artillery|rocket|missile/.test(txt)) return 'explosion';
+  if (/casualt|dead|killed|kill|wound|injur|fatality/.test(txt))     return 'casualty';
+  if (/protest|demonstrat|riot|march|unrest|uprising/.test(txt))     return 'protest';
+  if (/troops|convoy|advance|retreat|offensive|military|soldier|forces|tank/.test(txt)) return 'military';
+  if (/ceasefire|negotiat|diplomat|sanction|agree|deal|summit/.test(txt)) return 'diplomacy';
+  if (/cyber|hack|breach|ransomware|malware|phish|apt/.test(txt))    return 'cyber';
+  if (/fire|wildfire|inferno/.test(txt))                              return 'fire';
+  if (/earthquake|seismic|tremor/.test(txt))                          return 'quake';
+  return 'generic';
 }
 
 function initMap() {
@@ -5395,16 +5680,149 @@ function plotEvents() {
   // Static outer ring — skip exchange/CSG/newspin/harbour (custom rendered below)
   groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;}).append('circle').attr('class','event-ring')
     .attr('r', function(d){return (d.r+5)/k;}).attr('fill','none')
-    .attr('stroke', function(d){return d.color;}).attr('stroke-width',0.5).attr('opacity',0.35);
+    .attr('stroke', function(d){
+      // Corroborated events get a brighter ring
+      if (d.corroborated) return '#aaccaa';
+      return d.color;
+    })
+    .attr('stroke-width', function(d){ return d.corroborated ? 0.8 : 0.5; })
+    .attr('opacity', function(d){ return d.corroborated ? 0.55 : 0.35; })
+    .attr('stroke-dasharray', function(d){ return d.corroborated ? 'none' : 'none'; });
 
   // Aircraft triangle
   groups.filter(function(d){return d.isAircraft;}).append('path')
     .attr('d', function(d){ var s=d.r/k; return 'M0,'+-s*1.5+' L'+s+','+s+' L'+-s+','+s+'Z'; })
     .attr('fill', function(d){return d.color;}).attr('opacity',0.75);
 
-  // Core dot — standard events only
-  groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;}).append('circle').attr('class','event-dot')
-    .attr('r', function(d){return d.r/k;}).attr('fill', function(d){return d.color;}).attr('opacity',0.85);
+  // ── Differentiated icons per event type ──
+  var iconG = groups.filter(function(d){
+    return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;
+  });
+
+  iconG.each(function(d) {
+    var g    = d3.select(this);
+    var type = classifyEventIcon(d);
+    var s    = (d.r || 3) / k;
+    var col  = d.color;
+    var op   = d.corroborated ? 0.95 : 0.82;
+    var corrobRing = d.corroborated;
+
+    // Corroboration badge — small source-count dot top-right
+    if (corrobRing && d.sourceCount > 1) {
+      g.append('circle')
+        .attr('cx', s * 1.4).attr('cy', -s * 1.4)
+        .attr('r', s * 0.7)
+        .attr('fill', '#8acc8a').attr('opacity', 0.9)
+        .attr('pointer-events', 'none');
+      g.append('text')
+        .attr('x', s * 1.4).attr('y', -s * 1.4)
+        .attr('text-anchor','middle').attr('dominant-baseline','central')
+        .attr('font-size', s * 0.7 + 'px')
+        .attr('fill', '#060807').attr('font-weight','700')
+        .attr('pointer-events','none')
+        .text(d.sourceCount);
+    }
+
+    if (type === 'explosion') {
+      // Jagged burst / diamond
+      var pts = [];
+      for (var a = 0; a < 8; a++) {
+        var r2 = (a % 2 === 0) ? s * 1.4 : s * 0.7;
+        var ang = (a / 8) * Math.PI * 2 - Math.PI / 2;
+        pts.push([r2 * Math.cos(ang), r2 * Math.sin(ang)]);
+      }
+      g.append('polygon')
+        .attr('points', pts.map(function(p){ return p[0]+','+p[1]; }).join(' '))
+        .attr('fill', col).attr('opacity', op).attr('class','event-dot');
+
+    } else if (type === 'airstrike') {
+      // Downward-pointing chevron / arrow
+      g.append('path')
+        .attr('d', 'M0,'+(s*1.5)+' L'+(s*1.1)+','+(-s*0.8)+' L'+(s*0.3)+','+(-s*0.2)+
+              ' L0,'+(-s*1.5)+' L'+(-s*0.3)+','+(-s*0.2)+' L'+(-s*1.1)+','+(-s*0.8)+'Z')
+        .attr('fill', col).attr('opacity', op).attr('class','event-dot');
+
+    } else if (type === 'drone') {
+      // X shape (crosshair)
+      var ds = s * 1.2;
+      g.append('line').attr('x1',-ds).attr('y1',-ds).attr('x2',ds).attr('y2',ds)
+        .attr('stroke',col).attr('stroke-width',s*0.55).attr('opacity',op).attr('stroke-linecap','round');
+      g.append('line').attr('x1',ds).attr('y1',-ds).attr('x2',-ds).attr('y2',ds)
+        .attr('stroke',col).attr('stroke-width',s*0.55).attr('opacity',op).attr('stroke-linecap','round');
+      g.append('circle').attr('r',s*0.35).attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'military') {
+      // Upward arrow / chevron
+      g.append('path')
+        .attr('d','M0,'+(-s*1.5)+' L'+(s*1.0)+','+(s*0.8)+' L'+(s*0.3)+','+(s*0.2)+
+              ' L'+(s*0.3)+','+(s*1.5)+' L'+(-s*0.3)+','+(s*1.5)+
+              ' L'+(-s*0.3)+','+(s*0.2)+' L'+(-s*1.0)+','+(s*0.8)+'Z')
+        .attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'protest') {
+      // Raised fist / triangle with flat bottom
+      g.append('path')
+        .attr('d','M0,'+(-s*1.4)+' L'+(s*1.2)+','+(s*1.0)+' L'+(-s*1.2)+','+(s*1.0)+'Z')
+        .attr('fill',col).attr('opacity',op).attr('class','event-dot');
+      g.append('rect')
+        .attr('x',-s*0.35).attr('y',-s*0.3).attr('width',s*0.7).attr('height',s*0.7)
+        .attr('fill','#060807').attr('opacity',0.6).attr('pointer-events','none');
+
+    } else if (type === 'casualty') {
+      // Cross
+      g.append('rect').attr('x',-s*0.35).attr('y',-s*1.3).attr('width',s*0.7).attr('height',s*2.6)
+        .attr('fill',col).attr('opacity',op).attr('rx',s*0.15).attr('class','event-dot');
+      g.append('rect').attr('x',-s*1.3).attr('y',-s*0.35).attr('width',s*2.6).attr('height',s*0.7)
+        .attr('fill',col).attr('opacity',op).attr('rx',s*0.15);
+
+    } else if (type === 'cyber') {
+      // Hexagon
+      var hPts = [];
+      for (var hi = 0; hi < 6; hi++) {
+        var ha = hi * Math.PI / 3 - Math.PI / 6;
+        hPts.push([(s*1.3)*Math.cos(ha), (s*1.3)*Math.sin(ha)]);
+      }
+      g.append('polygon')
+        .attr('points', hPts.map(function(p){ return p[0]+','+p[1]; }).join(' '))
+        .attr('fill','none').attr('stroke',col).attr('stroke-width',s*0.4).attr('opacity',op);
+      g.append('circle').attr('r',s*0.5).attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'quake') {
+      // Concentric wave rings
+      g.append('circle').attr('r',s*1.5).attr('fill','none').attr('stroke',col).attr('stroke-width',s*0.3).attr('opacity',op*0.4);
+      g.append('circle').attr('r',s*0.9).attr('fill','none').attr('stroke',col).attr('stroke-width',s*0.35).attr('opacity',op*0.6);
+      g.append('circle').attr('r',s*0.4).attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'fire') {
+      // Diamond / rhombus
+      g.append('polygon')
+        .attr('points','0,'+(-s*1.5)+' '+(s*1.0)+',0+' +' 0,'+(s*1.5)+' '+(-s*1.0)+',0')
+        .attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'ship') {
+      // Horizontal double-arrow / vessel shape
+      g.append('circle').attr('r',s).attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'gps') {
+      // Signal-loss slash across circle
+      g.append('circle').attr('r',s*1.1).attr('fill','none').attr('stroke',col).attr('stroke-width',s*0.35).attr('opacity',op);
+      g.append('line').attr('x1',-s*1.1).attr('y1',s*1.1).attr('x2',s*1.1).attr('y2',-s*1.1)
+        .attr('stroke',col).attr('stroke-width',s*0.45).attr('opacity',op).attr('stroke-linecap','round');
+      g.append('circle').attr('r',s*0.35).attr('fill',col).attr('opacity',op).attr('class','event-dot');
+
+    } else if (type === 'diplomacy') {
+      // Diamond (rotated square)
+      g.append('rect')
+        .attr('x',-s).attr('y',-s).attr('width',s*2).attr('height',s*2)
+        .attr('transform','rotate(45)')
+        .attr('fill',col).attr('opacity',op*0.7).attr('class','event-dot');
+
+    } else {
+      // Generic — plain circle
+      g.append('circle').attr('class','event-dot')
+        .attr('r',s).attr('fill',col).attr('opacity',op);
+    }
+  });
 
   // ── Harbour (container port) dots — upward triangle (static installation) ──
   var harbG = groups.filter(function(d){ return d.isHarbour; });
@@ -5566,11 +5984,22 @@ function plotEvents() {
           '<div style="color:var(--text-hi);font-family:var(--sans);font-size:10px;font-weight:500;line-height:1.45;">'+d.label+'</div>' +
           tagLine;
       } else {
-        // General conflict/event dot — show label + brief context
+        var iconType = classifyEventIcon(d);
+        var iconLabels = {
+          explosion:'EXPLOSION', airstrike:'AIRSTRIKE', drone:'DRONE/UAV',
+          military:'MILITARY MVMT', protest:'PROTEST', casualty:'CASUALTY',
+          cyber:'CYBER', quake:'SEISMIC', fire:'WILDFIRE', ship:'VESSEL',
+          gps:'GPS JAMMING', diplomacy:'DIPLOMACY', generic:'EVENT', zonedot:'CONFLICT ZONE'
+        };
+        var iconLabel = iconLabels[iconType] || 'EVENT';
+        var corrobLine = d.corroborated
+          ? '<div style="color:#8acc8a;font-family:var(--mono);font-size:8px;letter-spacing:1px;margin-top:5px;">✓ CORROBORATED · ' + d.sourceCount + ' SOURCES</div>'
+          : (d.sourceCount > 1 ? '' : '<div style="color:var(--dim);font-family:var(--mono);font-size:8px;margin-top:4px;">SINGLE SOURCE</div>');
         tooltip.innerHTML =
-          '<div style="color:var(--text-hi);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:1px;margin-bottom:4px;">'+d.label+'</div>' +
-          '<div style="color:var(--muted);font-family:var(--sans);font-size:9px;line-height:1.5;">'+d.detail+'</div>' +
-          tagLine;
+          '<div style="color:var(--muted);font-family:var(--mono);font-size:7px;letter-spacing:2px;margin-bottom:4px;">' + iconLabel + '</div>' +
+          '<div style="color:var(--text-hi);font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">' + d.label + '</div>' +
+          '<div style="color:var(--muted);font-family:var(--sans);font-size:9px;line-height:1.5;">' + d.detail + '</div>' +
+          corrobLine + tagLine;
       }
       tooltip.style.left = Math.min(t.applyX(p[0])+12, container.clientWidth-220)+'px';
       tooltip.style.top  = Math.max(t.applyY(p[1])-80, 8)+'px';
@@ -5894,11 +6323,161 @@ function clearStoryPanel() {
     '<div class="story-empty-text">Click any feed item or map pin to read the full story</div></div>';
   document.getElementById('storyMeta').textContent = '';
   document.getElementById('storyRelated').innerHTML = '';
+  var sh = document.getElementById('storyHeadline');
+  if (sh) { sh.textContent = ''; sh.style.display = 'none'; }
 }
 
 function openStoryByIdx(idx) {
   var item = _feedItems[idx];
   if (item) openStory(item);
+}
+
+// ── AI DECK BRIEFING ──
+// Generates a Claude-powered situation update for the current deck,
+// using live feed data (GDELT headlines, conflict zone status, etc.) as context.
+
+var _briefingBusy = false;
+
+async function generateDeckBriefing() {
+  if (_briefingBusy) return;
+  if (!ANTHROPIC_API_KEY) {
+    openStory({
+      text: 'API Key Required',
+      tag: 'AI', cls: 'tag-yellow',
+      desc: 'Add your Anthropic API key in Admin → API Keys to enable AI deck briefings.'
+    });
+    return;
+  }
+  _briefingBusy = true;
+
+  // Show loading state in Intel Reader
+  var storyBody = document.getElementById('storyBody');
+  var storyMeta = document.getElementById('storyMeta');
+  var storyHead = document.getElementById('storyHeadline');
+  if (!storyBody) { _briefingBusy = false; return; }
+
+  var deck = activeDeck || 'command';
+  var deckLabel = {
+    command:'Command Center', conflict:'War & Conflict', maritime:'Maritime & Trade',
+    markets:'Markets', cyber:'Cyber & Tech', humanitarian:'Humanitarian',
+    natural:'Natural Hazards', energy:'Energy'
+  }[deck] || deck;
+
+  // Show panel with loading state
+  document.getElementById('intelReader').classList.add('open');
+  if (storyMeta) storyMeta.textContent = 'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(Date.now()) + ' CPH';
+  if (storyHead) {
+    storyHead.textContent = 'Generating ' + deckLabel + ' briefing…';
+    storyHead.style.display = 'block';
+  }
+  storyBody.innerHTML = '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;animation:none;padding:20px 0;">' +
+    '◉ CLAUDE HAIKU PROCESSING<br><br>' +
+    '<div style="color:var(--dim);font-size:8px;line-height:1.8;">' +
+    'Analysing ' + liveGdeltItems.length + ' GDELT events<br>' +
+    'Cross-referencing ' + liveConflictEvents.length + ' conflict pins<br>' +
+    'Synthesising feed data…</div></div>';
+  document.getElementById('storyRelated').innerHTML = '';
+
+  // Build context from live data
+  var gdeltSample = liveGdeltItems.slice(0, 12).map(function(i){ return '• ' + i.text; }).join('\n');
+  var telegramSample = liveTelegramItems.slice(0, 6).map(function(i){ return '• ' + i.text; }).join('\n');
+  var rssSample = liveRssItems.slice(0, 6).map(function(i){ return '• ' + i.text; }).join('\n');
+
+  var activeZone = activeConflictId
+    ? (CONFLICT_ZONES.filter(function(z){ return z.id === activeConflictId; })[0] || null)
+    : null;
+  var zoneCtx = activeZone
+    ? 'Active zone focus: ' + activeZone.label + ' — ' + activeZone.detail + '\n'
+    : '';
+
+  var deckCtx = (window._deckAnalystCtx || '');
+  var corrobCount = _corroborationClusters.length;
+
+  var systemPrompt = 'You are a senior geopolitical intelligence analyst writing for a classified situational dashboard. ' +
+    'Be direct, precise, and analytical. Use intelligence report style — no fluff, no hedging. ' +
+    'Lead with the most operationally significant development. ' +
+    'Format: 3-4 short paragraphs. No headers. No bullet points. Plain prose. Max 200 words.';
+
+  var userPrompt = deckCtx + '\n\n' + zoneCtx +
+    'Write a current intelligence briefing for the ' + deckLabel + ' deck based on this live data:\n\n' +
+    'GDELT HEADLINES (last 4h):\n' + (gdeltSample || 'No GDELT data available') + '\n\n' +
+    (telegramSample ? 'TELEGRAM OSINT:\n' + telegramSample + '\n\n' : '') +
+    (rssSample ? 'RSS FEEDS:\n' + rssSample + '\n\n' : '') +
+    'Corroborated events (2+ sources): ' + corrobCount + '\n' +
+    'Active conflict pins on map: ' + liveConflictEvents.length + '\n\n' +
+    'Generate the briefing now. Be specific about locations, actors, and escalation indicators.';
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!response.ok) {
+      var errData = await response.json().catch(function(){ return {}; });
+      throw new Error((errData.error && errData.error.message) || 'API ' + response.status);
+    }
+
+    var data = await response.json();
+    var briefingText = (data.content && data.content[0] && data.content[0].text) || '';
+
+    if (!briefingText) throw new Error('Empty response');
+
+    // Render in Intel Reader
+    if (storyHead) {
+      storyHead.textContent = deckLabel + ' — AI Situation Report';
+      storyHead.style.display = 'block';
+    }
+    storyBody.innerHTML =
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
+        '<span style="color:#8acc8a;">◉</span> CLAUDE HAIKU · ' + tzTime(Date.now()) + ' CPH' +
+        (corrobCount > 0 ? ' · <span style="color:#8acc8a;">' + corrobCount + ' CORROBORATED</span>' : '') +
+      '</div>' +
+      '<div style="font-family:var(--sans);font-size:11px;line-height:1.75;color:var(--text);white-space:pre-wrap;">' +
+        briefingText.replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+      '</div>' +
+      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--dim);font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.6;">' +
+        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveTelegramItems.length + ' Telegram · ' + liveRssItems.length + ' RSS<br>' +
+        'Model: Claude Haiku · Generated ' + tzDateTime(Date.now()) +
+      '</div>';
+
+    // Related: suggest other decks
+    var otherDecks = ['command','conflict','maritime','cyber','energy','natural'].filter(function(d){ return d !== deck; });
+    var relHtml = '<div class="story-related-label">Other Deck Briefings</div>';
+    otherDecks.forEach(function(d) {
+      var dl = {command:'Command Center',conflict:'War & Conflict',maritime:'Maritime & Trade',
+                cyber:'Cyber & Tech',energy:'Energy',natural:'Natural Hazards'}[d] || d;
+      relHtml += '<div class="story-related-item" onclick="loadDeck(\'' + d + '\');setTimeout(generateDeckBriefing,300);">' +
+        '<div class="story-related-text" style="margin:0;">⚡ ' + dl + ' briefing</div>' +
+        '<div class="story-related-meta">Click to switch deck + generate</div></div>';
+    });
+    document.getElementById('storyRelated').innerHTML = relHtml;
+
+  } catch(e) {
+    storyBody.innerHTML =
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--crit-hi);padding:10px 0;">✗ BRIEFING FAILED</div>' +
+      '<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px;">' + (e.message || 'Unknown error') + '</div>' +
+      '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:10px;line-height:1.6;">' +
+        'Check: API key valid · Anthropic API reachable · Key has Haiku access' +
+      '</div>';
+    if (storyHead) {
+      storyHead.textContent = 'Briefing Error';
+      storyHead.style.display = 'block';
+    }
+  } finally {
+    _briefingBusy = false;
+  }
 }
 
 function openStory(item) {
@@ -6648,6 +7227,7 @@ async function fetchGPSJam() {
 // Key is optional for demo/public tier — we fall back to static if unavailable.
 var liveAcledItems = [];
 var ACLED_API_KEY = '';  // Set via Admin panel in future; empty = demo tier
+var ANTHROPIC_API_KEY = '';  // Set via Admin panel — used for AI crawler + deck briefings
 
 async function fetchACLED() {
   try {
@@ -7096,6 +7676,15 @@ document.head.appendChild(topoScript);
     var active = document.querySelector('.mobile-deck-pill[onclick*="' + name + '"]');
     if (active) active.classList.add('active');
   };
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Skip when typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'b' || e.key === 'B') {
+      generateDeckBriefing();
+    }
+  });
 })();
 
 // Refresh intervals
@@ -7160,6 +7749,7 @@ function loadPersistedSettings() {
     if (keys.acled) ACLED_API_KEY = keys.acled;
     if (keys.adsb)  ADSB_API_KEY  = keys.adsb;
     if (keys.ais)   window._aisApiKey = keys.ais;
+    if (keys.anthropic) ANTHROPIC_API_KEY = keys.anthropic;
   } catch(e) {}
 }
 
@@ -7228,6 +7818,7 @@ function showAdminContent() {
     if (keys.acled) document.getElementById('acledKeyInput').value = keys.acled;
     if (keys.adsb)  document.getElementById('adsbKeyInput').value  = keys.adsb;
     if (keys.ais)   document.getElementById('aisKeyInput').value   = keys.ais;
+    if (keys.anthropic) document.getElementById('anthropicKeyInput').value = keys.anthropic;
   } catch(e) {}
 }
 
@@ -7267,17 +7858,18 @@ function adminAddTelegram() {
 }
 
 function adminSaveKey(type) {
-  var inputId = type === 'acled' ? 'acledKeyInput' : type === 'adsb' ? 'adsbKeyInput' : 'aisKeyInput';
+  var inputId = type === 'acled' ? 'acledKeyInput' :
+                type === 'adsb'  ? 'adsbKeyInput'  :
+                type === 'ais'   ? 'aisKeyInput'   : 'anthropicKeyInput';
   var val = (document.getElementById(inputId).value || '').trim();
   try {
     var keys = JSON.parse(localStorage.getItem('bk_api_keys') || '{}');
     keys[type] = val;
     localStorage.setItem('bk_api_keys', JSON.stringify(keys));
-    // Apply immediately
-    if (type === 'acled') { ACLED_API_KEY = val; }
-    if (type === 'adsb')  { ADSB_API_KEY = val; }
-    if (type === 'ais')   { window._aisApiKey = val; if (val) connectAIS(); }
-    // Flash button
+    if (type === 'acled')     { ACLED_API_KEY = val; }
+    if (type === 'adsb')      { ADSB_API_KEY = val; }
+    if (type === 'ais')       { window._aisApiKey = val; if (val) connectAIS(); }
+    if (type === 'anthropic') { ANTHROPIC_API_KEY = val; }
     var btn = document.querySelector('[onclick="adminSaveKey(\'' + type + '\')"]');
     if (btn) { btn.textContent = '✓'; setTimeout(function(){ btn.textContent = 'SAVE'; }, 1500); }
   } catch(e) {}
@@ -7460,6 +8052,15 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
       <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:10px;line-height:1.6;">Keys are stored in localStorage only. Never sent to any server.</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--accent-hi);margin-bottom:4px;">ANTHROPIC API KEY</div>
+          <div style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-bottom:5px;line-height:1.5;">Powers AI deck briefings + NLP crawler. Get key at console.anthropic.com</div>
+          <div style="display:flex;gap:8px;">
+            <input id="anthropicKeyInput" type="password" placeholder="sk-ant-..."
+              style="flex:1;background:var(--surface2);border:1px solid var(--accent-lo);padding:6px 10px;color:var(--text-hi);font-family:var(--mono);font-size:9px;outline:none;">
+            <button onclick="adminSaveKey('anthropic')" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
+          </div>
+        </div>
+        <div>
           <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:4px;">ACLED API KEY</div>
           <div style="display:flex;gap:8px;">
             <input id="acledKeyInput" type="password" placeholder="acled key (free at acleddata.com)"
@@ -7499,6 +8100,25 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
         <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
           <input type="checkbox" id="adminShowExchanges" checked onchange="toggleMapSetting('exchanges',this.checked)"> Stock Exchanges
         </label>
+      </div>
+
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--dim);">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">AI INTELLIGENCE CRAWLER</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted);line-height:1.5;margin-bottom:10px;">
+          Uses Claude Haiku to extract precise geolocation + event type from GDELT headlines. Fires on each GDELT refresh (~15 min). Requires Anthropic API key above.
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="adminAiCrawler" onchange="toggleAiCrawler(this.checked)"> Enable AI NLP geolocation
+        </label>
+        <div style="margin-top:8px;">
+          <button id="aiCrawlerBtn" onclick="if(_aiCrawlerEnabled){var h=liveGdeltItems.map(function(i){return i.text;});maybeRunAiCrawler(h);}"
+            style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--muted);background:transparent;border:1px solid var(--dim);padding:4px 10px;cursor:pointer;width:100%;">
+            ○ AI CRAWLER OFF
+          </button>
+        </div>
+        <div id="aiCrawlerStatus" style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-top:6px;letter-spacing:1px;">
+          Idle — toggle to activate
+        </div>
       </div>
     </div>
   </div>
