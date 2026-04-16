@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.8.2</title>
+<title>Burgerklubben's Situationsrapport · v4.8.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -916,8 +916,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.2 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.2 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.4 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.4 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +936,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.2</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.4</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -2399,25 +2399,23 @@ async function aiExtractGeoEvents(headlines) {
     headlines.slice(0, 15).map(function(h, i) { return (i+1) + '. ' + h; }).join('\n')
   ].join('\n');
 
-  if (!ANTHROPIC_API_KEY) {
-    console.warn('AI crawler: no Anthropic API key set — add key in Admin panel');
+  if (!XAI_API_KEY) {
+    console.warn('AI crawler: no xAI API key set — add key in Admin panel');
     var status = document.getElementById('aiCrawlerStatus');
-    if (status) { status.textContent = '✗ No API key — set in Admin → API Keys'; status.style.color = 'var(--warn-hi)'; }
+    if (status) { status.textContent = '✗ No xAI key — set in Admin → API Keys'; status.style.color = 'var(--warn-hi)'; }
     _aiCrawlerBusy = false;
     return [];
   }
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': 'Bearer ' + XAI_API_KEY,
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'grok-3-mini',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -2425,7 +2423,7 @@ async function aiExtractGeoEvents(headlines) {
 
     if (!response.ok) throw new Error('API ' + response.status);
     var data = await response.json();
-    var text = (data.content && data.content[0] && data.content[0].text) || '[]';
+    var text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '[]';
     // Strip any markdown fences
     text = text.replace(/```json|```/g, '').trim();
     var results = JSON.parse(text);
@@ -6338,6 +6336,7 @@ function openStoryByIdx(idx) {
 // using live feed data (GDELT headlines, conflict zone status, etc.) as context.
 
 var _briefingBusy = false;
+var _briefingCache = {};  // deck -> { html, relHtml, meta, ts }
 
 async function generateDeckBriefing() {
   // Reset busy flag if stuck
@@ -6355,17 +6354,32 @@ async function generateDeckBriefing() {
     natural:'Natural Hazards', energy:'Energy'
   }[deck] || deck;
 
+  // ── Serve from cache if available ──
+  var cached = _briefingCache[deck];
+  if (cached) {
+    if (storyMeta) storyMeta.textContent = cached.meta +
+      ' · <span style="color:var(--dim);font-size:7px;">CACHED</span>';
+    if (storyHead) { storyHead.textContent = deckLabel + ' — AI Situation Report'; storyHead.style.display = 'block'; }
+    storyBody.innerHTML = cached.html +
+      '<div style="margin-top:8px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
+        '↺ Cached ' + cached.age + ' ago · ' +
+        '<span style="cursor:pointer;color:var(--accent);text-decoration:underline;" onclick="delete _briefingCache[\'' + deck + '\'];generateDeckBriefing();">Regenerate</span>' +
+      '</div>';
+    document.getElementById('storyRelated').innerHTML = cached.relHtml;
+    return;
+  }
+
   // Always show loading state first so user gets feedback
   if (storyMeta) storyMeta.textContent = 'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(Date.now()) + ' CPH';
   if (storyHead) { storyHead.textContent = deckLabel + ' — AI Situation Report'; storyHead.style.display = 'block'; }
   document.getElementById('storyRelated').innerHTML = '';
 
-  if (!ANTHROPIC_API_KEY) {
+  if (!XAI_API_KEY) {
     storyBody.innerHTML =
       '<div style="padding:16px 0;">' +
       '<div style="font-family:var(--mono);font-size:9px;color:var(--warn-hi);letter-spacing:1px;margin-bottom:10px;">✗ NO API KEY</div>' +
       '<div style="font-family:var(--sans);font-size:10px;color:var(--muted);line-height:1.6;">' +
-        'Add your Anthropic API key in <strong>Admin → API Keys</strong> to enable AI deck briefings.<br><br>' +
+        'Add your xAI API key in <strong>Admin → API Keys</strong> to enable AI deck briefings.<br><br>' +
         'Get a key at <span style="color:var(--accent);">console.anthropic.com</span>' +
       '</div></div>';
     return;
@@ -6405,19 +6419,16 @@ async function generateDeckBriefing() {
     'Generate the briefing now.';
 
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': 'Bearer ' + XAI_API_KEY,
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'grok-3-mini',
         max_tokens: 400,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
       })
     });
 
@@ -6427,12 +6438,12 @@ async function generateDeckBriefing() {
     }
 
     var data = await resp.json();
-    var txt  = (data.content && data.content[0] && data.content[0].text) || '';
+    var txt  = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
     if (!txt) throw new Error('Empty response from API');
 
     storyBody.innerHTML =
       '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
-        '<span style="color:#8acc8a;">◉</span> CLAUDE HAIKU · ' + tzTime(Date.now()) + ' CPH' +
+        '<span style="color:#8acc8a;">◉</span> GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH' +
         (corrobCount > 0 ? ' · <span style="color:#8acc8a;">' + corrobCount + ' CORROBORATED</span>' : '') +
       '</div>' +
       '<div style="font-family:var(--sans);font-size:11px;line-height:1.8;color:var(--text);white-space:pre-wrap;">' +
@@ -6440,7 +6451,7 @@ async function generateDeckBriefing() {
       '</div>' +
       '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--dim);font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.6;">' +
         'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveTelegramItems.length + ' Telegram · ' + liveRssItems.length + ' RSS<br>' +
-        'Model: Claude Haiku · ' + tzDateTime(Date.now()) +
+        'Model: Grok-3-mini (xAI) · ' + tzDateTime(Date.now()) +
       '</div>';
 
     // Related: other deck briefings
@@ -6453,6 +6464,19 @@ async function generateDeckBriefing() {
         '<div class="story-related-meta">Generate briefing for this deck</div></div>';
     });
     document.getElementById('storyRelated').innerHTML = relHtml;
+
+    // ── Cache this briefing for the session ──
+    var cacheTs = Date.now();
+    _briefingCache[deck] = {
+      html:   storyBody.innerHTML,
+      relHtml: relHtml,
+      meta:   'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(cacheTs) + ' CPH',
+      ts:     cacheTs,
+      get age() {
+        var mins = Math.round((Date.now() - this.ts) / 60000);
+        return mins < 1 ? 'just now' : mins + 'm';
+      }
+    };
 
   } catch(e) {
     storyBody.innerHTML =
@@ -7214,7 +7238,8 @@ async function fetchGPSJam() {
 // Key is optional for demo/public tier — we fall back to static if unavailable.
 var liveAcledItems = [];
 var ACLED_API_KEY = '';  // Set via Admin panel in future; empty = demo tier
-var ANTHROPIC_API_KEY = '';  // Set via Admin panel — used for AI crawler + deck briefings
+var ANTHROPIC_API_KEY = '';  // Legacy — now using xAI Grok
+var XAI_API_KEY = '';  // xAI Grok key — set via Admin panel
 
 async function fetchACLED() {
   try {
@@ -7736,7 +7761,8 @@ function loadPersistedSettings() {
     if (keys.acled) ACLED_API_KEY = keys.acled;
     if (keys.adsb)  ADSB_API_KEY  = keys.adsb;
     if (keys.ais)   window._aisApiKey = keys.ais;
-    if (keys.anthropic) ANTHROPIC_API_KEY = keys.anthropic;
+    if (keys.anthropic) { ANTHROPIC_API_KEY = keys.anthropic; XAI_API_KEY = keys.anthropic; }
+    if (keys.xai)       { XAI_API_KEY = keys.xai; ANTHROPIC_API_KEY = keys.xai; }
   } catch(e) {}
 }
 
@@ -7805,7 +7831,7 @@ function showAdminContent() {
     if (keys.acled) document.getElementById('acledKeyInput').value = keys.acled;
     if (keys.adsb)  document.getElementById('adsbKeyInput').value  = keys.adsb;
     if (keys.ais)   document.getElementById('aisKeyInput').value   = keys.ais;
-    if (keys.anthropic) document.getElementById('anthropicKeyInput').value = keys.anthropic;
+    if (keys.xai || keys.anthropic) document.getElementById('anthropicKeyInput').value = keys.xai || keys.anthropic;
   } catch(e) {}
 }
 
@@ -7847,7 +7873,7 @@ function adminAddTelegram() {
 function adminSaveKey(type) {
   var inputId = type === 'acled' ? 'acledKeyInput' :
                 type === 'adsb'  ? 'adsbKeyInput'  :
-                type === 'ais'   ? 'aisKeyInput'   : 'anthropicKeyInput';
+                type === 'ais'   ? 'aisKeyInput'   : 'anthropicKeyInput';  // xai uses same input
   var val = (document.getElementById(inputId).value || '').trim();
   try {
     var keys = JSON.parse(localStorage.getItem('bk_api_keys') || '{}');
@@ -7856,7 +7882,7 @@ function adminSaveKey(type) {
     if (type === 'acled')     { ACLED_API_KEY = val; }
     if (type === 'adsb')      { ADSB_API_KEY = val; }
     if (type === 'ais')       { window._aisApiKey = val; if (val) connectAIS(); }
-    if (type === 'anthropic') { ANTHROPIC_API_KEY = val; }
+    if (type === 'xai' || type === 'anthropic') { XAI_API_KEY = val; ANTHROPIC_API_KEY = val; }
     var btn = document.querySelector('[onclick="adminSaveKey(\'' + type + '\')"]');
     if (btn) { btn.textContent = '✓'; setTimeout(function(){ btn.textContent = 'SAVE'; }, 1500); }
   } catch(e) {}
@@ -8039,12 +8065,12 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
       <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-bottom:10px;line-height:1.6;">Keys are stored in localStorage only. Never sent to any server.</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--accent-hi);margin-bottom:4px;">ANTHROPIC API KEY</div>
-          <div style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-bottom:5px;line-height:1.5;">Powers AI deck briefings + NLP crawler. Get key at console.anthropic.com</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--accent-hi);margin-bottom:4px;">xAI API KEY (GROK)</div>
+          <div style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-bottom:5px;line-height:1.5;">Powers AI deck briefings + NLP crawler. Get key at console.x.ai</div>
           <div style="display:flex;gap:8px;">
-            <input id="anthropicKeyInput" type="password" placeholder="sk-ant-..."
+            <input id="anthropicKeyInput" type="password" placeholder="xai-..."
               style="flex:1;background:var(--surface2);border:1px solid var(--accent-lo);padding:6px 10px;color:var(--text-hi);font-family:var(--mono);font-size:9px;outline:none;">
-            <button onclick="adminSaveKey('anthropic')" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
+            <button onclick="adminSaveKey('xai')" style="background:rgba(74,124,89,0.15);border:1px solid var(--accent);color:var(--accent-hi);font-family:var(--mono);font-size:8px;padding:6px 10px;cursor:pointer;">SAVE</button>
           </div>
         </div>
         <div>
