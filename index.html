@@ -3176,8 +3176,8 @@ var SUBMARINE_CABLES = [
     landingPoints:['France','Egypt','India','Singapore','Japan'],
     route:[
       [-4.5,48.5],[-5,44],[-6,40],[-5.5,36.2],[-1,36],[4,38],[5,37.5],[6,37],[8,37],
-      [10,36.8],[12,37],[14,37],[18,37],[22,34],[26,33],[30,31.5],[32,30.5],[33,29],
-      [34,27],[35,25],[36,23],[37.5,20],[39,17],[40,15],[41,13.5],[43,12.5],[44,12],
+      [10,36.8],[12,37],[14,37],[18,37],[22,35],[26,34],[28,33],[30,32],[31.5,31.5],
+      [32.3,30.8],[32.5,30],[32.5,29],[33,28],[34,27],[35,25],[36,23],[37.5,20],[39,17],[40,15],[41,13.5],[43,12.5],[44,12],
       [46,12],[48,11.5],[50,12],[52,14],[54,17],[55,22],[56,23.5],[56.5,22],[58,19],
       [60,16],[62,14],[64,13],[65,13],[67,13],[68,14],[70,16],[72,20],
       [74,15],[75,11],[76,9],[78,9],[80,8.5],[82,8],[84,8],[86,8.5],[88,9],[90,8.5],
@@ -3190,8 +3190,8 @@ var SUBMARINE_CABLES = [
     year:2005, owners:['Orange','SingTel','Telecom Italia'],
     landingPoints:['France','Egypt','India','Singapore'],
     route:[
-      [-4.5,48],[-5,43],[-5.5,36.5],[0,36],[5,37.5],[10,36.8],[16,37],[22,34],[28,31],[32,30.5],
-      [33,29],[36,23],[38,17],[40,14],[43,12],[46,12],[50,12],[55,22],[58,19],[62,14],[66,14],
+      [-4.5,48],[-5,43],[-5.5,36.5],[0,36],[5,37.5],[10,36.8],[16,37],[22,35],[28,33],
+      [30,32],[31.5,31.5],[32.3,30.8],[32.5,30],[32.5,29],[33,28],[36,23],[38,17],[40,14],[43,12],[46,12],[50,12],[55,22],[58,19],[62,14],[66,14],
       [70,16],[72,20],[76,9],[80,8],[86,8],[92,8],[98,6],[104,1],[110,4]],
     desc:'Critical Europe-Asia link repeatedly affected by Red Sea disruptions.',
     keywords:['sea me we 4','sea me we4'] },
@@ -3200,7 +3200,8 @@ var SUBMARINE_CABLES = [
     year:2016, owners:['Orange','SingTel','MTN'],
     landingPoints:['France','Tunisia','Egypt','India','Singapore'],
     route:[
-      [-4.5,48],[-5.5,36.5],[0,36],[8,37],[14,37],[18,37],[24,34],[30,31],[32,30],[36,23],
+      [-4.5,48],[-5.5,36.5],[0,36],[8,37],[14,37],[18,37],[24,35],[28,33],
+      [30,32],[31.5,31.5],[32.4,30.5],[32.5,29.5],[33,28],[36,23],
       [38,17],[40,14],[43,12],[50,12],[55,22],[62,14],[68,14],[72,20],[80,8],[92,8],[100,4],[104,1]],
     desc:'Cut in Red Sea Jan 2024 during Houthi campaign.',
     keywords:['sea me we 5','seamewe5','red sea cable'] },
@@ -3209,7 +3210,8 @@ var SUBMARINE_CABLES = [
     year:2017, owners:['China Telecom','Vodafone','STC'],
     landingPoints:['France','Egypt','Djibouti','India','Hong Kong'],
     route:[
-      [-4,48],[-5.5,36.5],[0,36],[8,37],[16,37],[24,34],[30,31],[32,30],[36,23],[38,17],
+      [-4,48],[-5.5,36.5],[0,36],[8,37],[16,37],[24,35],[28,33],
+      [30,32],[31.5,31.5],[32.4,30.5],[32.5,29.5],[33,28],[36,23],[38,17],
       [40,14],[43,12],[46,12],[50,12],[55,22],[62,14],[68,14],[72,20],[76,9],[80,8],[86,8],
       [92,8],[98,6],[104,1],[110,4],[114,22]],
     desc:'High-capacity cable with significant Chinese ownership. Red Sea chokepoint exposure.',
@@ -3219,16 +3221,16 @@ var SUBMARINE_CABLES = [
     year:2021, owners:['PEACE Cable International'],
     landingPoints:['Pakistan (Karachi)','Kenya (Mombasa)','South Africa (Cape Town)','France (Marseille)'],
     route:[
-      // Pakistan coast → Arabian Sea → around Horn of Africa
+      // Pakistan coast → Arabian Sea → Horn of Africa
       [66.9,24.9],[65,22],[62,19],[59,15],[55,12],[51,10],[48,8],[46,5],[44,2],[42,-2],
-      // East African coast south
+      // East African coast southward
       [40,-8],[38,-15],[36,-20],[34,-26],[28,-34],
-      // Around Cape of Good Hope → up West African coast
-      [20,-34],[14,-32],[10,-25],[8,-18],[5,-10],[2,-2],[0,5],
-      // West Africa north
-      [-2,10],[-8,15],[-14,18],[-16,16],[-16,12],[-14,8],[-10,4],
-      // Across to Europe - Atlantic crossing near North Africa
-      [-6,35],[-2,38],[3,43],[5,43.3]],
+      // Around Cape of Good Hope → up West African Atlantic coast (well offshore)
+      [18,-35],[12,-32],[8,-24],[5,-16],[2,-8],[0,0],
+      // West Africa north — stay 300-500km offshore
+      [-2,6],[-6,10],[-12,14],[-16,18],[-18,22],[-18,26],[-16,30],
+      // Atlantic approach to Europe
+      [-12,34],[-8,36],[-4,38],[-2,41],[2,43],[5,43.3]],
     desc:'Chinese-backed cable. Connects Pakistan to East & West Africa and Europe. Only cable directly linking China-backed interests through Africa to Europe.',
     keywords:['peace cable','chinese cable africa'] },
 
@@ -3236,8 +3238,8 @@ var SUBMARINE_CABLES = [
     year:2012, owners:['Reliance Jio','Vodafone'],
     landingPoints:['UK','Portugal','Egypt','Saudi Arabia','India'],
     route:[
-      [-4,51],[-8,45],[-10,38],[-8,36],[-5,36],[0,36],[5,36],[10,36],[16,37],[22,35],
-      [28,31],[32,30],[36,23],[38,17],[40,14],[44,12],[48,11],[52,13],[56,22],[62,18],[68,14],[72,20]],
+      [-4,51],[-8,45],[-10,38],[-8,36],[-5,36],[0,36],[5,36],[10,36],[16,37],[22,36],
+      [26,34],[28,33],[30,32],[31.5,31.5],[32.4,30.5],[32.5,29.5],[33,28],[36,23],[38,17],[40,14],[44,12],[48,11],[52,13],[56,22],[62,18],[68,14],[72,20]],
     desc:'Key Europe-India link crossing Red Sea.',
     keywords:['eig cable','europe india gateway'] },
 
@@ -3334,8 +3336,8 @@ var SUBMARINE_CABLES = [
     landingPoints:['France','Portugal','Senegal','Nigeria','S.Africa'],
     route:[
       [-4,48],[-6,44],[-8,40],[-10,36],[-12,30],[-14,22],[-16,16],[-16,12],
-      [-16,8],[-14,6],[-10,5],[-6,4],[-2,4],[2,4],[4,2],[6,-2],
-      [8,-6],[10,-10],[12,-16],[14,-22],[16,-28],[18,-34]],
+      [-17,8],[-16,5],[-14,3],[-10,2],[-6,1],[-2,1],[2,2],[4,1],
+      [3,-2],[4,-5],[6,-8],[8,-12],[10,-16],[12,-22],[14,-28],[16,-34],[18,-34]],
     desc:'Major West African connectivity cable. Serves 24 countries.',
     keywords:['ace cable','africa coast europe'] },
 
@@ -3343,8 +3345,9 @@ var SUBMARINE_CABLES = [
     year:2012, owners:['MTN','Vodacom'],
     landingPoints:['UK','Portugal','Nigeria','S.Africa'],
     route:[
-      [-4,51],[-8,45],[-10,38],[-12,30],[-14,22],[-16,16],[-15,10],[-12,6],
-      [-8,4],[-4,3],[0,2],[4,0],[6,-4],[8,-10],[10,-16],[14,-22],[16,-28],[18,-34]],
+      [-4,51],[-8,45],[-10,38],[-12,30],[-14,22],[-16,16],[-16,12],
+      [-17,8],[-16,5],[-13,3],[-10,2],[-6,1],[-2,1],[2,1],[4,0],
+      [4,-3],[5,-6],[6,-10],[8,-14],[10,-18],[12,-22],[14,-28],[16,-34],[18,-34]],
     desc:'West Africa Cable System. Links UK to Southern Africa.',
     keywords:['wacs cable','west africa cable'] },
 
@@ -3570,8 +3573,9 @@ var SHIPPING_LANES = [
       [44.5,11.8],[44,12.2],[43.5,12.5],[43,12.5],[42.5,12.2],[42,12],[41.5,12.5],[41,13],
       [40.5,13.5],[40,14],[39.5,14.8],[39,15.5],[38.5,16.5],[38,17.5],[37.8,19],[37.5,20.5],
       [37,22],[36.8,23.5],[36.5,25],[36,26.5],[35.5,27.5],[35,28.5],[34.5,29.5],[34,30.2],
-      [33.5,30.6],[33,30.8],[32.7,30.9],[32.5,31.2],[32.4,31.6],[32.4,32],[32.5,32.3],
-      [33,32.2],[34,31.8],[30,31.5],[27,31.5],[24,32],[21,33],[18,34],[16,35.5],[14,36.5],
+      [33.5,30.6],[33,30.8],[32.7,30.9],[32.5,31.2],[32.4,31.6],[32.4,32],[32.4,32.5],
+      [32.4,33],[32.3,33.5],[32.2,34],[32,34.5],[31.8,35],[31.5,35.5],[31,35.8],[30,36],
+      [28,36],[26,36],[24,36],[22,35],[20,35],[18,35],[16,36],[14,37],
       [12,37.5],[10,38],[8,38],[6,38],[4,38],[2,38],[0,38],[-2,37.5],[-4,37],[-5,36.5],
       [-5.5,36.5],[-6,36.8],[-5.5,37.5],[-5,38.5],[-4,40],[-3,41.5],[-2,43],[-1,44.5],
       [0,46],[1,47.5],[2,49],[2.5,50],[3,51],[3.5,51.5],[4,52.5]],
@@ -3588,9 +3592,10 @@ var SHIPPING_LANES = [
       [44.5,10.8],[44,11.2],[43.5,11],[43,11],[42.5,10.5],[42,10.5],[41.5,11],[41,11.5],
       [40.5,12],[40,12.5],[39.5,13.5],[39,14.5],[38.5,15.5],[38,16.5],[37.8,18],[37.5,19.5],
       [37,21],[36.8,22.5],[36.5,24],[36,25.5],[35.5,26.5],[35,27.5],[34.5,28.5],[34,29.5],
-      [33.5,29.8],[33,30],[32.6,30.3],[32.4,30.8],[32.3,31.2],[32.3,31.8],[32.4,32.1],
-      [33,32],[34,31.5],[29,31],[26,31],[22,32],[18,33.5],[15,35],[12,36.5],[10,37.5],
-      [8,37.5],[6,37.5],[4,37],[2,37],[0,37],[-2,36.5],[-4,36],[-5,35.5],
+      [33.5,29.8],[33,30],[32.6,30.3],[32.4,30.8],[32.3,31.2],[32.3,31.8],[32.3,32.3],
+      [32.3,32.8],[32.2,33.2],[32.0,33.8],[31.8,34.4],[31.5,35],[31,35.5],[30,35.8],
+      [28,35.5],[26,35.5],[24,35],[22,34.5],[20,34.5],[18,34.5],[16,35.5],[14,36.5],
+      [12,37],[10,37.5],[8,37.5],[6,37.5],[4,37],[2,37],[0,37],[-2,36.5],[-4,36],[-5,35.5],
       [-5.5,35.5],[-6,36],[-5.5,37],[-5,38],[-4,39.5],[-3,41],[-2,42.5],[-1,44],
       [0,45.5],[1,47],[2,48.5],[2.5,49.5],[3,50.5],[3.5,51],[4,51.5]] },
 
@@ -3635,8 +3640,8 @@ var SHIPPING_LANES = [
     chokepoints:['Cape of Good Hope','Mozambique Channel'],
     keywords:['cape of good hope','cape route','south africa'],
     bbox:[-18,-42,70,54],
-    edgeA:[[4,52],[3,51],[2,50],[1,49],[0,48],[-1,47],[-2,46],[-3,44.5],[-4,43],[-5,41.5],[-6,40],[-7,38.5],[-8,37],[-9,35],[-10,33],[-11,30.5],[-12,28],[-13,25],[-14,22],[-15,19],[-16,16],[-16.5,13],[-17,10],[-17,7],[-17,4],[-17,1],[-16.5,-2],[-16,-5],[-15,-8],[-14,-11],[-13,-14],[-12,-17],[-11,-20],[-9,-23],[-7,-26],[-5,-29],[-2,-32],[1,-34],[5,-36],[9,-37],[12,-37],[14,-36.5],[16,-36],[17,-35.5],[18,-35],[19,-35.5],[20,-35.5],[21,-35.5],[22,-35],[23,-34.5],[24,-34],[25,-34],[26,-34],[27,-33.5],[28,-33],[29,-32.5],[30,-31.5],[31,-30],[32,-28.5],[33,-27],[34,-25.5],[35,-24],[36,-22.5],[37,-21],[38,-19.5],[39,-18],[40,-16],[41,-14],[42,-12],[43,-10],[44,-8],[45,-6],[46,-4],[47,-2],[48,0],[49,2],[50,4],[51,6],[52,8],[53,10],[54,12],[55,14],[56,16],[57,18],[58,18],[59,18],[60,18],[61,18.5],[62,19],[63,19.5],[64,20],[65,21],[66,21.5],[67,22],[68,23]],
-    edgeB:[[4,51],[3,50],[2,49],[1,48],[0,47],[-1,46],[-2,44.5],[-3,43],[-4,41.5],[-5,40],[-6,38],[- 7,36.5],[-8,35],[-9,33],[-10,30.5],[-11,28],[-12,25.5],[-13,22.5],[-14,19.5],[-15,16.5],[-16,13],[-16.5,10],[-17,7],[-16.5,4],[-16,1],[-15.5,-2],[-15,-5],[-14,-8],[-13,-11],[-12,-14],[-11,-17],[-10,-20],[-8,-23],[-6,-26],[-4,-29],[-1,-32],[3,-34],[7,-36],[10,-37],[13,-37],[15,-36.5],[17,-36],[18,-35.5],[19,-36],[20,-36.5],[21,-36.5],[22,-36],[23,-35.5],[24,-35],[25,-35],[26,-35],[27,-34.5],[28,-34],[29,-33],[30,-31.5],[31,-30],[32,-28.5],[33,-27],[34,-25.5],[35,-24],[36,-22.5],[37,-21],[38,-19.5],[39,-18],[40,-16],[41,-14],[42,-12],[43,-10],[44,-8],[45,-6],[46,-4],[47,-2],[48,0],[49,2],[50,4],[51,6],[52,8],[53,10],[54,12],[55,14],[56,16],[57,17.5],[58,17.5],[59,17.5],[60,17.5],[61,18],[62,18.5],[63,19],[64,19.5],[65,20],[66,21],[67,21.5],[68,22]] },
+    edgeA:[[4,52],[3,51],[2,50],[1,49],[0,48],[-1,47],[-2,46],[-3,44.5],[-4,43],[-5,41.5],[-6,40],[-7,38],[-8,36],[-9,33.5],[-10,30],[-11,26],[-12,22],[-13,18],[-14,14],[-15,10],[-16,7],[-17,4],[-18,1],[-18,-2],[-18,-5],[-17,-8],[-16,-11],[-15,-14],[-13,-17],[-11,-20],[-9,-23],[-7,-26],[-5,-29],[-2,-32],[1,-34],[5,-36],[9,-37],[12,-37],[14,-36.5],[16,-36],[17,-35.5],[18,-35],[19,-35.5],[20,-35.5],[21,-35.5],[22,-35],[23,-34.5],[24,-34],[25,-34],[26,-34],[27,-33.5],[28,-33],[29,-32.5],[30,-31.5],[31,-30],[32,-28.5],[33,-27],[34,-25.5],[35,-24],[36,-22.5],[37,-21],[38,-19.5],[39,-18],[40,-16],[41,-14],[42,-12],[43,-10],[44,-8],[45,-6],[46,-4],[47,-2],[48,0],[49,2],[50,4],[51,6],[52,8],[53,10],[54,12],[55,14],[56,16],[57,18],[58,18],[59,18],[60,18],[61,18.5],[62,19],[63,19.5],[64,20],[65,21],[66,21.5],[67,22],[68,23]],
+    edgeB:[[4,51],[3,50],[2,49],[1,48],[0,47],[-1,46],[-2,44.5],[-3,43],[-4,41.5],[-5,40],[-6,38.5],[-7,36],[-8,33.5],[-9,30],[-10,26],[-11,22],[-12,18],[-13,14],[-14,10],[-15,7],[-16,4],[-17,1],[-17,-2],[-17,-5],[-16,-8],[-15,-11],[-14,-14],[-12,-17],[-10,-20],[-8,-23],[-6,-26],[-4,-29],[-1,-32],[3,-34],[7,-36],[10,-37],[13,-37],[15,-36.5],[17,-36],[18,-35.5],[19,-36],[20,-36.5],[21,-36.5],[22,-36],[23,-35.5],[24,-35],[25,-35],[26,-35],[27,-34.5],[28,-34],[29,-33],[30,-31.5],[31,-30],[32,-28.5],[33,-27],[34,-25.5],[35,-24],[36,-22.5],[37,-21],[38,-19.5],[39,-18],[40,-16],[41,-14],[42,-12],[43,-10],[44,-8],[45,-6],[46,-4],[47,-2],[48,0],[49,2],[50,4],[51,6],[52,8],[53,10],[54,12],[55,14],[56,16],[57,17.5],[58,17.5],[59,17.5],[60,17.5],[61,18],[62,18.5],[63,19],[64,19.5],[65,20],[66,21],[67,21.5],[68,22]] },
 
   // ── 7. ENGLISH CHANNEL + NORTH SEA ──
   { id:'english_channel', label:'English Channel', color:'#4aaaaa', opacity:0.18,
@@ -4159,94 +4164,143 @@ function getPortMentions(port) {
 }
 
 async function fetchStockIndices() {
-  // Strategy: try multiple free sources in order
-  // 1. Stooq (no key, CORS-friendly via proxy) — CSV format
-  // 2. Finnhub (free key optional, direct CORS)
-  // 3. Static fallback
   var fetched = 0;
   var total = STOCK_EXCHANGES.length;
   function onDone() {
     fetched++;
     if (fetched >= total) {
+      // If nothing worked at all, apply static fallback
+      if (Object.keys(liveIndexData).length === 0) applyStaticFallback();
       rebuildMap();
       if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
     }
   }
 
-  // Stooq symbol mapping (different from Yahoo)
+  function applyStaticFallback() {
+    liveIndexData = {
+      NYSE:    { price:38721, change:142,    changePct:0.37,  currency:'USD', name:'NYSE'     },
+      NASDAQ:  { price:16430, change:-28,    changePct:-0.17, currency:'USD', name:'NASDAQ'   },
+      LSE:     { price:7680,  change:22,     changePct:0.29,  currency:'GBP', name:'FTSE 100' },
+      EURONEXT:{ price:8121,  change:44,     changePct:0.54,  currency:'EUR', name:'CAC 40'   },
+      DAX:     { price:18420, change:88,     changePct:0.48,  currency:'EUR', name:'DAX'      },
+      TSE:     { price:38950, change:-210,   changePct:-0.54, currency:'JPY', name:'Nikkei'   },
+      SSE:     { price:3088,  change:12,     changePct:0.39,  currency:'CNY', name:'Shanghai' },
+      HKEX:    { price:17240, change:-85,    changePct:-0.49, currency:'HKD', name:'HSI'      },
+      BSE:     { price:72400, change:320,    changePct:0.44,  currency:'INR', name:'SENSEX'   },
+      ASX:     { price:7820,  change:18,     changePct:0.23,  currency:'AUD', name:'ASX 200'  },
+      TADAWUL: { price:11820, change:-42,    changePct:-0.35, currency:'SAR', name:'TASI'     },
+      CPH:     { price:2680,  change:8,      changePct:0.30,  currency:'DKK', name:'OMX C25'  },
+    };
+  }
+
+  // Per-request fetch with hard 8s timeout
+  function fetchWithHardTimeout(url, ms) {
+    return new Promise(function(resolve, reject) {
+      var done = false;
+      var tid = setTimeout(function() {
+        if (!done) { done = true; reject(new Error('timeout')); }
+      }, ms || 8000);
+      proxyFetch(url).then(function(r) {
+        if (!done) { done = true; clearTimeout(tid); resolve(r); }
+      }).catch(function(e) {
+        if (!done) { done = true; clearTimeout(tid); reject(e); }
+      });
+    });
+  }
+
+  // Stooq symbol mapping
   var STOOQ_MAP = {
-    NYSE:    '^dji',    NASDAQ:  '^ndx',   LSE:     '^ftse',
-    EURONEXT:'^cac',   DAX:     '^dax',   TSE:     '^nkx',
-    SSE:     '000001.cn', HKEX: '^hsi',   BSE:     '^bsesn',
-    ASX:     '^asx',   TADAWUL: '^tasi',  CPH:     '^omxc25',
+    NYSE:    '^dji',      NASDAQ:  '^ndx',    LSE:     '^ftse',
+    EURONEXT:'^cac',      DAX:     '^dax',    TSE:     '^nkx',
+    SSE:     '000001.cn', HKEX:    '^hsi',    BSE:     '^bsesn',
+    ASX:     '^asx',      TADAWUL: '^tasi',   CPH:     '^omxc25',
   };
 
-  try {
-    STOCK_EXCHANGES.forEach(function(ex) {
-      var sym = STOOQ_MAP[ex.id] || ex.symbol.toLowerCase().replace('^','');
-      var url = 'https://stooq.com/q/d/l/?s=' + encodeURIComponent(sym) + '&i=d';
-      proxyFetch(url).then(function(res) {
-        return res.ok ? res.text() : Promise.reject('stooq ' + res.status);
-      }).then(function(csv) {
-        // Stooq CSV: Date,Open,High,Low,Close,Volume
-        var lines = csv.trim().split('\n').filter(function(l){ return l && l.indexOf('Date') !== 0; });
-        if (lines.length < 2) throw new Error('no data');
-        var today = lines[lines.length-1].split(',');
-        var prev  = lines[lines.length-2].split(',');
-        var price  = parseFloat(today[4]);  // Close
-        var prevCl = parseFloat(prev[4]);
-        if (isNaN(price) || price === 0) throw new Error('bad price');
-        var change = price - prevCl;
-        var pct    = prevCl ? (change / prevCl * 100) : 0;
-        liveIndexData[ex.id] = { price:price, change:change, changePct:pct,
-          currency:'', name:ex.name };
-        // Store previous trading day separately
-        if (lines.length >= 3) {
-          var prev2 = lines[lines.length-3].split(',');
-          var prevPrice = parseFloat(prev[4]);
-          var prev2Close = parseFloat(prev2[4]);
-          var prevChange = prevPrice - prev2Close;
-          var prevPct = prev2Close ? (prevChange / prev2Close * 100) : 0;
-          prevDayData[ex.id] = { price:prevPrice, change:prevChange, changePct:prevPct, date:prev[0] };
+  // Yahoo Finance v8 chart — free, no key, returns JSON
+  var YAHOO_MAP = {
+    NYSE:    '%5EDJI',  NASDAQ:  '%5ENDX',  LSE:     '%5EFTSE',
+    EURONEXT:'%5EFCHI', DAX:     '%5EGDAXI',TSE:     '%5EN225',
+    SSE:     '000001.SS',HKEX:   '%5EHSI',  BSE:     '%5EBSESN',
+    ASX:     '%5EAXJO', TADAWUL: '%5ETASI', CPH:     '%5EOMXC25',
+  };
+
+  STOCK_EXCHANGES.forEach(function(ex) {
+    var stooqSym = STOOQ_MAP[ex.id] || ex.symbol.toLowerCase().replace('^','');
+    var stooqUrl = 'https://stooq.com/q/d/l/?s=' + encodeURIComponent(stooqSym) + '&i=d';
+
+    fetchWithHardTimeout(stooqUrl, 8000).then(function(res) {
+      return res.ok ? res.text() : Promise.reject('stooq ' + res.status);
+    }).then(function(csv) {
+      var lines = csv.trim().split('\n').filter(function(l){ return l && l.indexOf('Date') !== 0; });
+      if (lines.length < 2) throw new Error('no data');
+      var today = lines[lines.length-1].split(',');
+      var prev  = lines[lines.length-2].split(',');
+      var price  = parseFloat(today[4]);
+      var prevCl = parseFloat(prev[4]);
+      if (isNaN(price) || price === 0) throw new Error('bad price');
+      var change = price - prevCl;
+      var pct    = prevCl ? (change / prevCl * 100) : 0;
+      liveIndexData[ex.id] = { price:price, change:change, changePct:pct, currency:'', name:ex.name };
+      if (lines.length >= 3) {
+        var prev2 = lines[lines.length-3].split(',');
+        var prevPrice = parseFloat(prev[4]);
+        var prev2Close = parseFloat(prev2[4]);
+        var prevChange = prevPrice - prev2Close;
+        var prevPct = prev2Close ? (prevChange / prev2Close * 100) : 0;
+        prevDayData[ex.id] = { price:prevPrice, change:prevChange, changePct:prevPct, date:prev[0] };
+      }
+      onDone();
+    }).catch(function() {
+      // Fallback 1: Yahoo Finance v8 chart API (1d interval, 5d range)
+      var ySym = YAHOO_MAP[ex.id] || encodeURIComponent(ex.symbol);
+      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ySym + '?interval=1d&range=5d';
+      fetchWithHardTimeout(yahooUrl, 8000).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+      .then(function(data) {
+        var result = data && data.chart && data.chart.result && data.chart.result[0];
+        if (!result) throw new Error('no yahoo data');
+        var closes = result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close;
+        if (!closes || closes.length < 2) throw new Error('no closes');
+        var price2  = closes[closes.length-1];
+        var prevCl2 = closes[closes.length-2];
+        if (!price2) throw new Error('null close');
+        var change2 = price2 - prevCl2;
+        var pct2    = prevCl2 ? (change2 / prevCl2 * 100) : 0;
+        liveIndexData[ex.id] = { price:price2, change:change2, changePct:pct2, currency:'', name:ex.name };
+        if (closes.length >= 3) {
+          var prevCl3 = closes[closes.length-3];
+          var prevChg = prevCl2 - prevCl3;
+          var prevPct = prevCl3 ? (prevChg / prevCl3 * 100) : 0;
+          var ts = result.timestamp;
+          var prevDate = ts ? new Date(ts[ts.length-2]*1000).toISOString().slice(0,10) : '';
+          prevDayData[ex.id] = { price:prevCl2, change:prevChg, changePct:prevPct, date:prevDate };
         }
         onDone();
       }).catch(function() {
-        // Fallback: try financialmodelingprep (no key needed for basic quote)
+        // Fallback 2: FMP demo key
         var fmpUrl = 'https://financialmodelingprep.com/api/v3/quote-short/' +
           encodeURIComponent(ex.symbol.replace('^','%5E')) + '?apikey=demo';
-        proxyFetch(fmpUrl).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        fetchWithHardTimeout(fmpUrl, 6000).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
         .then(function(d) {
           var q = Array.isArray(d) ? d[0] : null;
           if (!q || !q.price) throw new Error('no fmp data');
-          var price2 = q.price;
-          var change2 = q.changesPercentage ? (price2 * q.changesPercentage / (100 + q.changesPercentage)) : 0;
-          liveIndexData[ex.id] = { price:price2, change:change2,
-            changePct:q.changesPercentage||0, currency:'', name:ex.name };
+          var price3 = q.price;
+          var chg3 = q.changesPercentage ? (price3 * q.changesPercentage / (100 + q.changesPercentage)) : 0;
+          liveIndexData[ex.id] = { price:price3, change:chg3, changePct:q.changesPercentage||0, currency:'', name:ex.name };
           onDone();
         }).catch(function() { onDone(); });
       });
     });
-  } catch(e) {
-    // Fallback static data
-    if (Object.keys(liveIndexData).length === 0) {
-      var fallback = {
-        NYSE:    { price:38721, change:142,   changePct:0.37,  currency:'USD', name:'NYSE'     },
-        NASDAQ:  { price:16430, change:-28,   changePct:-0.17, currency:'USD', name:'NASDAQ'   },
-        LSE:     { price:7680,  change:22,    changePct:0.29,  currency:'GBP', name:'FTSE 100' },
-        EURONEXT:{ price:8121,  change:44,    changePct:0.54,  currency:'EUR', name:'CAC 40'   },
-        DAX:     { price:18420, change:88,    changePct:0.48,  currency:'EUR', name:'DAX'      },
-        TSE:     { price:38950, change:-210,  changePct:-0.54, currency:'JPY', name:'Nikkei'   },
-        SSE:     { price:3088,  change:12,    changePct:0.39,  currency:'CNY', name:'Shanghai' },
-        HKEX:    { price:17240, change:-85,   changePct:-0.49, currency:'HKD', name:'HSI'      },
-        BSE:     { price:72400, change:320,   changePct:0.44,  currency:'INR', name:'SENSEX'   },
-        ASX:     { price:7820,  change:18,    changePct:0.23,  currency:'AUD', name:'ASX 200'  },
-        TADAWUL: { price:11820, change:-42,   changePct:-0.35, currency:'SAR', name:'TASI'     },
-      };
-      liveIndexData = fallback;
+  });
+
+  // Safety net: if after 20s nothing resolved, force completion
+  setTimeout(function() {
+    if (fetched < total) {
+      fetched = total;
+      if (Object.keys(liveIndexData).length === 0) applyStaticFallback();
       rebuildMap();
       if (currentCat === 'markets' || currentCat === 'all') renderFeed(currentCat);
     }
-  }
+  }, 20000);
 }
 
 
