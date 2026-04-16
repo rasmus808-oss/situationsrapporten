@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.1</title>
+<title>Burgerklubben's Situationsrapport · v4.9.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -921,8 +921,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.1 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.1 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.2 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.2 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -941,7 +941,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.1</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.2</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -2358,6 +2358,11 @@ async function fetchGDELT() {
         { time:'08:55', text:'Philippine Coast Guard repels Chinese water cannon in Spratlys', tag:'CONFLICT', cls:'tag-yellow' },
       ];
       if (currentCat === 'all' || currentCat === 'conflict') renderFeed(currentCat);
+    }
+    // Fire auto-brief even if GDELT failed — use fallback headlines
+    if (!_autoSituationsrapportDone) {
+      _autoSituationsrapportDone = true;
+      setTimeout(generateSituationsrapport, 800);
     }
   }
 }
@@ -7877,6 +7882,13 @@ topoScript.onload = function() {
   setTimeout(fetchGDACS,           18000);   // GDACS: UN disaster alerts
   setTimeout(fetchTelegramChannels,20000);   // Telegram OSINT channels via RSS
   setTimeout(fetchADSBExchange,    13000);   // ADS-B Exchange: aircraft tracking
+  // Guaranteed fallback — fire Situationsrapporten even if GDELT never completes
+  setTimeout(function() {
+    if (!_autoSituationsrapportDone) {
+      _autoSituationsrapportDone = true;
+      generateSituationsrapport();
+    }
+  }, 12000);
   loadPersistedSettings();                   // Load saved admin settings from localStorage
 };
 document.head.appendChild(topoScript);
