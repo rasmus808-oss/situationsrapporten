@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.8</title>
+<title>Burgerklubben's Situationsrapport · v4.8.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -916,8 +916,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.1 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.1 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +936,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.1</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1227,6 +1227,7 @@
         <button class="story-close-btn" id="storyCloseBtn" onclick="clearStoryPanel()" title="Clear">✕</button>
       </div>
       <div id="storyMeta" class="story-meta"></div>
+      <div id="storyHeadline" style="display:none;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-hi);padding:6px 14px 2px;letter-spacing:0.3px;line-height:1.4;border-bottom:1px solid var(--dim);"></div>
     </div>
     <div class="story-body" id="storyBody">
       <div class="story-empty">
@@ -6363,8 +6364,7 @@ async function generateDeckBriefing() {
     natural:'Natural Hazards', energy:'Energy'
   }[deck] || deck;
 
-  // Show panel with loading state
-  document.getElementById('intelReader').classList.add('open');
+  // Panel is always visible — just populate storyBody directly
   if (storyMeta) storyMeta.textContent = 'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(Date.now()) + ' CPH';
   if (storyHead) {
     storyHead.textContent = 'Generating ' + deckLabel + ' briefing…';
