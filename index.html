@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.8.1</title>
+<title>Burgerklubben's Situationsrapport · v4.8.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -916,8 +916,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.1 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.1 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.2 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.2 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +936,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.1</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.2</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -6340,22 +6340,13 @@ function openStoryByIdx(idx) {
 var _briefingBusy = false;
 
 async function generateDeckBriefing() {
-  if (_briefingBusy) return;
-  if (!ANTHROPIC_API_KEY) {
-    openStory({
-      text: 'API Key Required',
-      tag: 'AI', cls: 'tag-yellow',
-      desc: 'Add your Anthropic API key in Admin → API Keys to enable AI deck briefings.'
-    });
-    return;
-  }
-  _briefingBusy = true;
+  // Reset busy flag if stuck
+  if (_briefingBusy) { _briefingBusy = false; }
 
-  // Show loading state in Intel Reader
   var storyBody = document.getElementById('storyBody');
   var storyMeta = document.getElementById('storyMeta');
   var storyHead = document.getElementById('storyHeadline');
-  if (!storyBody) { _briefingBusy = false; return; }
+  if (!storyBody) return;
 
   var deck = activeDeck || 'command';
   var deckLabel = {
@@ -6364,51 +6355,57 @@ async function generateDeckBriefing() {
     natural:'Natural Hazards', energy:'Energy'
   }[deck] || deck;
 
-  // Panel is always visible — just populate storyBody directly
+  // Always show loading state first so user gets feedback
   if (storyMeta) storyMeta.textContent = 'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(Date.now()) + ' CPH';
-  if (storyHead) {
-    storyHead.textContent = 'Generating ' + deckLabel + ' briefing…';
-    storyHead.style.display = 'block';
+  if (storyHead) { storyHead.textContent = deckLabel + ' — AI Situation Report'; storyHead.style.display = 'block'; }
+  document.getElementById('storyRelated').innerHTML = '';
+
+  if (!ANTHROPIC_API_KEY) {
+    storyBody.innerHTML =
+      '<div style="padding:16px 0;">' +
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--warn-hi);letter-spacing:1px;margin-bottom:10px;">✗ NO API KEY</div>' +
+      '<div style="font-family:var(--sans);font-size:10px;color:var(--muted);line-height:1.6;">' +
+        'Add your Anthropic API key in <strong>Admin → API Keys</strong> to enable AI deck briefings.<br><br>' +
+        'Get a key at <span style="color:var(--accent);">console.anthropic.com</span>' +
+      '</div></div>';
+    return;
   }
-  storyBody.innerHTML = '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;animation:none;padding:20px 0;">' +
+
+  _briefingBusy = true;
+  storyBody.innerHTML =
+    '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;padding:20px 0;">' +
     '◉ CLAUDE HAIKU PROCESSING<br><br>' +
     '<div style="color:var(--dim);font-size:8px;line-height:1.8;">' +
     'Analysing ' + liveGdeltItems.length + ' GDELT events<br>' +
     'Cross-referencing ' + liveConflictEvents.length + ' conflict pins<br>' +
     'Synthesising feed data…</div></div>';
-  document.getElementById('storyRelated').innerHTML = '';
 
-  // Build context from live data
-  var gdeltSample = liveGdeltItems.slice(0, 12).map(function(i){ return '• ' + i.text; }).join('\n');
-  var telegramSample = liveTelegramItems.slice(0, 6).map(function(i){ return '• ' + i.text; }).join('\n');
-  var rssSample = liveRssItems.slice(0, 6).map(function(i){ return '• ' + i.text; }).join('\n');
+  // Build context
+  var gdeltSample    = liveGdeltItems.slice(0,12).map(function(i){ return '• '+i.text; }).join('\n');
+  var telegramSample = liveTelegramItems.slice(0,6).map(function(i){ return '• '+i.text; }).join('\n');
+  var rssSample      = liveRssItems.slice(0,6).map(function(i){ return '• '+i.text; }).join('\n');
+  var activeZone     = activeConflictId ? (CONFLICT_ZONES.filter(function(z){ return z.id===activeConflictId; })[0]||null) : null;
+  var zoneCtx        = activeZone ? 'Active zone focus: '+activeZone.label+' — '+activeZone.detail+'\n' : '';
+  var deckCtx        = (window._deckAnalystCtx || '');
+  var corrobCount    = _corroborationClusters.length;
 
-  var activeZone = activeConflictId
-    ? (CONFLICT_ZONES.filter(function(z){ return z.id === activeConflictId; })[0] || null)
-    : null;
-  var zoneCtx = activeZone
-    ? 'Active zone focus: ' + activeZone.label + ' — ' + activeZone.detail + '\n'
-    : '';
-
-  var deckCtx = (window._deckAnalystCtx || '');
-  var corrobCount = _corroborationClusters.length;
-
-  var systemPrompt = 'You are a senior geopolitical intelligence analyst writing for a classified situational dashboard. ' +
-    'Be direct, precise, and analytical. Use intelligence report style — no fluff, no hedging. ' +
+  var systemPrompt =
+    'You are a senior geopolitical intelligence analyst writing for a classified situational dashboard. ' +
+    'Be direct, precise, and analytical. Intelligence report style — no fluff, no hedging. ' +
     'Lead with the most operationally significant development. ' +
-    'Format: 3-4 short paragraphs. No headers. No bullet points. Plain prose. Max 200 words.';
+    '3-4 short paragraphs. No headers. No bullet points. Plain prose. Max 200 words.';
 
   var userPrompt = deckCtx + '\n\n' + zoneCtx +
     'Write a current intelligence briefing for the ' + deckLabel + ' deck based on this live data:\n\n' +
     'GDELT HEADLINES (last 4h):\n' + (gdeltSample || 'No GDELT data available') + '\n\n' +
     (telegramSample ? 'TELEGRAM OSINT:\n' + telegramSample + '\n\n' : '') +
-    (rssSample ? 'RSS FEEDS:\n' + rssSample + '\n\n' : '') +
+    (rssSample      ? 'RSS FEEDS:\n'      + rssSample      + '\n\n' : '') +
     'Corroborated events (2+ sources): ' + corrobCount + '\n' +
     'Active conflict pins on map: ' + liveConflictEvents.length + '\n\n' +
-    'Generate the briefing now. Be specific about locations, actors, and escalation indicators.';
+    'Generate the briefing now.';
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -6424,63 +6421,53 @@ async function generateDeckBriefing() {
       })
     });
 
-    if (!response.ok) {
-      var errData = await response.json().catch(function(){ return {}; });
-      throw new Error((errData.error && errData.error.message) || 'API ' + response.status);
+    if (!resp.ok) {
+      var errData = await resp.json().catch(function(){ return {}; });
+      throw new Error((errData.error && errData.error.message) || 'HTTP ' + resp.status);
     }
 
-    var data = await response.json();
-    var briefingText = (data.content && data.content[0] && data.content[0].text) || '';
+    var data = await resp.json();
+    var txt  = (data.content && data.content[0] && data.content[0].text) || '';
+    if (!txt) throw new Error('Empty response from API');
 
-    if (!briefingText) throw new Error('Empty response');
-
-    // Render in Intel Reader
-    if (storyHead) {
-      storyHead.textContent = deckLabel + ' — AI Situation Report';
-      storyHead.style.display = 'block';
-    }
     storyBody.innerHTML =
       '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
         '<span style="color:#8acc8a;">◉</span> CLAUDE HAIKU · ' + tzTime(Date.now()) + ' CPH' +
         (corrobCount > 0 ? ' · <span style="color:#8acc8a;">' + corrobCount + ' CORROBORATED</span>' : '') +
       '</div>' +
-      '<div style="font-family:var(--sans);font-size:11px;line-height:1.75;color:var(--text);white-space:pre-wrap;">' +
-        briefingText.replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+      '<div style="font-family:var(--sans);font-size:11px;line-height:1.8;color:var(--text);white-space:pre-wrap;">' +
+        txt.replace(/</g,'&lt;').replace(/>/g,'&gt;') +
       '</div>' +
       '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--dim);font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.6;">' +
         'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveTelegramItems.length + ' Telegram · ' + liveRssItems.length + ' RSS<br>' +
-        'Model: Claude Haiku · Generated ' + tzDateTime(Date.now()) +
+        'Model: Claude Haiku · ' + tzDateTime(Date.now()) +
       '</div>';
 
-    // Related: suggest other decks
-    var otherDecks = ['command','conflict','maritime','cyber','energy','natural'].filter(function(d){ return d !== deck; });
+    // Related: other deck briefings
     var relHtml = '<div class="story-related-label">Other Deck Briefings</div>';
-    otherDecks.forEach(function(d) {
+    ['command','conflict','maritime','cyber','energy','natural'].filter(function(d){ return d!==deck; }).forEach(function(d) {
       var dl = {command:'Command Center',conflict:'War & Conflict',maritime:'Maritime & Trade',
-                cyber:'Cyber & Tech',energy:'Energy',natural:'Natural Hazards'}[d] || d;
-      relHtml += '<div class="story-related-item" onclick="loadDeck(\'' + d + '\');setTimeout(generateDeckBriefing,300);">' +
-        '<div class="story-related-text" style="margin:0;">⚡ ' + dl + ' briefing</div>' +
-        '<div class="story-related-meta">Click to switch deck + generate</div></div>';
+                cyber:'Cyber & Tech',energy:'Energy',natural:'Natural Hazards'}[d]||d;
+      relHtml += '<div class="story-related-item" onclick="loadDeck(\'' + d + '\');setTimeout(generateDeckBriefing,400);">' +
+        '<div class="story-related-text" style="margin:0;">⚡ '+dl+'</div>' +
+        '<div class="story-related-meta">Generate briefing for this deck</div></div>';
     });
     document.getElementById('storyRelated').innerHTML = relHtml;
 
   } catch(e) {
     storyBody.innerHTML =
       '<div style="font-family:var(--mono);font-size:9px;color:var(--crit-hi);padding:10px 0;">✗ BRIEFING FAILED</div>' +
-      '<div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:6px;">' + (e.message || 'Unknown error') + '</div>' +
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6;">' + (e.message||'Unknown error') + '</div>' +
       '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:10px;line-height:1.6;">' +
-        'Check: API key valid · Anthropic API reachable · Key has Haiku access' +
+        'Check: API key valid in Admin · Anthropic API reachable from browser' +
       '</div>';
-    if (storyHead) {
-      storyHead.textContent = 'Briefing Error';
-      storyHead.style.display = 'block';
-    }
   } finally {
     _briefingBusy = false;
   }
 }
 
 function openStory(item) {
+  if (!item || !item.text) return;
   if (!item || !item.text) return;
   _currentStoryItem = item;
   _relatedItems = [];  // reset related index
