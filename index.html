@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.8.4</title>
+<title>Burgerklubben's Situationsrapport · v4.8.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -916,8 +916,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.4 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.4 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.7 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.7 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +936,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.4</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.7</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -2358,6 +2358,15 @@ async function fetchGDELT() {
 // This dramatically improves pin accuracy over keyword-regex approach.
 
 var _aiCrawlerEnabled = false;
+var _aiCrawlerRuns    = 0;     // total crawler runs this session
+var _lastActivityTs   = Date.now();  // updated on any user interaction
+var _AI_IDLE_TIMEOUT  = 10 * 60 * 1000;  // 10 minutes in ms
+var _aiBriefingRuns   = 0;     // total briefings generated this session
+// Cost estimates (DKK) — Grok-3-mini at $0.30/$0.50 per M tokens, 7 DKK/USD
+// Crawler: ~500 input + 300 output tokens per run = ~$0.00029 = ~0.002 DKK
+// Briefing: ~600 input + 250 output tokens per run = ~$0.00031 = ~0.0022 DKK
+var _AI_CRAWLER_COST_DKK  = 0.002;
+var _AI_BRIEFING_COST_DKK = 0.0022;
 var _aiCrawlerBusy    = false;
 
 function toggleAiCrawler(enabled) {
@@ -2370,9 +2379,39 @@ function toggleAiCrawler(enabled) {
     btn.style.borderColor = enabled ? 'var(--accent-lo)' : 'var(--dim)';
   }
   if (status) {
-    status.textContent = enabled ? 'Active — fires every GDELT refresh (~5 min)' : 'Idle — toggle to activate';
+    status.textContent = enabled ? 'Active — fires every GDELT refresh (~15 min)' : 'Idle — toggle to activate';
     status.style.color = enabled ? 'var(--accent)' : 'var(--dim)';
   }
+  updateAiCostDisplay();
+}
+
+function updateAiCostDisplay() {
+  var el = document.getElementById('aiCostDisplay');
+  if (!el) return;
+  var crawlerCost  = (_aiCrawlerRuns  * _AI_CRAWLER_COST_DKK).toFixed(3);
+  var briefingCost = (_aiBriefingRuns * _AI_BRIEFING_COST_DKK).toFixed(3);
+  var totalCost    = (_aiCrawlerRuns * _AI_CRAWLER_COST_DKK + _aiBriefingRuns * _AI_BRIEFING_COST_DKK).toFixed(3);
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:8px;">' +
+      '<div style="background:var(--surface2);border:1px solid var(--dim);padding:6px 8px;">' +
+        '<div style="font-size:6px;letter-spacing:1.5px;color:var(--dim);margin-bottom:3px;">CRAWLER</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + _aiCrawlerRuns + ' runs</div>' +
+        '<div style="font-size:8px;color:var(--dim);">' + crawlerCost + ' kr</div>' +
+      '</div>' +
+      '<div style="background:var(--surface2);border:1px solid var(--dim);padding:6px 8px;">' +
+        '<div style="font-size:6px;letter-spacing:1.5px;color:var(--dim);margin-bottom:3px;">BRIEFS</div>' +
+        '<div style="font-size:10px;color:var(--muted);">' + _aiBriefingRuns + ' runs</div>' +
+        '<div style="font-size:8px;color:var(--dim);">' + briefingCost + ' kr</div>' +
+      '</div>' +
+      '<div style="background:var(--surface2);border:1px solid var(--accent-lo);padding:6px 8px;">' +
+        '<div style="font-size:6px;letter-spacing:1.5px;color:var(--accent-lo);margin-bottom:3px;">SESSION</div>' +
+        '<div style="font-size:10px;color:var(--accent);">' + totalCost + ' kr</div>' +
+        '<div style="font-size:8px;color:var(--dim);">total</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="font-size:7px;color:var(--dim);margin-top:5px;line-height:1.5;">' +
+      'Grok-3-mini · ~0.002 kr/crawl · ~0.0022 kr/brief · Resets on page reload' +
+    '</div>';
 }
 
 // Process a batch of headline strings through Claude API
@@ -2478,7 +2517,24 @@ async function aiExtractGeoEvents(headlines) {
 async function maybeRunAiCrawler(headlines) {
   if (!_aiCrawlerEnabled) return;
   if (!headlines || headlines.length === 0) return;
+  // Idle check — don't fire if no user activity in last 10 minutes
+  if (Date.now() - _lastActivityTs > _AI_IDLE_TIMEOUT) {
+    var status = document.getElementById('aiCrawlerStatus');
+    if (status) {
+      status.textContent = '⏸ Paused — no activity for 10+ min. Move mouse to resume.';
+      status.style.color = 'var(--warn-hi)';
+    }
+    return;
+  }
   await aiExtractGeoEvents(headlines);
+  _aiCrawlerRuns++;
+  updateAiCostDisplay();
+  // Restore active status (in case it was showing paused)
+  var status = document.getElementById('aiCrawlerStatus');
+  if (status && _aiCrawlerEnabled) {
+    status.textContent = 'Active — fires every GDELT refresh (~15 min)';
+    status.style.color = 'var(--accent)';
+  }
 }
 
 // GDELT Event Stream: geolocated conflict events for map pins
@@ -6388,7 +6444,7 @@ async function generateDeckBriefing() {
   _briefingBusy = true;
   storyBody.innerHTML =
     '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;padding:20px 0;">' +
-    '◉ CLAUDE HAIKU PROCESSING<br><br>' +
+    '◉ GROK PROCESSING<br><br>' +
     '<div style="color:var(--dim);font-size:8px;line-height:1.8;">' +
     'Analysing ' + liveGdeltItems.length + ' GDELT events<br>' +
     'Cross-referencing ' + liveConflictEvents.length + ' conflict pins<br>' +
@@ -6477,6 +6533,8 @@ async function generateDeckBriefing() {
         return mins < 1 ? 'just now' : mins + 'm';
       }
     };
+    _aiBriefingRuns++;
+    updateAiCostDisplay();
 
   } catch(e) {
     storyBody.innerHTML =
@@ -7697,6 +7755,14 @@ document.head.appendChild(topoScript);
       generateDeckBriefing();
     }
   });
+
+  // Activity tracking — reset idle timer on any user interaction
+  function resetActivity() { _lastActivityTs = Date.now(); }
+  document.addEventListener('mousemove',  resetActivity, { passive: true });
+  document.addEventListener('mousedown',  resetActivity, { passive: true });
+  document.addEventListener('keydown',    resetActivity, { passive: true });
+  document.addEventListener('touchstart', resetActivity, { passive: true });
+  document.addEventListener('scroll',     resetActivity, { passive: true });
 })();
 
 // Refresh intervals
@@ -8132,6 +8198,7 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
         <div id="aiCrawlerStatus" style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-top:6px;letter-spacing:1px;">
           Idle — toggle to activate
         </div>
+        <div id="aiCostDisplay" style="font-family:var(--mono);"></div>
       </div>
     </div>
   </div>
