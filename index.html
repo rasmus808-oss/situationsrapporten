@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.3</title>
+<title>Burgerklubben's Situationsrapport · v4.9.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -921,8 +921,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.3 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.3 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.4 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.4 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -941,7 +941,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.3</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.4</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -6461,96 +6461,116 @@ var _autoSituationsrapportDone = false;
 // ── SITUATIONSRAPPORTEN — opening brief ──
 // Fires once on first GDELT load. Generates a short headline-style
 // situation summary with key developments and source links.
+// Cached Situationsrapporten HTML for back-button
+var _situationsrapportHtml = null;
+var _situationsrapportMeta = null;
+
+function backToSituationsrapport() {
+  if (!_situationsrapportHtml) return;
+  var storyBody = document.getElementById('storyBody');
+  var storyMeta = document.getElementById('storyMeta');
+  var storyHead = document.getElementById('storyHeadline');
+  if (storyMeta) storyMeta.textContent = _situationsrapportMeta || 'SITUATIONSRAPPORTEN';
+  if (storyHead) { storyHead.textContent = 'Situationsrapporten'; storyHead.style.display = 'block'; }
+  if (storyBody) storyBody.innerHTML = _situationsrapportHtml;
+  document.getElementById('storyRelated').innerHTML = '';
+}
+
 async function generateSituationsrapport() {
-  if (!XAI_API_KEY) return;  // silently skip if no key
+  if (!XAI_API_KEY) return;
 
   var storyBody = document.getElementById('storyBody');
   var storyMeta = document.getElementById('storyMeta');
   var storyHead = document.getElementById('storyHeadline');
   if (!storyBody) return;
 
+  // Clear previous story bleed — reset meta and headline cleanly
   if (storyMeta) storyMeta.textContent = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
   if (storyHead) { storyHead.textContent = 'Situationsrapporten'; storyHead.style.display = 'block'; }
-  // Don't overwrite storyBody yet — let the blinking "BRIEF INCOMING…" stay visible
   document.getElementById('storyRelated').innerHTML = '';
+  // Keep blinking state visible while fetching
 
+  // Build source index — numbered headlines with links for back-navigation
+  var sourceItems = liveGdeltItems.slice(0, 15).concat(liveRssItems.slice(0, 6));
   var gdeltSample = liveGdeltItems.slice(0, 15).map(function(i, n) {
     return (n+1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
   }).join('\n');
-  var rssSample = liveRssItems.slice(0, 6).map(function(i) {
-    return '• ' + i.text + (i.link ? ' [' + i.link + ']' : '');
+  var rssSample = liveRssItems.slice(0, 6).map(function(i, n) {
+    return (liveGdeltItems.slice(0,15).length + n + 1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
   }).join('\n');
 
   var systemPrompt =
     'You are writing the opening situation brief for "Situationsrapporten" — ' +
     'a Danish geopolitical intelligence dashboard. ' +
-    'Write a crisp, scannable briefing of 5-7 bullet points covering the most significant global developments right now. ' +
-    'Each bullet: one punchy sentence, max 15 words. Lead with the most critical. ' +
-    'Where a source URL is available in the input, append it as a markdown link [→](url). ' +
+    'Write 5-7 bullet points covering the most significant global developments. ' +
+    'Each bullet: one punchy sentence max 15 words. Lead with the most critical. ' +
+    'At the end of each bullet, append the source number in brackets like [3] if you used that headline. ' +
     'No intro sentence. No conclusion. Just the bullets. Use • as bullet character.';
 
   var userPrompt =
-    'Current headlines for Situationsrapporten opening brief:\n\n' +
-    'GDELT:\n' + (gdeltSample || 'No data yet') + '\n\n' +
-    (rssSample ? 'RSS:\n' + rssSample + '\n\n' : '') +
-    'Write the opening brief now.';
+    'Numbered headlines for Situationsrapporten:\n\n' +
+    (gdeltSample || 'No data yet') + '\n' +
+    (rssSample || '') + '\n\n' +
+    'Write the brief now, citing source numbers [N] at end of each bullet.';
 
   try {
     var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + XAI_API_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
         model: 'grok-3-mini',
-        max_tokens: 300,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: userPrompt }
-        ]
+        max_tokens: 350,
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
       })
     });
-
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     var data = await resp.json();
     var txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
     if (!txt) throw new Error('empty');
 
-    // Parse bullets and render with clickable links
     var lines = txt.split('\n').filter(function(l) { return l.trim().length > 0; });
     var bulletHtml = lines.map(function(line) {
-      // Convert markdown links [→](url) to real anchor tags
-      line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, label, url) {
-        return '<a href="' + url + '" target="_blank" rel="noopener" ' +
-          'style="color:var(--accent);text-decoration:none;margin-left:4px;" ' +
-          'onmouseover="this.style.color=\'var(--accent-hi)\'" ' +
-          'onmouseout="this.style.color=\'var(--accent)\'">' + label + '</a>';
-      });
-      // Strip leading bullet chars for uniform rendering
       line = line.replace(/^[•\-\*]\s*/, '');
-      return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
-        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:1px;">▸</span>' +
+      // Replace [N] citation with a clickable link to the source
+      line = line.replace(/\[(\d+)\]/g, function(_, n) {
+        var idx = parseInt(n) - 1;
+        var src = sourceItems[idx];
+        if (!src) return '';
+        var srcLabel = src.tag || src.source || 'SRC';
+        if (src.link) {
+          return '<a href="' + src.link + '" target="_blank" rel="noopener" ' +
+            'style="font-family:var(--mono);font-size:7px;color:var(--accent);text-decoration:none;' +
+            'border:1px solid var(--accent-lo);padding:1px 4px;margin-left:4px;vertical-align:middle;" ' +
+            'onmouseover="this.style.background=\'rgba(74,124,89,0.15)\'" ' +
+            'onmouseout="this.style.background=\'\'">' + srcLabel + ' →</a>';
+        }
+        return '<span style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-left:4px;">[' + srcLabel + ']</span>';
+      });
+      return '<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--dim);cursor:default;">' +
+        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:2px;">▸</span>' +
         '<div style="font-family:var(--sans);font-size:11px;line-height:1.55;color:var(--text-hi);">' + line + '</div>' +
         '</div>';
     }).join('');
 
-    storyBody.innerHTML =
+    var bodyHtml =
       '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">' +
         '◉ GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH · OPENING BRIEF' +
       '</div>' +
       bulletHtml +
-      '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
-        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveRssItems.length + ' RSS · ' +
+      '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.8;">' +
+        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveRssItems.length + ' RSS<br>' +
         '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">↺ Refresh</span>' +
-        ' · <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">⚡ Full brief</span>' +
+        ' &nbsp;·&nbsp; <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">⚡ Full brief</span>' +
       '</div>';
 
+    storyBody.innerHTML = bodyHtml;
+    // Cache for back-button
+    _situationsrapportHtml = bodyHtml;
+    _situationsrapportMeta = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
     _aiBriefingRuns++;
     updateAiCostDisplay();
 
   } catch(e) {
-    // Fail silently on auto-brief — don't interrupt the user experience
     storyBody.innerHTML =
       '<div class="story-empty"><div class="story-empty-icon">◎</div>' +
       '<div class="story-empty-text">Click any feed item or map pin to read the full story</div></div>';
@@ -6801,6 +6821,16 @@ function openStory(item) {
     });
   }
   document.getElementById('storyRelated').innerHTML = relHtml;
+
+  // Back-to-brief button if Situationsrapporten is cached
+  if (_situationsrapportHtml) {
+    var backBtn = document.createElement('div');
+    backBtn.style.cssText = 'padding:8px 12px;border-top:1px solid var(--dim);';
+    backBtn.innerHTML = '<span onclick="backToSituationsrapport()" style="font-family:var(--mono);font-size:8px;' +
+      'color:var(--accent);cursor:pointer;letter-spacing:1px;" ' +
+      'onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--accent)\'">← SITUATIONSRAPPORTEN</span>';
+    document.getElementById('storyRelated').appendChild(backBtn);
+  }
 
   // Also focus on map
   if (item.text) {
