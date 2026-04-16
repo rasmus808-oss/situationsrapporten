@@ -2664,58 +2664,58 @@ var liveIndexData = {};
 var CARRIER_GROUPS = [
   {
     id:'truman',     name:'USS Harry S. Truman CSG', hull:'CVN-75',
-    lon:18.0,  lat:37.5,
-    fleet:'Sixth Fleet', region:'Mediterranean Sea', updated:'Mar 2026',
+    lon:14.0,  lat:39.0,
+    fleet:'Sixth Fleet', region:'Central Mediterranean', updated:'Apr 2026',
     detail:'Sixth Fleet — Mediterranean',
     class:'Nimitz-class', displacement:'104,000t', aircraft:90, speed:30,
     escorts:['USS Cole (DDG-67)','USS Gravely (DDG-107)','USS Forrest Sherman (DDG-98)','USS Leyte Gulf (CG-55)'],
     mission:'Theatre presence, deterrence ops. Supporting NATO maritime security in Mediterranean and Black Sea approaches.',
     threat:'Russian Black Sea Fleet standoff range. Su-34/Su-30 coverage from Crimea. Kalibr cruise missile reach.',
-    notes:'Entered Med Feb 2026. Replaced USS Dwight D. Eisenhower. Operating with French PN group periodically.'
+    notes:'Operating in central Mediterranean Apr 2026. Periodic coordination with French PN group.'
   },
   {
     id:'vinson',     name:'USS Carl Vinson CSG',     hull:'CVN-70',
-    lon:125.0, lat:14.0,
-    fleet:'Seventh Fleet', region:'Western Pacific / Philippine Sea', updated:'Mar 2026',
+    lon:132.0, lat:27.0,
+    fleet:'Seventh Fleet', region:'Philippine Sea', updated:'Apr 2026',
     detail:'Seventh Fleet — Western Pacific',
     class:'Nimitz-class', displacement:'104,000t', aircraft:90, speed:30,
     escorts:['USS Lake Champlain (CG-57)','USS Stockdale (DDG-106)','USS Dewey (DDG-105)'],
     mission:'Freedom of navigation ops, South China Sea patrol. Joint exercises with JMSDF and ROK Navy.',
     threat:'DF-21D/DF-26 ASBM coverage from mainland China. PLA Navy submarine presence. Taiwan Strait tripwire.',
-    notes:'Conducted dual CSG ops with USS Ronald Reagan in Jan 2026. Periodic visits to Yokosuka and Subic Bay.'
+    notes:'Philippine Sea operations Apr 2026. Dual CSG posture with USS Roosevelt during surge periods.'
   },
   {
     id:'lincoln',    name:'USS Abraham Lincoln CSG', hull:'CVN-72',
-    lon:62.0,  lat:17.0,
-    fleet:'Fifth Fleet', region:'Arabian Sea / Persian Gulf approaches', updated:'Mar 2026',
+    lon:58.0,  lat:22.0,
+    fleet:'Fifth Fleet', region:'Arabian Sea', updated:'Apr 2026',
     detail:'Fifth Fleet — Arabian Sea',
     class:'Nimitz-class', displacement:'104,000t', aircraft:90, speed:30,
-    escorts:['USS Philippne Sea (CG-58)','USS Spruance (DDG-111)','USS Michael Murphy (DDG-112)'],
+    escorts:['USS Philippine Sea (CG-58)','USS Spruance (DDG-111)','USS Michael Murphy (DDG-112)'],
     mission:'Iran deterrence, Red Sea security, counter-Houthi ops. Supporting Operation Prosperity Guardian.',
     threat:'Iranian ballistic missiles, IRGC fast boats, Houthi anti-ship missiles. Mining threat in Hormuz.',
-    notes:'Conducting sustained ops in Arabian Sea in response to Houthi attacks. Extended deployment from 2025.'
+    notes:'Sustained Arabian Sea ops Apr 2026. Extended deployment in response to ongoing Houthi campaign.'
   },
   {
     id:'ford',       name:'USS Gerald R. Ford CSG',  hull:'CVN-78',
-    lon:-68.0, lat:37.5,
-    fleet:'Second Fleet', region:'North Atlantic', updated:'Mar 2026',
+    lon:-32.0, lat:48.0,
+    fleet:'Second Fleet', region:'North Atlantic', updated:'Apr 2026',
     detail:'Second Fleet — N. Atlantic',
     class:'Gerald R. Ford-class', displacement:'100,000t', aircraft:90, speed:30,
     escorts:['USS Normandy (CG-60)','USS Thomas Hudner (DDG-116)','USS Ramage (DDG-61)','USS McFaul (DDG-74)'],
-    mission:'NATO collective defence, GIUK gap patrol, Baltic security posture. Exercise NORDIC RESPONSE.',
+    mission:'NATO collective defence, GIUK gap patrol, Baltic security posture.',
     threat:'Russian Northern Fleet submarine activity. Kalibr SLCM range from Barents/Norwegian Sea.',
-    notes:'World\'s first Ford-class carrier. EMALS catapult system. Operating with allied navies in North Atlantic.'
+    notes:'Mid-Atlantic transit Apr 2026. GIUK gap monitoring and NATO allied coordination.'
   },
   {
     id:'roosevelt',  name:'USS Theodore Roosevelt CSG', hull:'CVN-71',
-    lon:-117.2,lat:32.7,
-    fleet:'Third Fleet', region:'Eastern Pacific / CONUS', updated:'Mar 2026',
+    lon:-119.0, lat:34.0,
+    fleet:'Third Fleet', region:'Eastern Pacific / CONUS', updated:'Apr 2026',
     detail:'Third Fleet — Eastern Pacific/CONUS',
     class:'Nimitz-class', displacement:'104,000t', aircraft:90, speed:30,
     escorts:['USS Bunker Hill (CG-52)','USS Russell (DDG-59)','USS Paul Hamilton (DDG-60)'],
     mission:'CONUS-based readiness, Pacific Rim exercises. Surge capacity for Indo-Pacific if required.',
     threat:'Currently in lower-threat environment. PLAN long-range maritime patrol aircraft reach Pacific coast.',
-    notes:'Operating from NAS North Island, San Diego. Preparing for scheduled Indo-Pacific deployment mid-2026.'
+    notes:'San Diego area operations Apr 2026. Preparing for scheduled Indo-Pacific deployment mid-2026.'
   },
 ];
 
@@ -3221,16 +3221,11 @@ var SUBMARINE_CABLES = [
     year:2021, owners:['PEACE Cable International'],
     landingPoints:['Pakistan (Karachi)','Kenya (Mombasa)','South Africa (Cape Town)','France (Marseille)'],
     route:[
-      // Pakistan coast → Arabian Sea → Horn of Africa
-      [66.9,24.9],[65,22],[62,19],[59,15],[55,12],[51,10],[48,8],[46,5],[44,2],[42,-2],
-      // East African coast southward
-      [40,-8],[38,-15],[36,-20],[34,-26],[28,-34],
-      // Around Cape of Good Hope → up West African Atlantic coast (well offshore)
-      [18,-35],[12,-32],[8,-24],[5,-16],[2,-8],[0,0],
-      // West Africa north — stay 300-500km offshore
-      [-2,6],[-6,10],[-12,14],[-16,18],[-18,22],[-18,26],[-16,30],
-      // Atlantic approach to Europe
-      [-12,34],[-8,36],[-4,38],[-2,41],[2,43],[5,43.3]],
+      [66.9,24.9],[65,22],[62,18],[59,14],[56,11],[53,10],[50,9],[48,8],
+      [46,5],[44,2],[42,-2],[40,-8],[38,-15],[36,-20],[34,-26],
+      [28,-34],[22,-36],[18,-35],
+      [10,-28],[4,-20],[0,-12],[-4,-4],[-8,4],[-14,12],[-18,20],[-18,26],
+      [-14,32],[-8,36],[-4,40],[0,42],[3,43],[5,43.3]],
     desc:'Chinese-backed cable. Connects Pakistan to East & West Africa and Europe. Only cable directly linking China-backed interests through Africa to Europe.',
     keywords:['peace cable','chinese cable africa'] },
 
@@ -3716,9 +3711,19 @@ var SHIPPING_LANES = [
     keyPorts:['Hamburg','Copenhagen','Stockholm','Helsinki','Gdansk'],
     chokepoints:['Danish Straits','Kiel Canal'],
     keywords:['baltic sea','baltic shipping','nordic','danish straits'],
-    bbox:[8,54,32,62],
-    edgeA:[[9.5,57],[10,57.2],[10.5,57.4],[11,57.5],[11.5,57.4],[12,57.2],[12.5,57],[13,57],[13.5,57.2],[14,57.5],[14.5,57.5],[15,57.5],[15.5,57.5],[16,57.5],[17,57.8],[17.5,58],[18,58.3],[18.5,58.5],[19,59],[19.5,59.2],[20,59.5],[21,59.5],[22,59.5],[22.5,60],[23,60.3],[24,60.5],[25,60.5],[26.5,60.5],[28,61],[29.5,61]],
-    edgeB:[[9.5,56],[10,56.2],[10.5,56.4],[11,56.5],[11.5,56.4],[12,56.2],[12.5,56],[13,56],[13.5,56.2],[14,56.5],[14.5,56.5],[15,56.5],[15.5,56.5],[16,56.5],[17,56.8],[17.5,57],[18,57.3],[18.5,57.5],[19,58],[19.5,58.2],[20,58.5],[21,58.5],[22,58.5],[22.5,59],[23,59.3],[24,59.5],[25,59.5],[26.5,59.5],[28,60],[29.5,60]] },
+    bbox:[9,54,30,62],
+    edgeA:[
+      [10.6,57.8],[11.2,57.9],[11.8,57.8],[12.4,57.5],[12.8,57.2],[13.2,57.0],[13.8,57.0],
+      [14.4,57.3],[15.0,57.5],[15.8,57.5],[16.5,57.5],[17.2,57.7],[17.8,58.0],
+      [18.4,58.3],[19.0,58.6],[19.6,59.0],[20.2,59.3],[20.8,59.5],[21.5,59.5],
+      [22.2,59.5],[22.8,59.8],[23.4,60.1],[24.0,60.3],[24.8,60.4],[25.5,60.4],
+      [26.5,60.4],[27.5,60.6],[28.5,60.8],[29.5,61.0]],
+    edgeB:[
+      [10.6,56.8],[11.2,56.9],[11.8,56.8],[12.4,56.5],[12.8,56.2],[13.2,56.0],[13.8,56.0],
+      [14.4,56.3],[15.0,56.5],[15.8,56.5],[16.5,56.5],[17.2,56.7],[17.8,57.0],
+      [18.4,57.3],[19.0,57.6],[19.6,58.0],[20.2,58.3],[20.8,58.5],[21.5,58.5],
+      [22.2,58.5],[22.8,58.8],[23.4,59.1],[24.0,59.3],[24.8,59.4],[25.5,59.4],
+      [26.5,59.4],[27.5,59.6],[28.5,59.8],[29.5,60.0]] },
 
   // ── 14. AFRICA EAST COAST ──
   { id:'africa_east', label:'Africa East Coast', color:'#3a8aaa', opacity:0.11,
@@ -3816,7 +3821,7 @@ function openLaneStory(laneId) {
 
   // Live vessel count
   var actColor = vessels > 30 ? 'var(--accent-hi)' : vessels > 10 ? 'var(--warn-hi)' : 'var(--muted)';
-  var actLabel = vessels > 30 ? 'HIGH' : vessels > 10 ? 'MODERATE' : vessels > 0 ? 'LOW' : 'NO AIS';
+  var actLabel = vessels > 30 ? 'HIGH' : vessels > 10 ? 'MODERATE' : vessels > 0 ? 'LOW' : (window._aisApiKey ? 'NO AIS' : 'NO KEY');
   html += '<div style="background:var(--surface2);border:1px solid var(--dim);padding:9px;">' +
     '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">LIVE VESSELS (AIS)</div>' +
     '<div style="display:flex;align-items:baseline;gap:6px;">' +
