@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.8.9</title>
+<title>Burgerklubben's Situationsrapport · v4.9.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -107,6 +107,11 @@
   @keyframes breathe {
     0%, 100% { opacity: 0.35; }
     50%       { opacity: 1;   }
+  }
+
+  @keyframes blink-slow {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.2; }
   }
 
   .header-right {
@@ -916,8 +921,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.9 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.8.9 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.1 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.1 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -936,7 +941,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.8.9</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.1</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1229,9 +1234,9 @@
       <div id="storyHeadline" style="display:none;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text-hi);padding:6px 14px 2px;letter-spacing:0.3px;line-height:1.4;border-bottom:1px solid var(--dim);"></div>
     </div>
     <div class="story-body" id="storyBody">
-      <div class="story-empty">
-        <div class="story-empty-icon">◎</div>
-        <div class="story-empty-text">Click any feed item or map pin to read the full story</div>
+      <div class="story-empty" id="storyDefaultEmpty">
+        <div class="story-empty-icon" style="animation:blink-slow 1.4s ease-in-out infinite;">◉</div>
+        <div class="story-empty-text" style="animation:blink-slow 1.4s ease-in-out infinite;letter-spacing:2px;font-size:9px;">BRIEF INCOMING…</div>
       </div>
     </div>
     <div class="story-feed" id="storyRelated">
@@ -2329,6 +2334,12 @@ async function fetchGDELT() {
     // If AI crawler enabled, send headlines for NLP geolocation
     var headlines = liveGdeltItems.map(function(i) { return i.text; });
     maybeRunAiCrawler(headlines);
+
+    // Auto-generate opening brief on first GDELT load
+    if (!_autoSituationsrapportDone) {
+      _autoSituationsrapportDone = true;
+      setTimeout(generateSituationsrapport, 800);
+    }
 
     if (currentCat === 'all' || currentCat === 'conflict') renderFeed(currentCat);
 
@@ -6432,6 +6443,107 @@ function openStoryByIdx(idx) {
 
 var _briefingBusy = false;
 var _briefingCache = {};  // deck -> { html, relHtml, meta, ts }
+var _autoSituationsrapportDone = false;
+
+// ── SITUATIONSRAPPORTEN — opening brief ──
+// Fires once on first GDELT load. Generates a short headline-style
+// situation summary with key developments and source links.
+async function generateSituationsrapport() {
+  if (!XAI_API_KEY) return;  // silently skip if no key
+
+  var storyBody = document.getElementById('storyBody');
+  var storyMeta = document.getElementById('storyMeta');
+  var storyHead = document.getElementById('storyHeadline');
+  if (!storyBody) return;
+
+  if (storyMeta) storyMeta.textContent = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
+  if (storyHead) { storyHead.textContent = 'Situationsrapporten'; storyHead.style.display = 'block'; }
+  // Don't overwrite storyBody yet — let the blinking "BRIEF INCOMING…" stay visible
+  document.getElementById('storyRelated').innerHTML = '';
+
+  var gdeltSample = liveGdeltItems.slice(0, 15).map(function(i, n) {
+    return (n+1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
+  }).join('\n');
+  var rssSample = liveRssItems.slice(0, 6).map(function(i) {
+    return '• ' + i.text + (i.link ? ' [' + i.link + ']' : '');
+  }).join('\n');
+
+  var systemPrompt =
+    'You are writing the opening situation brief for "Situationsrapporten" — ' +
+    'a Danish geopolitical intelligence dashboard. ' +
+    'Write a crisp, scannable briefing of 5-7 bullet points covering the most significant global developments right now. ' +
+    'Each bullet: one punchy sentence, max 15 words. Lead with the most critical. ' +
+    'Where a source URL is available in the input, append it as a markdown link [→](url). ' +
+    'No intro sentence. No conclusion. Just the bullets. Use • as bullet character.';
+
+  var userPrompt =
+    'Current headlines for Situationsrapporten opening brief:\n\n' +
+    'GDELT:\n' + (gdeltSample || 'No data yet') + '\n\n' +
+    (rssSample ? 'RSS:\n' + rssSample + '\n\n' : '') +
+    'Write the opening brief now.';
+
+  try {
+    var resp = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + XAI_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'grok-3-mini',
+        max_tokens: 300,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt }
+        ]
+      })
+    });
+
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    if (!txt) throw new Error('empty');
+
+    // Parse bullets and render with clickable links
+    var lines = txt.split('\n').filter(function(l) { return l.trim().length > 0; });
+    var bulletHtml = lines.map(function(line) {
+      // Convert markdown links [→](url) to real anchor tags
+      line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_, label, url) {
+        return '<a href="' + url + '" target="_blank" rel="noopener" ' +
+          'style="color:var(--accent);text-decoration:none;margin-left:4px;" ' +
+          'onmouseover="this.style.color=\'var(--accent-hi)\'" ' +
+          'onmouseout="this.style.color=\'var(--accent)\'">' + label + '</a>';
+      });
+      // Strip leading bullet chars for uniform rendering
+      line = line.replace(/^[•\-\*]\s*/, '');
+      return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);">' +
+        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:1px;">▸</span>' +
+        '<div style="font-family:var(--sans);font-size:11px;line-height:1.55;color:var(--text-hi);">' + line + '</div>' +
+        '</div>';
+    }).join('');
+
+    storyBody.innerHTML =
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">' +
+        '◉ GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH · OPENING BRIEF' +
+      '</div>' +
+      bulletHtml +
+      '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
+        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveRssItems.length + ' RSS · ' +
+        '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">↺ Refresh</span>' +
+        ' · <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">⚡ Full brief</span>' +
+      '</div>';
+
+    _aiBriefingRuns++;
+    updateAiCostDisplay();
+
+  } catch(e) {
+    // Fail silently on auto-brief — don't interrupt the user experience
+    storyBody.innerHTML =
+      '<div class="story-empty"><div class="story-empty-icon">◎</div>' +
+      '<div class="story-empty-text">Click any feed item or map pin to read the full story</div></div>';
+    if (storyHead) storyHead.style.display = 'none';
+  }
+}
 
 async function generateDeckBriefing() {
   // Reset busy flag if stuck
