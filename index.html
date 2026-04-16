@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.2</title>
+<title>Burgerklubben's Situationsrapport · v4.9.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -921,8 +921,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.2 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.2 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.3 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.3 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -941,7 +941,7 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.2</span></div>
+  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.3</span></div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1148,8 +1148,13 @@
         <div id="mapTooltip" style="position:absolute;pointer-events:none;opacity:0;transition:opacity 0.12s;background:rgba(8,12,10,0.94);border:1px solid #2a2e2a;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;max-width:200px;z-index:10;"></div>
 
         <!-- Icon legend — bottom-left of map -->
-        <div id="mapIconLegend" style="position:absolute;bottom:8px;left:8px;z-index:15;background:rgba(6,9,8,0.88);border:1px solid #2a2e2a;padding:6px 8px;pointer-events:none;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:6px;letter-spacing:2px;color:#3a4a3a;margin-bottom:5px;">ICON KEY</div>
+        <div id="mapIconLegend" style="position:absolute;bottom:8px;left:8px;z-index:15;background:rgba(6,9,8,0.88);border:1px solid #2a2e2a;">
+          <div onclick="var b=document.getElementById('legendBody');var a=document.getElementById('legendArrow');if(b.style.display==='none'){b.style.display='block';a.textContent='▴';}else{b.style.display='none';a.textContent='▾';}"
+            style="font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:2px;color:#5a7a5a;padding:5px 8px;cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none;"
+            onmouseover="this.style.color='#8acc8a'" onmouseout="this.style.color='#5a7a5a'">
+            ICON KEY <span id="legendArrow">▾</span>
+          </div>
+          <div id="legendBody" style="display:none;padding:4px 8px 6px;border-top:1px solid #1e261e;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;">
             <div style="display:flex;align-items:center;gap:4px;">
               <svg width="12" height="12" viewBox="-6 -6 12 12"><polygon points="0,-5 2.5,-1.5 5,-1.5 3,0.5 4,4 0,2 -4,4 -3,0.5 -5,-1.5 -2.5,-1.5" fill="#b04444" opacity="0.9"/></svg>
@@ -1187,6 +1192,7 @@
               <svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="1.8" fill="#8acc8a"/><text x="3" y="1.5" font-family="monospace" font-size="6" fill="#8acc8a" font-weight="700">2</text></svg>
               <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;color:#8acc8a;">CORROBORATED</span>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -5812,7 +5818,9 @@ function plotEvents() {
   iconG.each(function(d) {
     var g    = d3.select(this);
     var type = classifyEventIcon(d);
-    var s    = (d.r || 3) / k;
+    // Enforce minimum size so shapes are distinguishable at world zoom
+    var rawS = (d.r || 3) / k;
+    var s    = Math.max(rawS, 3.5);   // never smaller than 3.5px regardless of zoom
     var col  = d.color;
     var op   = d.corroborated ? 0.95 : 0.82;
     var corrobRing = d.corroborated;
