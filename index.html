@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.6</title>
+<title>Burgerklubben's Situationsrapport · v4.9.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -920,8 +920,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.6 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.6 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.7 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.7 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -957,7 +957,7 @@
       <!-- bun bottom -->
       <rect x="3" y="22" width="26" height="5" rx="2.5" fill="var(--accent)" opacity="0.85"/>
     </svg>
-    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.6</span>
+    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.7</span>
   </div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
@@ -1984,11 +1984,7 @@ function renderFeed(cat) {
 // Initial render
 renderFeed('all');
 
-// Pre-load intel reader with a static story on boot
-setTimeout(function() {
-  var firstStatic = securityItems[0];
-  if (firstStatic) openStory(firstStatic);
-}, 300);
+// Do NOT auto-open any story on boot — intel reader waits for Situationsrapporten brief
 
 // ── Live ticker updater — pulls from RSS + GDELT ──
 function updateTicker() {
@@ -5631,16 +5627,7 @@ function initMap() {
   mapZoom = d3.zoom().scaleExtent([0.5,32]).on('zoom', function(e) {
     mapG.attr('transform', e.transform);
     var k = e.transform.k;
-    // Rescale circle rings and dots (skip harbour paths — handled separately)
-    mapG.selectAll('.event-group .event-ring').each(function(d) {
-      if (d && (d.isHarbour || d.isCSG)) return;  // handled below
-      if (d && d.r) d3.select(this).attr('r', (d.r+5)/k);
-    });
-    mapG.selectAll('.event-group .event-dot').each(function(d) {
-      if (d && d.isHarbour) return;  // harbour uses path, not circle
-      if (d && d.r) d3.select(this).attr('r', d.r/k);
-    });
-    // Rescale harbour triangle paths
+    // Rescale harbour triangle paths (in-place, cheap)
     mapG.selectAll('.event-group').filter(function(d){ return d && d.isHarbour; }).each(function() {
       var grp = d3.select(this);
       var so = 10/k, si = 5/k;
@@ -5648,6 +5635,7 @@ function initMap() {
         .attr('d', 'M0,'+ (-so) +' L'+ (so*0.87) +','+ (so*0.5) +' L'+ (-so*0.87) +','+ (so*0.5) +'Z');
       grp.selectAll('path.event-dot')
         .attr('d', 'M0,'+ (-si) +' L'+ (si*0.87) +','+ (si*0.5) +' L'+ (-si*0.87) +','+ (si*0.5) +'Z');
+
     });
     // Rescale CSG rings/dots
     mapG.selectAll('.event-group').filter(function(d){ return d && d.isCSG; }).each(function(){
@@ -6991,12 +6979,7 @@ function openStory(item) {
       'onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--accent)\'">← SITUATIONSRAPPORTEN</span>';
     document.getElementById('storyRelated').appendChild(backBtn);
   }
-
-  // Also focus on map
-  if (item.text) {
-    var fakeEl = { getAttribute: function(){ return item.text; } };
-    focusFeedPin(fakeEl);
-  }
+  // Map focus only fires on explicit LOCATE ON MAP click (focusFeedPinFromStory)
 }
 
 function focusFeedPinFromStory() {
@@ -7444,17 +7427,6 @@ async function fetchRSS() {
     renderFeed(currentCat);
   }
   updateTicker();
-  // Auto-open first story in reader panel if it's still showing the empty state
-  if (liveRssItems.length > 0 && !_currentStoryItem) {
-    openStory(liveRssItems[0]);
-  }
-  // Open latest RSS story in intel reader if panel still showing static content
-  if (liveRssItems.length > 0 && !_currentStoryItem) {
-    openStory(liveRssItems[0]);
-  } else if (liveRssItems.length > 0 && _currentStoryItem && !_currentStoryItem.link) {
-    // Replace static fallback with first live story
-    openStory(liveRssItems[0]);
-  }
 
   // Push top item to security ticker
   if (liveRssItems.length > 0) {
