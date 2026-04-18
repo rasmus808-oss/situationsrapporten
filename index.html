@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.9</title>
+<title>Burgerklubben's Situationsrapport · v5.0.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -920,8 +920,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.9 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.9 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v5.0.0 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v5.0.0 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -957,7 +957,7 @@
       <!-- bun bottom -->
       <rect x="3" y="22" width="26" height="5" rx="2.5" fill="var(--accent)" opacity="0.85"/>
     </svg>
-    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.9</span>
+    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v5.0.0</span>
   </div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
@@ -6606,33 +6606,39 @@ async function generateSituationsrapport() {
 
   var isDefault = !!document.getElementById('storyDefaultEmpty');
 
-  var priorityNote =
-    'Conflict priority order (highest strategic risk): ' +
-    _conflictPriorityOrder.join(', ') + '. ' +
-    'Lead with the highest-priority active conflict if there are significant developments.';
-
   var today = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  var priorityNote = 'Conflict priority (highest risk first): ' + _conflictPriorityOrder.join(', ') + '.';
+
+  // Feed the top scored items as context — best of what we have loaded
+  var topItems = liveGdeltItems.concat(liveRssItems)
+    .filter(function(i){ return i._staticScore; })
+    .sort(function(a,b){ return (b._staticScore||0) - (a._staticScore||0); })
+    .slice(0, 12);
+
+  var contextLines = topItems.length
+    ? topItems.map(function(i,n){ return (n+1)+'. '+i.text; }).join('\n')
+    : 'No live feed data loaded yet — use your training knowledge for today, ' + today + '.';
 
   var systemPrompt =
-    'You are writing the opening situation brief for "Situationsrapporten" — ' +
-    'a Danish geopolitical intelligence dashboard. Today is ' + today + '. ' +
-    priorityNote + ' ' +
-    'Search the web for the latest breaking geopolitical, military, and security developments right now. ' +
-    'Write 5-7 bullet points covering the most significant global developments from the last 12 hours. ' +
-    'Each bullet: one punchy sentence max 15 words. ' +
-    'Format EXACTLY as: ZONE_ID|TAG|sentence — where ZONE_ID is one of: iran/ukraine/gaza/sudan/myanmar/yemen/drc/haiti/westbank/somalia/sahel/ethiopia/global, ' +
-    'TAG is one of ATTACK/STRIKE/MILITARY/NUCLEAR/CYBER/MARITIME/DIPLOMACY/MARKET/HAZARD. ' +
-    'No intro. No conclusion. One bullet per line. No bullet characters.';
+    'You are writing the opening situation brief for "Situationsrapporten" — a Danish geopolitical intelligence dashboard. ' +
+    'Today is ' + today + '. ' + priorityNote + ' ' +
+    'Write 5-7 bullet points on the most significant current global developments. ' +
+    'Each bullet: one punchy sentence, max 15 words. ' +
+    'Format EXACTLY as: ZONE_ID|TAG|sentence\n' +
+    'ZONE_ID: iran/ukraine/gaza/sudan/myanmar/yemen/drc/haiti/westbank/somalia/sahel/ethiopia/global\n' +
+    'TAG: ATTACK/STRIKE/MILITARY/NUCLEAR/CYBER/MARITIME/DIPLOMACY/MARKET/HAZARD\n' +
+    'No intro. No conclusion. One bullet per line. No bullet characters. No citation markers.';
+
+  var userPrompt = 'Live feed context (top priority items):\n' + contextLines + '\n\nWrite the brief now.';
 
   try {
     var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
-        model: 'grok-3',
-        max_tokens: 500,
-        search_parameters: { mode: 'on', max_search_results: 10, return_citations: true },
-        messages: [{ role: 'user', content: systemPrompt }]
+        model: 'grok-3-mini',
+        max_tokens: 450,
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
       })
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -6640,10 +6646,7 @@ async function generateSituationsrapport() {
     var txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
     if (!txt) throw new Error('empty');
 
-    // Extract citations from response if present
-    var citations = (data.citations || []);
-
-    var lines = txt.split('\n').filter(function(l) { return l.trim().length > 0; });
+    var lines = txt.split('\n').filter(function(l){ return l.trim().length > 0; });
     _situationsrapportBullets = [];
 
     var tagColors = {
@@ -6653,52 +6656,33 @@ async function generateSituationsrapport() {
     };
 
     var bulletRows = lines.map(function(line, bulletIdx) {
-      line = line.replace(/^[•\-\*]\s*/, '').trim();
+      line = line.replace(/^[•\-\*]\s*/, '').replace(/\[\d+\]/g,'').trim();
       var zoneId = 'global', tag = 'INTEL', sentence = line;
-      var pipeMatch = line.match(/^([a-z_]+)\|([A-Z]+)\|(.+)$/);
-      if (pipeMatch) {
-        zoneId = pipeMatch[1];
-        tag = pipeMatch[2];
-        sentence = pipeMatch[3].trim();
-      }
+      var m = line.match(/^([a-z_]+)\|([A-Z]+)\|(.+)$/);
+      if (m) { zoneId = m[1]; tag = m[2]; sentence = m[3].trim(); }
 
-      // Strip any inline citation markers like [1] [2] from sentence
-      var cleanSentence = sentence.replace(/\[\d+\]/g, '').trim();
+      var words = sentence.split(' ');
+      var headline = words.slice(0,7).join(' ') + (words.length > 7 ? '\u2026' : '');
+      var srcs = topItems.filter(function(i){ return sentence.toLowerCase().split(' ').some(function(w){ return w.length>5 && (i.text||'').toLowerCase().indexOf(w)>=0; }); }).slice(0,3);
+      _situationsrapportBullets.push({ headline:headline, full:sentence, tag:tag, zoneId:zoneId, sources:srcs });
 
-      var words = cleanSentence.split(' ');
-      var headline = words.slice(0, 7).join(' ') + (words.length > 7 ? '\u2026' : '');
-
-      // Attach any available citations as sources
-      var srcs = citations.slice(0, 3).map(function(c) {
-        return { text: c.title || c.url, link: c.url, tag: 'WEB' };
-      });
-
-      _situationsrapportBullets.push({ headline: headline, full: cleanSentence, tag: tag, zoneId: zoneId, sources: srcs });
-
-      var tagColor = tagColors[tag] || 'var(--accent)';
-
+      var tc = tagColors[tag] || 'var(--accent)';
       return '<div onclick="openBriefBullet(' + bulletIdx + ')" style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--dim);cursor:pointer;" ' +
         'onmouseover="this.style.background=\'rgba(74,124,89,0.07)\'" onmouseout="this.style.background=\'\'">' +
         '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:3px;">\u25b8</span>' +
         '<div style="flex:1;">' +
-          '<div style="font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text-hi);">' + cleanSentence + '</div>' +
-          '<div style="margin-top:3px;">' +
-            '<span style="font-family:var(--mono);font-size:7px;color:' + tagColor + ';border:1px solid ' + tagColor + ';opacity:0.7;padding:1px 4px;">' + tag + '</span>' +
-          '</div>' +
+          '<div style="font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text-hi);">' + sentence + '</div>' +
+          '<div style="margin-top:3px;"><span style="font-family:var(--mono);font-size:7px;color:' + tc + ';border:1px solid ' + tc + ';opacity:0.7;padding:1px 4px;">' + tag + '</span></div>' +
         '</div>' +
       '</div>';
     }).join('');
 
-    var sourceNote = citations.length
-      ? citations.length + ' live web sources'
-      : 'Grok live search';
-
     var bodyHtml =
       '<div style="font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:3px;color:var(--text-hi);padding-bottom:8px;border-bottom:1px solid rgba(74,124,89,0.3);margin-bottom:8px;">SITUATIONSRAPPORTEN</div>' +
-      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;">\u25c9 GROK-3 \u00b7 LIVE SEARCH \u00b7 ' + tzTime(Date.now()) + ' CPH</div>' +
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;">\u25c9 GROK-3-MINI \u00b7 ' + tzTime(Date.now()) + ' CPH \u00b7 OPENING BRIEF</div>' +
       bulletRows +
       '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.8;">' +
-        sourceNote + '<br>' +
+        (topItems.length ? topItems.length + ' feed items · ' : '') + today + '<br>' +
         '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">\u21ba Refresh</span>' +
         ' \u00a0\u00b7\u00a0 <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">\u26a1 Full brief</span>' +
       '</div>';
@@ -6714,7 +6698,6 @@ async function generateSituationsrapport() {
       if (sentinel) sentinel.remove();
       document.getElementById('storyRelated').innerHTML = '';
     }
-
     _aiBriefingRuns++;
     updateAiCostDisplay();
 
@@ -6722,7 +6705,6 @@ async function generateSituationsrapport() {
     console.warn('Situationsrapport error:', e);
   }
 }
-
 async function generateDeckBriefing() {
   if (_briefingBusy) { _briefingBusy = false; }
 
@@ -6771,7 +6753,7 @@ async function generateDeckBriefing() {
     '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;padding:20px 0;">' +
     '\u25c9 GROK SEARCHING LIVE\u2026<br><br>' +
     '<div style="color:var(--dim);font-size:8px;line-height:1.8;">' +
-    'Searching web for ' + deckLabel + ' developments\u2026<br>' +
+    'Analysing ' + deckLabel + ' developments\u2026<br>' +
     'Cross-referencing open-source intelligence\u2026<br>' +
     'Synthesising report\u2026</div></div>';
 
@@ -6803,9 +6785,8 @@ async function generateDeckBriefing() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
-        model: 'grok-3',
-        max_tokens: 500,
-        search_parameters: { mode: 'on', max_search_results: 15, return_citations: true },
+        model: 'grok-3-mini',
+        max_tokens: 450,
         messages: [{ role: 'user', content: systemPrompt }]
       })
     });
@@ -6848,7 +6829,7 @@ async function generateDeckBriefing() {
       '</div>' +
       citationsHtml +
       '<div style="margin-top:12px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
-        'Grok-3 \u00b7 live web search \u00b7 ' + citations.length + ' sources \u00b7 ' + tzDateTime(Date.now()) +
+        'Grok-3-mini \u00b7 ' + tzDateTime(Date.now()) + tzDateTime(Date.now()) +
       '</div>';
 
     storyBody.innerHTML = bodyHtml;
