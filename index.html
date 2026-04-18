@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.7</title>
+<title>Burgerklubben's Situationsrapport · v4.9.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -920,8 +920,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.7 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.7 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.9 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.9 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -957,7 +957,7 @@
       <!-- bun bottom -->
       <rect x="3" y="22" width="26" height="5" rx="2.5" fill="var(--accent)" opacity="0.85"/>
     </svg>
-    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.7</span>
+    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.9</span>
   </div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
@@ -5865,7 +5865,7 @@ function plotEvents() {
 
   // Static outer ring — skip exchange/CSG/newspin/harbour (custom rendered below)
   groups.filter(function(d){return !d.isAircraft && !d.isNewsPin && !d.isExchange && !d.isCSG && !d.isHarbour;}).append('circle').attr('class','event-ring')
-    .attr('r', function(d){return (d.r+5)/k;}).attr('fill','none')
+    .attr('r', function(d){return Math.max((d.r+5)/k, 8/k);}).attr('fill','none')
     .attr('stroke', function(d){
       // Corroborated events get a brighter ring
       if (d.corroborated) return '#aaccaa';
@@ -5877,7 +5877,7 @@ function plotEvents() {
 
   // Aircraft triangle
   groups.filter(function(d){return d.isAircraft;}).append('path')
-    .attr('d', function(d){ var s=d.r/k; return 'M0,'+-s*1.5+' L'+s+','+s+' L'+-s+','+s+'Z'; })
+    .attr('d', function(d){ var s=Math.max(d.r/k, 3/k); return 'M0,'+-s*1.5+' L'+s+','+s+' L'+-s+','+s+'Z'; })
     .attr('fill', function(d){return d.color;}).attr('opacity',0.75);
 
   // ── Differentiated icons per event type ──
@@ -5888,9 +5888,10 @@ function plotEvents() {
   iconG.each(function(d) {
     var g    = d3.select(this);
     var type = classifyEventIcon(d);
-    // Enforce minimum size so shapes are distinguishable at world zoom
+    // s is in map-space — mapG transform will scale it to screen.
+    // Floor 3.5px screen → 3.5/k map-space, so icons stay constant size when zoomed.
     var rawS = (d.r || 3) / k;
-    var s    = Math.max(rawS, 3.5);   // never smaller than 3.5px regardless of zoom
+    var s    = Math.max(rawS, 3.5 / k);
     var col  = d.color;
     var op   = d.corroborated ? 0.95 : 0.82;
     var corrobRing = d.corroborated;
@@ -6603,52 +6604,44 @@ async function generateSituationsrapport() {
   var storyHead = document.getElementById('storyHeadline');
   if (!storyBody) return;
 
-  // Only auto-populate reader if still showing default blinking state
   var isDefault = !!document.getElementById('storyDefaultEmpty');
 
-  var sourceItems = liveGdeltItems.slice(0, 15).concat(liveRssItems.slice(0, 6));
+  var priorityNote =
+    'Conflict priority order (highest strategic risk): ' +
+    _conflictPriorityOrder.join(', ') + '. ' +
+    'Lead with the highest-priority active conflict if there are significant developments.';
 
-  var priorityNote = 'Conflict priority order (highest risk first): ' +
-    _conflictPriorityOrder.join(', ') + '. Lead bullets should reflect this hierarchy if relevant.';
-
-  var gdeltSample = liveGdeltItems.slice(0, 15).map(function(i, n) {
-    return (n+1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
-  }).join('\n');
-  var rssSample = liveRssItems.slice(0, 6).map(function(i, n) {
-    return (liveGdeltItems.slice(0,15).length + n + 1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
-  }).join('\n');
+  var today = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
 
   var systemPrompt =
     'You are writing the opening situation brief for "Situationsrapporten" — ' +
-    'a Danish geopolitical intelligence dashboard. ' +
+    'a Danish geopolitical intelligence dashboard. Today is ' + today + '. ' +
     priorityNote + ' ' +
-    'Write 5-7 bullet points covering the most significant global developments. ' +
+    'Search the web for the latest breaking geopolitical, military, and security developments right now. ' +
+    'Write 5-7 bullet points covering the most significant global developments from the last 12 hours. ' +
     'Each bullet: one punchy sentence max 15 words. ' +
-    'Format EXACTLY as: ZONE_ID|TAG|sentence [N] — where ZONE_ID is one of: iran/ukraine/gaza/sudan/myanmar/yemen/drc/haiti/westbank/somalia/sahel/ethiopia/global, ' +
-    'TAG is one of ATTACK/STRIKE/MILITARY/NUCLEAR/CYBER/MARITIME/DIPLOMACY/MARKET/HAZARD, ' +
-    'sentence is the punchy text, [N] is source number. ' +
+    'Format EXACTLY as: ZONE_ID|TAG|sentence — where ZONE_ID is one of: iran/ukraine/gaza/sudan/myanmar/yemen/drc/haiti/westbank/somalia/sahel/ethiopia/global, ' +
+    'TAG is one of ATTACK/STRIKE/MILITARY/NUCLEAR/CYBER/MARITIME/DIPLOMACY/MARKET/HAZARD. ' +
     'No intro. No conclusion. One bullet per line. No bullet characters.';
-
-  var userPrompt =
-    'Headlines:\n\n' +
-    (gdeltSample || 'No data yet') + '\n' +
-    (rssSample || '') + '\n\n' +
-    'Write the brief now.';
 
   try {
     var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
-        model: 'grok-3-mini',
-        max_tokens: 400,
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+        model: 'grok-3',
+        max_tokens: 500,
+        search_parameters: { mode: 'on', max_search_results: 10, return_citations: true },
+        messages: [{ role: 'user', content: systemPrompt }]
       })
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     var data = await resp.json();
     var txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
     if (!txt) throw new Error('empty');
+
+    // Extract citations from response if present
+    var citations = (data.citations || []);
 
     var lines = txt.split('\n').filter(function(l) { return l.trim().length > 0; });
     _situationsrapportBullets = [];
@@ -6669,16 +6662,16 @@ async function generateSituationsrapport() {
         sentence = pipeMatch[3].trim();
       }
 
-      var srcs = [];
-      var cleanSentence = sentence.replace(/\[(\d+)\]/g, function(_, n) {
-        var idx = parseInt(n) - 1;
-        var src = sourceItems[idx];
-        if (src) srcs.push(src);
-        return '';
-      }).trim();
+      // Strip any inline citation markers like [1] [2] from sentence
+      var cleanSentence = sentence.replace(/\[\d+\]/g, '').trim();
 
       var words = cleanSentence.split(' ');
-      var headline = words.slice(0, 7).join(' ') + (words.length > 7 ? '…' : '');
+      var headline = words.slice(0, 7).join(' ') + (words.length > 7 ? '\u2026' : '');
+
+      // Attach any available citations as sources
+      var srcs = citations.slice(0, 3).map(function(c) {
+        return { text: c.title || c.url, link: c.url, tag: 'WEB' };
+      });
 
       _situationsrapportBullets.push({ headline: headline, full: cleanSentence, tag: tag, zoneId: zoneId, sources: srcs });
 
@@ -6686,7 +6679,7 @@ async function generateSituationsrapport() {
 
       return '<div onclick="openBriefBullet(' + bulletIdx + ')" style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--dim);cursor:pointer;" ' +
         'onmouseover="this.style.background=\'rgba(74,124,89,0.07)\'" onmouseout="this.style.background=\'\'">' +
-        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:3px;">▸</span>' +
+        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:3px;">\u25b8</span>' +
         '<div style="flex:1;">' +
           '<div style="font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text-hi);">' + cleanSentence + '</div>' +
           '<div style="margin-top:3px;">' +
@@ -6696,20 +6689,23 @@ async function generateSituationsrapport() {
       '</div>';
     }).join('');
 
+    var sourceNote = citations.length
+      ? citations.length + ' live web sources'
+      : 'Grok live search';
+
     var bodyHtml =
       '<div style="font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:3px;color:var(--text-hi);padding-bottom:8px;border-bottom:1px solid rgba(74,124,89,0.3);margin-bottom:8px;">SITUATIONSRAPPORTEN</div>' +
-      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;">◉ GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH · OPENING BRIEF</div>' +
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;">\u25c9 GROK-3 \u00b7 LIVE SEARCH \u00b7 ' + tzTime(Date.now()) + ' CPH</div>' +
       bulletRows +
       '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.8;">' +
-        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveRssItems.length + ' RSS<br>' +
-        '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">↺ Refresh</span>' +
-        ' &nbsp;·&nbsp; <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">⚡ Full brief</span>' +
+        sourceNote + '<br>' +
+        '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">\u21ba Refresh</span>' +
+        ' \u00a0\u00b7\u00a0 <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">\u26a1 Full brief</span>' +
       '</div>';
 
     _situationsrapportHtml = bodyHtml;
-    _situationsrapportMeta = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
+    _situationsrapportMeta = 'SITUATIONSRAPPORTEN \u00b7 ' + tzDateTime(Date.now());
 
-    // Only populate reader if still in default blinking state
     if (isDefault) {
       if (storyMeta) storyMeta.textContent = _situationsrapportMeta;
       if (storyHead) storyHead.style.display = 'none';
@@ -6726,8 +6722,8 @@ async function generateSituationsrapport() {
     console.warn('Situationsrapport error:', e);
   }
 }
+
 async function generateDeckBriefing() {
-  // Reset busy flag if stuck
   if (_briefingBusy) { _briefingBusy = false; }
 
   var storyBody = document.getElementById('storyBody');
@@ -6742,33 +6738,30 @@ async function generateDeckBriefing() {
     natural:'Natural Hazards', energy:'Energy'
   }[deck] || deck;
 
-  // ── Serve from cache if available ──
+  // Serve from cache if available
   var cached = _briefingCache[deck];
   if (cached) {
-    if (storyMeta) storyMeta.textContent = cached.meta +
-      ' · <span style="color:var(--dim);font-size:7px;">CACHED</span>';
-    if (storyHead) { storyHead.textContent = deckLabel + ' — AI Situation Report'; storyHead.style.display = 'block'; }
+    if (storyMeta) storyMeta.textContent = cached.meta;
+    if (storyHead) { storyHead.textContent = deckLabel + ' \u2014 AI Situation Report'; storyHead.style.display = 'block'; }
     storyBody.innerHTML = cached.html +
       '<div style="margin-top:8px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
-        '↺ Cached ' + cached.age + ' ago · ' +
+        '\u21ba Cached ' + cached.age + ' ago \u00b7 ' +
         '<span style="cursor:pointer;color:var(--accent);text-decoration:underline;" onclick="delete _briefingCache[\'' + deck + '\'];generateDeckBriefing();">Regenerate</span>' +
       '</div>';
     document.getElementById('storyRelated').innerHTML = cached.relHtml;
     return;
   }
 
-  // Always show loading state first so user gets feedback
-  if (storyMeta) storyMeta.textContent = 'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(Date.now()) + ' CPH';
-  if (storyHead) { storyHead.textContent = deckLabel + ' — AI Situation Report'; storyHead.style.display = 'block'; }
+  if (storyMeta) storyMeta.textContent = 'AI ANALYST \u00b7 ' + deckLabel.toUpperCase() + ' \u00b7 ' + tzTime(Date.now()) + ' CPH';
+  if (storyHead) { storyHead.textContent = deckLabel + ' \u2014 AI Situation Report'; storyHead.style.display = 'block'; }
   document.getElementById('storyRelated').innerHTML = '';
 
   if (!XAI_API_KEY) {
     storyBody.innerHTML =
       '<div style="padding:16px 0;">' +
-      '<div style="font-family:var(--mono);font-size:9px;color:var(--warn-hi);letter-spacing:1px;margin-bottom:10px;">✗ NO API KEY</div>' +
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--warn-hi);letter-spacing:1px;margin-bottom:10px;">\u2717 NO API KEY</div>' +
       '<div style="font-family:var(--sans);font-size:10px;color:var(--muted);line-height:1.6;">' +
-        'Add your xAI API key in <strong>Admin → API Keys</strong> to enable AI deck briefings.<br><br>' +
-        'Get a key at <span style="color:var(--accent);">console.anthropic.com</span>' +
+        'Add your xAI API key in <strong>Admin \u2192 API Keys</strong> to enable AI deck briefings.' +
       '</div></div>';
     return;
   }
@@ -6776,47 +6769,44 @@ async function generateDeckBriefing() {
   _briefingBusy = true;
   storyBody.innerHTML =
     '<div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:1px;padding:20px 0;">' +
-    '◉ GROK PROCESSING<br><br>' +
+    '\u25c9 GROK SEARCHING LIVE\u2026<br><br>' +
     '<div style="color:var(--dim);font-size:8px;line-height:1.8;">' +
-    'Analysing ' + liveGdeltItems.length + ' GDELT events<br>' +
-    'Cross-referencing ' + liveConflictEvents.length + ' conflict pins<br>' +
-    'Synthesising feed data…</div></div>';
+    'Searching web for ' + deckLabel + ' developments\u2026<br>' +
+    'Cross-referencing open-source intelligence\u2026<br>' +
+    'Synthesising report\u2026</div></div>';
 
-  // Build context
-  var gdeltSample    = liveGdeltItems.slice(0,12).map(function(i){ return '• '+i.text; }).join('\n');
-  var telegramSample = liveTelegramItems.slice(0,6).map(function(i){ return '• '+i.text; }).join('\n');
-  var rssSample      = liveRssItems.slice(0,6).map(function(i){ return '• '+i.text; }).join('\n');
-  var activeZone     = activeConflictId ? (CONFLICT_ZONES.filter(function(z){ return z.id===activeConflictId; })[0]||null) : null;
-  var zoneCtx        = activeZone ? 'Active zone focus: '+activeZone.label+' — '+activeZone.detail+'\n' : '';
-  var deckCtx        = (window._deckAnalystCtx || '');
-  var corrobCount    = _corroborationClusters.length;
+  var today = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  var activeZone = activeConflictId ? (CONFLICT_ZONES.filter(function(z){ return z.id===activeConflictId; })[0]||null) : null;
+  var zoneCtx = activeZone ? 'Current map focus: ' + activeZone.label + ' (' + activeZone.detail + '). ' : '';
+
+  var deckFocus = {
+    command:       'all major geopolitical, military, and security developments globally',
+    conflict:      'active armed conflicts, military operations, airstrikes, troop movements, and battlefield developments',
+    maritime:      'shipping security, naval movements, Strait of Hormuz, Red Sea/Houthi activity, Bab al-Mandeb, South China Sea',
+    markets:       'geopolitical market impacts, sanctions, energy prices, defense stocks, conflict-driven economic shifts',
+    cyber:         'state-sponsored cyberattacks, critical infrastructure threats, APT activity, information operations',
+    humanitarian:  'humanitarian crises, civilian casualties, displacement, famine, aid access, UN emergency alerts',
+    natural:       'major earthquakes, volcanic activity, extreme weather, wildfire emergencies, USGS/NOAA alerts',
+    energy:        'oil and gas supply disruptions, pipeline security, LNG market movements, energy infrastructure attacks'
+  }[deck] || 'global security developments';
 
   var systemPrompt =
-    'You are a senior geopolitical intelligence analyst writing for a classified situational dashboard. ' +
-    'Be direct, precise, and analytical. Intelligence report style — no fluff, no hedging. ' +
-    'Lead with the most operationally significant development. ' +
-    '3-4 short paragraphs. No headers. No bullet points. Plain prose. Max 200 words.';
-
-  var userPrompt = deckCtx + '\n\n' + zoneCtx +
-    'Write a current intelligence briefing for the ' + deckLabel + ' deck based on this live data:\n\n' +
-    'GDELT HEADLINES (last 4h):\n' + (gdeltSample || 'No GDELT data available') + '\n\n' +
-    (telegramSample ? 'TELEGRAM OSINT:\n' + telegramSample + '\n\n' : '') +
-    (rssSample      ? 'RSS FEEDS:\n'      + rssSample      + '\n\n' : '') +
-    'Corroborated events (2+ sources): ' + corrobCount + '\n' +
-    'Active conflict pins on map: ' + liveConflictEvents.length + '\n\n' +
-    'Generate the briefing now.';
+    'You are a senior geopolitical intelligence analyst. Today is ' + today + '. ' +
+    zoneCtx +
+    'Search the web for the latest developments (last 6-12 hours) on: ' + deckFocus + '. ' +
+    'Write a classified intelligence briefing. Style: direct, analytical, no hedging, no fluff. ' +
+    '3-4 short paragraphs. No headers. No bullet points. Plain prose. Max 220 words. ' +
+    'Lead with the most operationally significant development right now.';
 
   try {
     var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + XAI_API_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
-        model: 'grok-3-mini',
-        max_tokens: 400,
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+        model: 'grok-3',
+        max_tokens: 500,
+        search_parameters: { mode: 'on', max_search_results: 15, return_citations: true },
+        messages: [{ role: 'user', content: systemPrompt }]
       })
     });
 
@@ -6826,40 +6816,58 @@ async function generateDeckBriefing() {
     }
 
     var data = await resp.json();
-    var txt  = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-    if (!txt) throw new Error('Empty response from API');
+    var txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    if (!txt) throw new Error('Empty response');
 
-    storyBody.innerHTML =
+    var citations = (data.citations || []);
+    // Strip inline citation markers from prose
+    var cleanTxt = txt.replace(/\[\d+\]/g, '').trim();
+
+    var citationsHtml = citations.length
+      ? '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--dim);">' +
+          '<div style="font-family:var(--mono);font-size:6px;letter-spacing:2px;color:var(--dim);margin-bottom:6px;">SOURCES</div>' +
+          citations.slice(0,8).map(function(c) {
+            var domain = (c.url||'').replace(/^https?:\/\/(www\.)?/,'').split('/')[0].slice(0,30);
+            return '<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+              '<a href="' + (c.url||'#') + '" target="_blank" rel="noopener" ' +
+              'style="font-family:var(--sans);font-size:9px;color:var(--muted);text-decoration:none;" ' +
+              'onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--muted)\'">' +
+              (c.title||domain) + ' \u2197</a>' +
+              '<div style="font-family:var(--mono);font-size:6px;color:var(--dim);">' + domain + '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>'
+      : '';
+
+    var bodyHtml =
       '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px;">' +
-        '<span style="color:#8acc8a;">◉</span> GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH' +
-        (corrobCount > 0 ? ' · <span style="color:#8acc8a;">' + corrobCount + ' CORROBORATED</span>' : '') +
+        '<span style="color:#8acc8a;">\u25c9</span> GROK-3 \u00b7 LIVE SEARCH \u00b7 ' + tzTime(Date.now()) + ' CPH' +
       '</div>' +
       '<div style="font-family:var(--sans);font-size:11px;line-height:1.8;color:var(--text);white-space:pre-wrap;">' +
-        txt.replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+        cleanTxt.replace(/</g,'&lt;').replace(/>/g,'&gt;') +
       '</div>' +
-      '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--dim);font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.6;">' +
-        'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveTelegramItems.length + ' Telegram · ' + liveRssItems.length + ' RSS<br>' +
-        'Model: Grok-3-mini (xAI) · ' + tzDateTime(Date.now()) +
+      citationsHtml +
+      '<div style="margin-top:12px;font-family:var(--mono);font-size:7px;color:var(--dim);">' +
+        'Grok-3 \u00b7 live web search \u00b7 ' + citations.length + ' sources \u00b7 ' + tzDateTime(Date.now()) +
       '</div>';
 
-    // Related: other deck briefings
+    storyBody.innerHTML = bodyHtml;
+
     var relHtml = '<div class="story-related-label">Other Deck Briefings</div>';
     ['command','conflict','maritime','cyber','energy','natural'].filter(function(d){ return d!==deck; }).forEach(function(d) {
       var dl = {command:'Command Center',conflict:'War & Conflict',maritime:'Maritime & Trade',
                 cyber:'Cyber & Tech',energy:'Energy',natural:'Natural Hazards'}[d]||d;
       relHtml += '<div class="story-related-item" onclick="loadDeck(\'' + d + '\');setTimeout(generateDeckBriefing,400);">' +
-        '<div class="story-related-text" style="margin:0;">⚡ '+dl+'</div>' +
-        '<div class="story-related-meta">Generate briefing for this deck</div></div>';
+        '<div class="story-related-text" style="margin:0;">\u26a1 '+dl+'</div>' +
+        '<div class="story-related-meta">Generate live briefing</div></div>';
     });
     document.getElementById('storyRelated').innerHTML = relHtml;
 
-    // ── Cache this briefing for the session ──
     var cacheTs = Date.now();
     _briefingCache[deck] = {
-      html:   storyBody.innerHTML,
-      relHtml: relHtml,
-      meta:   'AI ANALYST · ' + deckLabel.toUpperCase() + ' · ' + tzTime(cacheTs) + ' CPH',
-      ts:     cacheTs,
+      html: bodyHtml, relHtml: relHtml,
+      meta: 'AI ANALYST \u00b7 ' + deckLabel.toUpperCase() + ' \u00b7 ' + tzTime(cacheTs) + ' CPH',
+      ts: cacheTs,
       get age() {
         var mins = Math.round((Date.now() - this.ts) / 60000);
         return mins < 1 ? 'just now' : mins + 'm';
@@ -6870,124 +6878,12 @@ async function generateDeckBriefing() {
 
   } catch(e) {
     storyBody.innerHTML =
-      '<div style="font-family:var(--mono);font-size:9px;color:var(--crit-hi);padding:10px 0;">✗ BRIEFING FAILED</div>' +
-      '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6;">' + (e.message||'Unknown error') + '</div>' +
-      '<div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:10px;line-height:1.6;">' +
-        'Check: API key valid in Admin · Anthropic API reachable from browser' +
-      '</div>';
+      '<div style="font-family:var(--mono);font-size:9px;color:var(--warn-hi);padding:16px 0;">\u2717 ' + (e.message||'Error') + '</div>';
+    console.warn('Deck briefing error:', e);
   } finally {
     _briefingBusy = false;
   }
 }
-
-function openStory(item) {
-  if (!item || !item.text) return;
-  if (!item || !item.text) return;
-  _currentStoryItem = item;
-  _relatedItems = [];  // reset related index
-
-  // Meta bar
-  var metaEl = document.getElementById('storyMeta');
-  var parts = [];
-  if (item.datetime) parts.push(item.datetime);
-  if (item.tag)      parts.push('[' + item.tag + ']');
-  metaEl.textContent = parts.join('  ·  ');
-
-  // Find which zone this belongs to
-  var lowerText = item.text.toLowerCase();
-  var zoneMatch = null, bestScore = 0;
-  CONFLICT_ZONES.forEach(function(z) {
-    var kws = ZONE_KEYWORDS[z.id] || [];
-    var score = kws.filter(function(kw){ return lowerText.indexOf(kw) >= 0; }).length;
-    if (score > bestScore) { bestScore = score; zoneMatch = z; }
-  });
-
-  // Build story body
-  var cls = item.cls || 'tag-yellow';
-  var tagColor = cls === 'tag-red' ? 'var(--crit-hi)' : cls === 'tag-blue' ? '#4a8a9a' : 'var(--accent-hi)';
-  var tagBg    = cls === 'tag-red' ? 'rgba(139,53,53,0.12)' : cls === 'tag-blue' ? 'rgba(46,74,92,0.12)' : 'rgba(74,124,89,0.10)';
-  var tagBorder = cls === 'tag-red' ? 'var(--crit)' : cls === 'tag-blue' ? 'var(--info)' : 'var(--accent)';
-
-  var html = '';
-
-  // Headline
-  html += '<div class="story-headline">' + escHtml(item.text) + '</div>';
-
-  // Source row
-  html += '<div class="story-source-row">';
-  if (item.tag) {
-    html += '<span class="story-tag" style="color:' + tagColor + ';border-color:' + tagBorder + ';background:' + tagBg + '">' + escHtml(item.tag) + '</span>';
-  }
-  if (item.datetime) {
-    html += '<span class="story-datetime">' + escHtml(item.datetime) + '</span>';
-  }
-  if (zoneMatch) {
-    html += '<button class="story-zone-pill" id="storyZonePill" data-zone="' + zoneMatch.id + '">' +
-      '⊙ ' + zoneMatch.label.toUpperCase() + '</button>';
-  }
-  html += '</div>';
-
-  // Description from RSS feed (if available)
-  if (item.desc && item.desc.length > 20) {
-    html += '<div class="story-summary">' + escHtml(item.desc) + '</div>';
-  } else if (zoneMatch) {
-    // Fallback: zone context paragraph
-    html += '<div class="story-summary" style="opacity:0.6;font-style:italic;">' + escHtml(zoneMatch.detail) + '</div>';
-  }
-
-  // Link to original article
-  if (item.link) {
-    html += '<a href="' + escHtml(item.link) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;' +
-      'font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--accent);text-decoration:none;margin-bottom:14px;">' +
-      '⬡ READ FULL ARTICLE</a>';
-  }
-
-  // Zoom to map button
-  if (zoneMatch || extractHeadlineLocation(item.text)) {
-    html += '<button class="story-map-btn" onclick="focusFeedPinFromStory()">⊕ LOCATE ON MAP</button>';
-  }
-
-  document.getElementById('storyBody').innerHTML = html;
-  // Wire zone pill click after DOM update
-  var zpill = document.getElementById('storyZonePill');
-  if (zpill) zpill.addEventListener('click', function() {
-    zoomToConflict(this.getAttribute('data-zone'));
-  });
-
-  // Related stories section
-  var related = findRelatedStories(item, zoneMatch);
-  var relHtml = '';
-  if (related.length > 0) {
-    relHtml += '<div class="story-related-label">Related · ' + related.length + ' stories</div>';
-    related.forEach(function(r) {
-      var ridx = _relatedItems.length;
-      _relatedItems.push(r);
-      relHtml += '<div class="story-related-item" onclick="openRelatedStory(' + ridx + ')">';
-      relHtml += '<div class="story-related-text">' + escHtml(r.text.slice(0,80)) + (r.text.length > 80 ? '…' : '') + '</div>';
-      relHtml += '<div class="story-related-meta">' + escHtml(r.tag || '') + (r.datetime ? '  ·  ' + escHtml(r.datetime) : '') + '</div>';
-      relHtml += '</div>';
-    });
-  }
-  document.getElementById('storyRelated').innerHTML = relHtml;
-
-  // Back-to-brief button if Situationsrapporten is cached
-  if (_situationsrapportHtml) {
-    var backBtn = document.createElement('div');
-    backBtn.style.cssText = 'padding:8px 12px;border-top:1px solid var(--dim);';
-    backBtn.innerHTML = '<span onclick="backToSituationsrapport()" style="font-family:var(--mono);font-size:8px;' +
-      'color:var(--accent);cursor:pointer;letter-spacing:1px;" ' +
-      'onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--accent)\'">← SITUATIONSRAPPORTEN</span>';
-    document.getElementById('storyRelated').appendChild(backBtn);
-  }
-  // Map focus only fires on explicit LOCATE ON MAP click (focusFeedPinFromStory)
-}
-
-function focusFeedPinFromStory() {
-  if (!_currentStoryItem) return;
-  var fakeEl = { getAttribute: function(){ return _currentStoryItem.text; } };
-  focusFeedPin(fakeEl);
-}
-
 // ── EXCHANGE INTEL READER ──
 // Opens a rich market brief in the story panel when an exchange dot is clicked.
 function openExchangeStory(exchangeId) {
