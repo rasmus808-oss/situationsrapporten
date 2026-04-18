@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Burgerklubben's Situationsrapport · v4.9.4</title>
+<title>Burgerklubben's Situationsrapport · v4.9.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -95,12 +95,11 @@
     gap: 10px;
   }
 
-  .logo::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
+  .logo-burger {
     flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    opacity: 0.72;
     animation: breathe 4s ease-in-out infinite;
   }
 
@@ -921,8 +920,8 @@
   <div class="ticker-label">⚡ LIVE INTEL</div>
   <div style="overflow:hidden;flex:1">
     <div class="ticker-inner" id="ticker">
-      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.4 <span>loading live feeds…</span></span>
-      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.4 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-a">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.6 <span>loading live feeds…</span></span>
+      <span class="ticker-text" id="ticker-b">BURGERKLUBBEN'S SITUATIONSRAPPORT · v4.9.6 <span>loading live feeds…</span></span>
     </div>
   </div>
 </div>
@@ -941,7 +940,25 @@
 
 <!-- Header -->
 <header>
-  <div class="logo">BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.4</span></div>
+  <div class="logo">
+    <svg class="logo-burger" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- bun top -->
+      <path d="M4 12 Q4 5 16 5 Q28 5 28 12 Z" fill="var(--accent)"/>
+      <!-- sesame seeds -->
+      <ellipse cx="12" cy="9" rx="1.4" ry="0.8" fill="var(--accent-lo)" opacity="0.7"/>
+      <ellipse cx="18" cy="7.5" rx="1.4" ry="0.8" fill="var(--accent-lo)" opacity="0.7"/>
+      <ellipse cx="22" cy="10" rx="1.2" ry="0.7" fill="var(--accent-lo)" opacity="0.7"/>
+      <!-- lettuce -->
+      <rect x="3" y="13" width="26" height="2.5" rx="1" fill="#3aaa5a" opacity="0.85"/>
+      <!-- patty -->
+      <rect x="3" y="16" width="26" height="4" rx="1.2" fill="#7a4020"/>
+      <!-- cheese -->
+      <rect x="3" y="20.5" width="26" height="2" rx="0.7" fill="#c09040" opacity="0.9"/>
+      <!-- bun bottom -->
+      <rect x="3" y="22" width="26" height="5" rx="2.5" fill="var(--accent)" opacity="0.85"/>
+    </svg>
+    BURGERKLUBBEN'S SITUATIONSRAPPORT <span style="opacity:0.45;margin-left:6px;">v4.9.6</span>
+  </div>
   <div class="header-right">
     <div class="live-badge">● LIVE</div>
     <button onclick="openAdmin()" style="font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all 0.1s;" onmouseover="this.style.borderColor='var(--accent-lo)';this.style.color='var(--muted)'" onmouseout="this.style.borderColor='var(--dim)';this.style.color='var(--dim)'">⚙ ADMIN</button>
@@ -1499,18 +1516,26 @@ function magClass(mag) {
   return               { cls:'tag-green',  sev:'MINOR'    };
 }
 
-function feedItem(item) {
+function feedItem(item, aiRanked) {
   var t   = (item.text||'');
   var tag = (item.tag||'');
   var cls = (item.cls||'tag-green');
   var dt  = (item.datetime||item.time||'');
-  // Store data on element via data attributes, call openStory via data lookup
   var idx = _feedItems.length;
   _feedItems.push(item);
+  var score = item._staticScore || 0;
+  // Priority dot: red=high(70+), orange=med(40-69), dim=low
+  var dotColor = score >= 70 ? 'var(--crit-hi)' : score >= 40 ? 'var(--warn-hi)' : 'var(--dim)';
+  var aiMark = aiRanked ? '<span style="font-family:var(--mono);font-size:6px;color:var(--accent-lo);margin-left:3px;vertical-align:middle;">AI</span>' : '';
   return '<div class="feed-item" style="cursor:pointer;" onclick="openStoryByIdx(' + idx + ')">' +
-    '<div class="feed-time">' + (item.time||'') + '</div>' +
-    '<div class="feed-text">' + t + '</div>' +
-    '<span class="feed-tag ' + cls + '">' + tag + '</span>' +
+    '<div style="display:flex;align-items:flex-start;gap:5px;">' +
+      '<div style="flex-shrink:0;width:5px;height:5px;border-radius:50%;background:' + dotColor + ';margin-top:4px;opacity:0.8;"></div>' +
+      '<div style="flex:1;">' +
+        '<div class="feed-time">' + (item.time||'') + '</div>' +
+        '<div class="feed-text">' + t + '</div>' +
+        '<span class="feed-tag ' + cls + '">' + tag + '</span>' + aiMark +
+      '</div>' +
+    '</div>' +
     '</div>';
 }
 var _feedItems = [];
@@ -1632,9 +1657,16 @@ function renderFeed(cat) {
        }).join(''))
     : noData('OpenSky: fetching…');
 
-  // GDELT live conflict events
-  var gdeltHtml = liveGdeltItems.length
-    ? (liveCount(liveGdeltItems.length, 'GDELT events') + liveGdeltItems.slice(0,7).map(feedItem).join(''))
+  // GDELT live conflict events — sorted by score
+  var gdeltSorted = liveGdeltItems.slice().sort(function(a,b){
+    var aScore = (a._aiRank !== undefined && a._aiRank < 900) ? (1000 - a._aiRank * 10) : (a._staticScore || 0);
+    var bScore = (b._aiRank !== undefined && b._aiRank < 900) ? (1000 - b._aiRank * 10) : (b._staticScore || 0);
+    return bScore - aScore;
+  });
+  var gdeltHtml = gdeltSorted.length
+    ? (liveCount(gdeltSorted.length, 'GDELT events') + gdeltSorted.slice(0,7).map(function(item){
+        return feedItem(item, item._aiRank !== undefined && item._aiRank < 900);
+      }).join(''))
     : noData('GDELT: fetching live events…');
 
   // ReliefWeb live humanitarian reports
@@ -1644,8 +1676,15 @@ function renderFeed(cat) {
 
   // ── Render by category ──
 
-  var rssHtml = liveRssItems.length
-    ? (liveCount(liveRssItems.length, 'articles') + liveRssItems.slice(0,8).map(feedItem).join(''))
+  var rssSorted = liveRssItems.slice().sort(function(a,b){
+    var aScore = (a._aiRank !== undefined && a._aiRank < 900) ? (1000 - a._aiRank * 10) : (a._staticScore || 0);
+    var bScore = (b._aiRank !== undefined && b._aiRank < 900) ? (1000 - b._aiRank * 10) : (b._staticScore || 0);
+    return bScore - aScore;
+  });
+  var rssHtml = rssSorted.length
+    ? (liveCount(rssSorted.length, 'articles') + rssSorted.slice(0,8).map(function(item){
+        return feedItem(item, item._aiRank !== undefined && item._aiRank < 900);
+      }).join(''))
     : noData('RSS: fetching live feeds…');
 
   var polyHtml = livePolyItems.length
@@ -2329,7 +2368,9 @@ async function fetchGDELT() {
       else if (/sanction|diplomat|negoti|ceasefire/.test(lc))     { tag='DIPLO';   cls:'tag-blue';   }
       else                                                          { tag='CONFLICT';cls='tag-yellow'; }
 
-      return { time:seenago, datetime:seenDate, text:title, tag:tag, cls:cls, link:a.url||'', desc:'' };
+      var item = { time:seenago, datetime:seenDate, text:title, tag:tag, cls:cls, link:a.url||'', desc:'' };
+      item._staticScore = scoreFeedItem(item);
+      return item;
     });
 
     // Also extract any geolocated events to plot on map
@@ -2373,29 +2414,94 @@ async function fetchGDELT() {
   }
 }
 
-// ── AI NLP CRAWLER — Claude-powered geolocation + event extraction ──
-// When enabled (admin toggle), sends batches of headlines to Claude Haiku
-// via Anthropic API to extract: {location, lat, lon, event_type, confidence}
-// This dramatically improves pin accuracy over keyword-regex approach.
+// ── AI FEED RANKER ──
+// Replaces the geo-crawler. On each GDELT/RSS refresh, scores every feed item
+// using: conflict hierarchy, recency, breaking signal, severity keywords, geo proximity.
+// Items are sorted by score before rendering. AI re-ranks the top items for nuance.
 
-var _aiCrawlerEnabled = false;
-var _aiCrawlerRuns    = 0;     // total crawler runs this session
-var _lastActivityTs   = Date.now();  // updated on any user interaction
-var _AI_IDLE_TIMEOUT  = 10 * 60 * 1000;  // 10 minutes in ms
-var _aiBriefingRuns   = 0;     // total briefings generated this session
-// Cost estimates (DKK) — Grok-3-mini at $0.30/$0.50 per M tokens, 7 DKK/USD
-// Crawler: ~500 input + 300 output tokens per run = ~$0.00029 = ~0.002 DKK
-// Briefing: ~600 input + 250 output tokens per run = ~$0.00031 = ~0.0022 DKK
+var _aiCrawlerEnabled = false;  // kept for UI compatibility
+var _aiCrawlerRuns    = 0;
+var _lastActivityTs   = Date.now();
+var _AI_IDLE_TIMEOUT  = 10 * 60 * 1000;
+var _aiBriefingRuns   = 0;
 var _AI_CRAWLER_COST_DKK  = 0.002;
 var _AI_BRIEFING_COST_DKK = 0.0022;
 var _aiCrawlerBusy    = false;
+
+// Per-item score cache: text -> score (0-100)
+var _feedScoreCache = {};
+
+// ── STATIC SCORER — runs instantly, no API call ──
+// Returns 0-100. Higher = more important.
+function scoreFeedItem(item) {
+  var text = (item.text || '').toLowerCase();
+  var score = 0;
+
+  // 1. RECENCY (0-30 pts) — newer = higher
+  if (item.datetime) {
+    var ageMs = Date.now() - new Date(item.datetime).getTime();
+    var ageH = ageMs / 3600000;
+    if (ageH < 0.5)  score += 30;
+    else if (ageH < 1)   score += 25;
+    else if (ageH < 3)   score += 18;
+    else if (ageH < 6)   score += 12;
+    else if (ageH < 12)  score += 7;
+    else if (ageH < 24)  score += 3;
+  }
+
+  // 2. BREAKING SIGNAL (0-20 pts)
+  if (/breaking|urgent|flash|just in|developing|alert/.test(text)) score += 20;
+  else if (/confirms|announces|declared|launched|struck/.test(text)) score += 10;
+
+  // 3. SEVERITY KEYWORDS (0-20 pts)
+  if (/nuclear|nuke|wmd|chemical weapon|bioweapon|dirty bomb/.test(text)) score += 20;
+  else if (/airstrike|missile|rocket|bomb|explosion|explo/.test(text))     score += 15;
+  else if (/kill|dead|casualt|massacre|genocide/.test(text))               score += 13;
+  else if (/attack|assault|offensive|invaded|seized/.test(text))           score += 10;
+  else if (/military|troops|forces|deploy/.test(text))                     score += 6;
+  else if (/protest|unrest|riot/.test(text))                               score += 3;
+
+  // 4. CONFLICT ZONE HIERARCHY (0-25 pts) — ZONE_STATIC_RISK based
+  var zoneKeywords = {
+    iran:     ['iran','irgc','tehran','hormuz','persian gulf','iaea','nuclear deal'],
+    ukraine:  ['ukraine','kyiv','zaporizhzhia','zelensky','kharkiv','donbas','russian forces'],
+    gaza:     ['gaza','hamas','idf','rafah','west bank','hezbollah','lebanon'],
+    westbank: ['west bank','settler','ramallah','jenin'],
+    yemen:    ['houthi','yemen','sanaa','aden','bab al-mandeb'],
+    drc:      ['congo','drc','m23','kinshasa','goma'],
+    sudan:    ['sudan','rsf','khartoum','darfur','el fasher'],
+    myanmar:  ['myanmar','burma','junta','shan','karen'],
+    somalia:  ['somalia','al-shabaab','mogadishu'],
+    sahel:    ['mali','burkina','niger','sahel','jihadist'],
+    haiti:    ['haiti','gang','port-au-prince'],
+    ethiopia: ['ethiopia','tigray','amhara','addis']
+  };
+  var bestZoneScore = 0;
+  Object.keys(zoneKeywords).forEach(function(zoneId) {
+    var keywords = zoneKeywords[zoneId];
+    var matches = keywords.filter(function(kw) { return text.indexOf(kw) >= 0; }).length;
+    if (matches > 0) {
+      var zoneRisk = ZONE_STATIC_RISK[zoneId] || 10;
+      var pts = Math.round((zoneRisk / 38) * 25 * Math.min(matches, 2));
+      if (pts > bestZoneScore) bestZoneScore = pts;
+    }
+  });
+  score += bestZoneScore;
+
+  // 5. SOURCE CREDIBILITY bonus (0-5 pts)
+  var src = (item.tag || item.source || '').toLowerCase();
+  if (/reuters|ap |bbc|ft |wsj|nyt|guardian/.test(text + src)) score += 5;
+  else if (/al jazeera|aljazeera|dw |france24|rfi/.test(text + src)) score += 3;
+
+  return Math.min(score, 100);
+}
 
 function toggleAiCrawler(enabled) {
   _aiCrawlerEnabled = enabled;
   var btn = document.getElementById('aiCrawlerBtn');
   var status = document.getElementById('aiCrawlerStatus');
   if (btn) {
-    btn.textContent = enabled ? '◉ AI CRAWLER ON — click to run now' : '○ AI CRAWLER OFF';
+    btn.textContent = enabled ? '◉ AI RE-RANKER ON — click to run now' : '○ AI RE-RANKER OFF';
     btn.style.color = enabled ? 'var(--accent-hi)' : 'var(--muted)';
     btn.style.borderColor = enabled ? 'var(--accent-lo)' : 'var(--dim)';
   }
@@ -2437,127 +2543,100 @@ function updateAiCostDisplay() {
 
 // Process a batch of headline strings through Claude API
 // Returns array of {text, lat, lon, event_type, confidence, location_name}
-async function aiExtractGeoEvents(headlines) {
-  if (!headlines || headlines.length === 0) return [];
-  if (_aiCrawlerBusy) return [];
+// ── AI RE-RANKER — fires after each GDELT/RSS refresh ──
+// Sends top static-scored headlines to Grok for nuanced re-ranking.
+// Returns an ordered list of indices; we update item._aiRank.
+async function aiReRankFeed(items) {
+  if (!XAI_API_KEY || !items || items.length === 0) return;
+  if (_aiCrawlerBusy) return;
+  // Idle check
+  if (Date.now() - _lastActivityTs > _AI_IDLE_TIMEOUT) {
+    var status = document.getElementById('aiCrawlerStatus');
+    if (status) { status.textContent = '⏸ Paused — no activity 10+ min'; status.style.color = 'var(--warn-hi)'; }
+    return;
+  }
   _aiCrawlerBusy = true;
 
-  var prompt = [
-    'You are a geopolitical intelligence analyst. Extract structured data from these conflict/security headlines.',
-    'For each headline, return JSON with fields:',
-    '  text: original headline (max 60 chars)',
-    '  location_name: most specific place name mentioned',
-    '  lat: decimal latitude (null if unknown)',
-    '  lon: decimal longitude (null if unknown)',
-    '  event_type: one of: explosion|airstrike|drone|military|protest|casualty|cyber|diplomacy|generic',
-    '  confidence: 0.0-1.0 (how confident you are in the lat/lon)',
-    '',
-    'Return ONLY a JSON array, no other text. If location is unknown or too vague, set lat/lon to null.',
-    'Use real-world coordinates. Be precise — city level or better when possible.',
-    '',
-    'Headlines:',
-    headlines.slice(0, 15).map(function(h, i) { return (i+1) + '. ' + h; }).join('\n')
-  ].join('\n');
+  // Take top 20 by static score for AI nuancing
+  var ranked = items.slice().sort(function(a,b){ return (b._staticScore||0) - (a._staticScore||0); });
+  var top = ranked.slice(0, 20);
 
-  if (!XAI_API_KEY) {
-    console.warn('AI crawler: no xAI API key set — add key in Admin panel');
-    var status = document.getElementById('aiCrawlerStatus');
-    if (status) { status.textContent = '✗ No xAI key — set in Admin → API Keys'; status.style.color = 'var(--warn-hi)'; }
-    _aiCrawlerBusy = false;
-    return [];
-  }
+  var prompt =
+    'You are a geopolitical intelligence analyst ranking news items for urgency and strategic importance.\n' +
+    'Ranking criteria (in order of weight):\n' +
+    '  1. Strategic threat level (nuclear/WMD > airstrike > ground offensive > troop movement > diplomacy)\n' +
+    '  2. Conflict hierarchy: iran > ukraine > gaza > westbank > yemen > drc > sudan > myanmar > somalia > sahel > ethiopia > haiti\n' +
+    '  3. Breaking / developing (new events rank higher than ongoing background noise)\n' +
+    '  4. Cascade risk (events that could escalate or trigger secondary conflicts)\n' +
+    '  5. Recency\n\n' +
+    'Return ONLY a JSON array of the input indices reordered by priority, highest first.\n' +
+    'Example: [2,0,5,1,3,4,...]\n\n' +
+    'Items (index: headline):\n' +
+    top.map(function(item, i) { return i + ': ' + item.text; }).join('\n');
 
   try {
-    var response = await fetch('https://api.x.ai/v1/chat/completions', {
+    var resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + XAI_API_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
         model: 'grok-3-mini',
-        max_tokens: 1000,
+        max_tokens: 150,
         messages: [{ role: 'user', content: prompt }]
       })
     });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var txt = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
+    txt = txt.replace(/```json|```/g, '').trim();
+    var order = JSON.parse(txt);
 
-    if (!response.ok) throw new Error('API ' + response.status);
-    var data = await response.json();
-    var text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '[]';
-    // Strip any markdown fences
-    text = text.replace(/```json|```/g, '').trim();
-    var results = JSON.parse(text);
-
-    // Convert to map event objects
-    var mapEvts = results
-      .filter(function(r) { return r.lat != null && r.lon != null && r.confidence >= 0.4; })
-      .map(function(r) {
-        var colorMap = {
-          explosion:'#b04444', airstrike:'#b04444', drone:'#a07840',
-          military:'#7a5c2e', protest:'#7a5c2e', casualty:'#b04444',
-          cyber:'#c09050', diplomacy:'#2a5a7a', generic:'#5a3535'
-        };
-        var sevMap = {
-          explosion:'CRITICAL', airstrike:'HIGH', drone:'HIGH',
-          military:'MEDIUM', protest:'MEDIUM', casualty:'HIGH',
-          cyber:'HIGH', diplomacy:'LOW', generic:'MEDIUM'
-        };
-        return {
-          lon: parseFloat(r.lon), lat: parseFloat(r.lat),
-          layer: 'conflict',
-          color: colorMap[r.event_type] || '#5a3535',
-          r: r.confidence >= 0.8 ? 3.5 : 3,
-          label: (r.location_name || 'Unknown') + ' — ' + (r.event_type || 'event'),
-          detail: r.text || '',
-          severity: sevMap[r.event_type] || 'MEDIUM',
-          source: 'ai-crawler',
-          datetime: new Date().toISOString(),
-          aiConfidence: r.confidence,
-          eventType: r.event_type
-        };
+    // Apply AI ranks back to original items
+    if (Array.isArray(order)) {
+      order.forEach(function(origIdx, aiRank) {
+        if (top[origIdx]) top[origIdx]._aiRank = aiRank;
       });
+      // Items not in top set get rank = 999
+      items.forEach(function(item) {
+        if (item._aiRank === undefined) item._aiRank = 999;
+      });
+    }
 
-    // Merge into liveConflictEvents, replacing previous ai-crawler events
-    liveConflictEvents = liveConflictEvents
-      .filter(function(e) { return e.source !== 'ai-crawler'; })
-      .concat(mapEvts);
+    _aiCrawlerRuns++;
+    updateAiCostDisplay();
+    var status = document.getElementById('aiCrawlerStatus');
+    if (status) { status.textContent = 'Re-ranked ' + top.length + ' items · ' + tzTime(Date.now()) + ' CPH'; status.style.color = 'var(--accent)'; }
 
-    rebuildMap();
-    setSourceStatus('gdelt', 'live', 'AI+GDELT · ' + mapEvts.length + ' events');
-    return mapEvts;
+    // Re-render feed with new ranking
+    renderFeed(currentCat);
 
   } catch(e) {
-    console.warn('AI crawler error:', e);
-    return [];
+    console.warn('AI re-ranker error:', e);
   } finally {
     _aiCrawlerBusy = false;
   }
 }
 
-// Hook into GDELT fetch — if AI crawler enabled, enrich the headlines batch
-async function maybeRunAiCrawler(headlines) {
-  if (!_aiCrawlerEnabled) return;
-  if (!headlines || headlines.length === 0) return;
-  // Idle check — don't fire if no user activity in last 10 minutes
-  if (Date.now() - _lastActivityTs > _AI_IDLE_TIMEOUT) {
-    var status = document.getElementById('aiCrawlerStatus');
-    if (status) {
-      status.textContent = '⏸ Paused — no activity for 10+ min. Move mouse to resume.';
-      status.style.color = 'var(--warn-hi)';
-    }
-    return;
-  }
-  await aiExtractGeoEvents(headlines);
-  _aiCrawlerRuns++;
-  updateAiCostDisplay();
-  // Restore active status (in case it was showing paused)
-  var status = document.getElementById('aiCrawlerStatus');
-  if (status && _aiCrawlerEnabled) {
-    status.textContent = 'Active — fires every GDELT refresh (~15 min)';
-    status.style.color = 'var(--accent)';
-  }
-}
+// Kept for backward compat (called from GDELT fetch hook)
+function aiExtractGeoEvents() { return Promise.resolve([]); }
 
+// ── APPLY SCORES + TRIGGER AI RE-RANK ──
+async function maybeRunAiCrawler(headlines) {
+  // Score all current feed items statically first (instant)
+  var allItems = liveGdeltItems.concat(liveRssItems);
+  allItems.forEach(function(item) {
+    if (item._staticScore === undefined) {
+      item._staticScore = scoreFeedItem(item);
+    }
+  });
+
+  // Re-render immediately with static scores
+  renderFeed(currentCat);
+
+  // Then fire AI re-ranker if enabled and API key present
+  if (!_aiCrawlerEnabled || !XAI_API_KEY) return;
+  if (!headlines || headlines.length === 0) return;
+  await aiReRankFeed(allItems);
+}
 // GDELT Event Stream: geolocated conflict events for map pins
 async function fetchGDELTEvents() {
   try {
@@ -5626,6 +5705,9 @@ function initMap() {
     drawPipelines._zt = setTimeout(drawPipelines, 80);
     clearTimeout(drawCables._zt);
     drawCables._zt = setTimeout(drawCables, 80);
+    // Redraw differentiated event icons on zoom (paths/polygons can't be rescaled via .attr('r'))
+    clearTimeout(plotEvents._zt);
+    plotEvents._zt = setTimeout(plotEvents, 100);
   });
 
   mapSvg.call(mapZoom).on('dblclick.zoom', null).style('cursor','grab');
@@ -6471,9 +6553,58 @@ function backToSituationsrapport() {
   var storyMeta = document.getElementById('storyMeta');
   var storyHead = document.getElementById('storyHeadline');
   if (storyMeta) storyMeta.textContent = _situationsrapportMeta || 'SITUATIONSRAPPORTEN';
-  if (storyHead) { storyHead.textContent = 'Situationsrapporten'; storyHead.style.display = 'block'; }
+  if (storyHead) storyHead.style.display = 'none'; // title is embedded in bodyHtml
   if (storyBody) storyBody.innerHTML = _situationsrapportHtml;
   document.getElementById('storyRelated').innerHTML = '';
+}
+
+// Sorted conflict zone IDs by static risk score (highest first)
+var _conflictPriorityOrder = Object.keys(ZONE_STATIC_RISK).sort(function(a,b){
+  return ZONE_STATIC_RISK[b] - ZONE_STATIC_RISK[a];
+});
+
+var _situationsrapportBullets = null; // [{headline, full, tag, zoneId, sources:[]}]
+
+// Open a single brief bullet as a drilldown in the Intel Reader
+function openBriefBullet(bulletIdx) {
+  if (!_situationsrapportBullets || !_situationsrapportBullets[bulletIdx]) return;
+  var b = _situationsrapportBullets[bulletIdx];
+  var storyBody = document.getElementById('storyBody');
+  var storyMeta = document.getElementById('storyMeta');
+  var storyHead = document.getElementById('storyHeadline');
+  var storyRelated = document.getElementById('storyRelated');
+  if (!storyBody) return;
+
+  if (storyMeta) storyMeta.textContent = b.tag + '  ·  ' + tzTime(Date.now()) + ' CPH';
+  if (storyHead) { storyHead.textContent = b.headline; storyHead.style.display = 'block'; }
+
+  var relatedHtml = b.sources.map(function(src) {
+    if (!src) return '';
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--dim);">' +
+      '<div style="font-family:var(--sans);font-size:10px;color:var(--text-hi);line-height:1.45;margin-bottom:3px;">' +
+        (src.link
+          ? '<a href="' + src.link + '" target="_blank" rel="noopener" style="color:var(--text-hi);text-decoration:none;" onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--text-hi)\'">' + src.text + ' ↗</a>'
+          : src.text) +
+      '</div>' +
+      '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">' +
+        (src.tag || src.source || '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  storyBody.innerHTML =
+    '<div style="font-family:var(--sans);font-size:11px;color:var(--text-hi);line-height:1.6;padding-bottom:12px;border-bottom:1px solid var(--dim);margin-bottom:8px;">' +
+      b.full +
+    '</div>' +
+    (b.sources.length
+      ? '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--dim);margin-bottom:6px;">SOURCES</div>' + relatedHtml
+      : '<div style="font-family:var(--mono);font-size:7px;color:var(--dim);">No direct source link available.</div>');
+
+  storyRelated.innerHTML =
+    '<div style="padding:8px 12px;border-top:1px solid var(--dim);">' +
+      '<span onclick="backToSituationsrapport()" style="font-family:var(--mono);font-size:8px;color:var(--accent);cursor:pointer;letter-spacing:1px;" ' +
+        'onmouseover="this.style.color=\'var(--accent-hi)\'" onmouseout="this.style.color=\'var(--accent)\'">← SITUATIONSRAPPORTEN</span>' +
+    '</div>';
 }
 
 async function generateSituationsrapport() {
@@ -6484,14 +6615,14 @@ async function generateSituationsrapport() {
   var storyHead = document.getElementById('storyHeadline');
   if (!storyBody) return;
 
-  // Clear previous story bleed — reset meta and headline cleanly
-  if (storyMeta) storyMeta.textContent = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
-  if (storyHead) { storyHead.textContent = 'Situationsrapporten'; storyHead.style.display = 'block'; }
-  document.getElementById('storyRelated').innerHTML = '';
-  // Keep blinking state visible while fetching
+  // Only auto-populate reader if still showing default blinking state
+  var isDefault = !!document.getElementById('storyDefaultEmpty');
 
-  // Build source index — numbered headlines with links for back-navigation
   var sourceItems = liveGdeltItems.slice(0, 15).concat(liveRssItems.slice(0, 6));
+
+  var priorityNote = 'Conflict priority order (highest risk first): ' +
+    _conflictPriorityOrder.join(', ') + '. Lead bullets should reflect this hierarchy if relevant.';
+
   var gdeltSample = liveGdeltItems.slice(0, 15).map(function(i, n) {
     return (n+1) + '. ' + i.text + (i.link ? ' [' + i.link + ']' : '');
   }).join('\n');
@@ -6502,16 +6633,19 @@ async function generateSituationsrapport() {
   var systemPrompt =
     'You are writing the opening situation brief for "Situationsrapporten" — ' +
     'a Danish geopolitical intelligence dashboard. ' +
+    priorityNote + ' ' +
     'Write 5-7 bullet points covering the most significant global developments. ' +
-    'Each bullet: one punchy sentence max 15 words. Lead with the most critical. ' +
-    'At the end of each bullet, append the source number in brackets like [3] if you used that headline. ' +
-    'No intro sentence. No conclusion. Just the bullets. Use • as bullet character.';
+    'Each bullet: one punchy sentence max 15 words. ' +
+    'Format EXACTLY as: ZONE_ID|TAG|sentence [N] — where ZONE_ID is one of: iran/ukraine/gaza/sudan/myanmar/yemen/drc/haiti/westbank/somalia/sahel/ethiopia/global, ' +
+    'TAG is one of ATTACK/STRIKE/MILITARY/NUCLEAR/CYBER/MARITIME/DIPLOMACY/MARKET/HAZARD, ' +
+    'sentence is the punchy text, [N] is source number. ' +
+    'No intro. No conclusion. One bullet per line. No bullet characters.';
 
   var userPrompt =
-    'Numbered headlines for Situationsrapporten:\n\n' +
+    'Headlines:\n\n' +
     (gdeltSample || 'No data yet') + '\n' +
     (rssSample || '') + '\n\n' +
-    'Write the brief now, citing source numbers [N] at end of each bullet.';
+    'Write the brief now.';
 
   try {
     var resp = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -6519,7 +6653,7 @@ async function generateSituationsrapport() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + XAI_API_KEY },
       body: JSON.stringify({
         model: 'grok-3-mini',
-        max_tokens: 350,
+        max_tokens: 400,
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
       })
     });
@@ -6529,55 +6663,81 @@ async function generateSituationsrapport() {
     if (!txt) throw new Error('empty');
 
     var lines = txt.split('\n').filter(function(l) { return l.trim().length > 0; });
-    var bulletHtml = lines.map(function(line) {
-      line = line.replace(/^[•\-\*]\s*/, '');
-      // Replace [N] citation with a clickable link to the source
-      line = line.replace(/\[(\d+)\]/g, function(_, n) {
+    _situationsrapportBullets = [];
+
+    var tagColors = {
+      ATTACK:'#c05040', STRIKE:'#c05040', NUCLEAR:'#c05040',
+      MILITARY:'#a07840', MARITIME:'#4a7aaa', CYBER:'#7a4aaa',
+      DIPLOMACY:'#4a8a9a', MARKET:'#6aab7a', HAZARD:'#a07840', INTEL:'var(--accent)'
+    };
+
+    var bulletRows = lines.map(function(line, bulletIdx) {
+      line = line.replace(/^[•\-\*]\s*/, '').trim();
+      var zoneId = 'global', tag = 'INTEL', sentence = line;
+      var pipeMatch = line.match(/^([a-z_]+)\|([A-Z]+)\|(.+)$/);
+      if (pipeMatch) {
+        zoneId = pipeMatch[1];
+        tag = pipeMatch[2];
+        sentence = pipeMatch[3].trim();
+      }
+
+      var srcs = [];
+      var cleanSentence = sentence.replace(/\[(\d+)\]/g, function(_, n) {
         var idx = parseInt(n) - 1;
         var src = sourceItems[idx];
-        if (!src) return '';
-        var srcLabel = src.tag || src.source || 'SRC';
-        if (src.link) {
-          return '<a href="' + src.link + '" target="_blank" rel="noopener" ' +
-            'style="font-family:var(--mono);font-size:7px;color:var(--accent);text-decoration:none;' +
-            'border:1px solid var(--accent-lo);padding:1px 4px;margin-left:4px;vertical-align:middle;" ' +
-            'onmouseover="this.style.background=\'rgba(74,124,89,0.15)\'" ' +
-            'onmouseout="this.style.background=\'\'">' + srcLabel + ' →</a>';
-        }
-        return '<span style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-left:4px;">[' + srcLabel + ']</span>';
-      });
-      return '<div style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--dim);cursor:default;">' +
-        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:2px;">▸</span>' +
-        '<div style="font-family:var(--sans);font-size:11px;line-height:1.55;color:var(--text-hi);">' + line + '</div>' +
-        '</div>';
+        if (src) srcs.push(src);
+        return '';
+      }).trim();
+
+      var words = cleanSentence.split(' ');
+      var headline = words.slice(0, 7).join(' ') + (words.length > 7 ? '…' : '');
+
+      _situationsrapportBullets.push({ headline: headline, full: cleanSentence, tag: tag, zoneId: zoneId, sources: srcs });
+
+      var tagColor = tagColors[tag] || 'var(--accent)';
+
+      return '<div onclick="openBriefBullet(' + bulletIdx + ')" style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--dim);cursor:pointer;" ' +
+        'onmouseover="this.style.background=\'rgba(74,124,89,0.07)\'" onmouseout="this.style.background=\'\'">' +
+        '<span style="color:var(--accent-lo);flex-shrink:0;font-size:9px;margin-top:3px;">▸</span>' +
+        '<div style="flex:1;">' +
+          '<div style="font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text-hi);">' + cleanSentence + '</div>' +
+          '<div style="margin-top:3px;">' +
+            '<span style="font-family:var(--mono);font-size:7px;color:' + tagColor + ';border:1px solid ' + tagColor + ';opacity:0.7;padding:1px 4px;">' + tag + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
 
     var bodyHtml =
-      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">' +
-        '◉ GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH · OPENING BRIEF' +
-      '</div>' +
-      bulletHtml +
+      '<div style="font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:3px;color:var(--text-hi);padding-bottom:8px;border-bottom:1px solid rgba(74,124,89,0.3);margin-bottom:8px;">SITUATIONSRAPPORTEN</div>' +
+      '<div style="font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;">◉ GROK-3-MINI · ' + tzTime(Date.now()) + ' CPH · OPENING BRIEF</div>' +
+      bulletRows +
       '<div style="margin-top:10px;font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.8;">' +
         'Sources: ' + liveGdeltItems.length + ' GDELT · ' + liveRssItems.length + ' RSS<br>' +
         '<span style="cursor:pointer;color:var(--accent);" onclick="generateSituationsrapport()">↺ Refresh</span>' +
         ' &nbsp;·&nbsp; <span style="cursor:pointer;color:var(--accent);" onclick="generateDeckBriefing()">⚡ Full brief</span>' +
       '</div>';
 
-    storyBody.innerHTML = bodyHtml;
-    // Cache for back-button
     _situationsrapportHtml = bodyHtml;
     _situationsrapportMeta = 'SITUATIONSRAPPORTEN · ' + tzDateTime(Date.now());
+
+    // Only populate reader if still in default blinking state
+    if (isDefault) {
+      if (storyMeta) storyMeta.textContent = _situationsrapportMeta;
+      if (storyHead) storyHead.style.display = 'none';
+      storyBody.innerHTML = bodyHtml;
+      var sentinel = document.getElementById('storyDefaultEmpty');
+      if (sentinel) sentinel.remove();
+      document.getElementById('storyRelated').innerHTML = '';
+    }
+
     _aiBriefingRuns++;
     updateAiCostDisplay();
 
   } catch(e) {
-    storyBody.innerHTML =
-      '<div class="story-empty"><div class="story-empty-icon">◎</div>' +
-      '<div class="story-empty-text">Click any feed item or map pin to read the full story</div></div>';
-    if (storyHead) storyHead.style.display = 'none';
+    console.warn('Situationsrapport error:', e);
   }
 }
-
 async function generateDeckBriefing() {
   // Reset busy flag if stuck
   if (_briefingBusy) { _briefingBusy = false; }
@@ -7271,6 +7431,11 @@ async function fetchRSS() {
     seen[item.text] = true;
     return true;
   }).slice(0, 60);
+
+  // Apply static scores
+  liveRssItems.forEach(function(item) {
+    if (item._staticScore === undefined) item._staticScore = scoreFeedItem(item);
+  });
 
   setSourceStatus('rss','live', liveRssItems.length + ' articles');
   scoreConflictZones();
@@ -8386,19 +8551,19 @@ var _mapSettings = { daynight: true, csg: true, exchanges: true };
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--dim);">
         <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">AI INTELLIGENCE CRAWLER</div>
         <div style="font-family:var(--mono);font-size:8px;color:var(--muted);line-height:1.5;margin-bottom:10px;">
-          Uses Claude Haiku to extract precise geolocation + event type from GDELT headlines. Fires on each GDELT refresh (~15 min). Requires Anthropic API key above.
+          Scores every feed item by: conflict hierarchy (Iran > Ukraine > Gaza…), recency, breaking signal, severity keywords, and source credibility. Static scoring is instant and always active. Enable below to also fire Grok-3-mini for AI re-ranking of top items on each GDELT refresh.
         </div>
         <label style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;">
-          <input type="checkbox" id="adminAiCrawler" onchange="toggleAiCrawler(this.checked)"> Enable AI NLP geolocation
+          <input type="checkbox" id="adminAiCrawler" onchange="toggleAiCrawler(this.checked)"> Enable AI re-ranking (Grok-3-mini)
         </label>
         <div style="margin-top:8px;">
           <button id="aiCrawlerBtn" onclick="if(_aiCrawlerEnabled){var h=liveGdeltItems.map(function(i){return i.text;});maybeRunAiCrawler(h);}"
             style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--muted);background:transparent;border:1px solid var(--dim);padding:4px 10px;cursor:pointer;width:100%;">
-            ○ AI CRAWLER OFF
+            ○ AI RE-RANKER OFF
           </button>
         </div>
         <div id="aiCrawlerStatus" style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-top:6px;letter-spacing:1px;">
-          Idle — toggle to activate
+          Static scoring active · Enable AI re-ranking for deeper prioritisation
         </div>
         <div id="aiCostDisplay" style="font-family:var(--mono);"></div>
       </div>
